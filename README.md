@@ -56,3 +56,15 @@ python -m unittest discover -s tests
 
 The current tests are offline parser tests. They do not require a live Quake 3
 server.
+
+## License
+
+Copyright (C) 2026 tsautier
+
+OpenASE is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE) for the full text.
+
+OpenASE is not affiliated with Yahoo or the original All-Seeing Eye authors.
+No original ASE files are distributed with this project.
