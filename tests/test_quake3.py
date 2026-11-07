@@ -57,6 +57,17 @@ class Quake3ParserTests(unittest.TestCase):
 
         self.assertEqual(parse_getservers_response(packet), ["127.0.0.1:27960"])
 
+    def test_parse_getservers_response_accepts_unpadded_eot(self):
+        packet = (
+            OUT_OF_BAND_PREFIX
+            + b"getserversResponse\\"
+            + bytes([10, 0, 0, 2])
+            + (27961).to_bytes(2, "big")
+            + b"\\EOT"
+        )
+
+        self.assertEqual(parse_getservers_response(packet), ["10.0.0.2:27961"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,7 @@ import socket
 from dataclasses import dataclass, field
 
 DEFAULT_PORT = 27960
-DEFAULT_MASTER = "master.ioquake3.org"
+DEFAULT_MASTER = "master.quake3arena.com"
 DEFAULT_MASTER_PORT = 27950
 OUT_OF_BAND_PREFIX = b"\xff\xff\xff\xff"
 CHALLENGE = "openase"
@@ -146,7 +146,9 @@ def parse_getservers_response(packet: bytes) -> list[str]:
             continue
 
         chunk = body[index + 1 : index + 7]
-        if chunk == b"EOT\x00\x00\x00":
+        # Packets end with `\EOT` or `\EOF`, padded with NUL bytes by some
+        # masters and bare on others (e.g. master.quake3arena.com).
+        if chunk[:3] in (b"EOT", b"EOF") and chunk[3:].strip(b"\x00") == b"":
             break
         if len(chunk) < 6:
             raise ValueError("truncated getserversResponse address entry")

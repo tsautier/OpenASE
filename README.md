@@ -46,7 +46,21 @@ provides one. OpenASE does not guess countries from IP addresses without a
 verifiable GeoIP database.
 
 Default Quake 3 server port is `27960` when no port is provided.
-Default Quake 3 master server port is `27950`.
+Default Quake 3 master server is `master.quake3arena.com:27950`.
+
+## Rust version
+
+A native Rust port lives in [`rust/`](rust/). It has the same features and the
+same `openase_settings.json` format, with an [egui](https://github.com/emilk/egui)
+interface. It also scans 16 servers in parallel and reads master lists split
+across several UDP packets.
+
+```powershell
+cd rust
+cargo run --release          # GUI
+cargo run --example scan     # command-line smoke test against the master
+cargo test
+```
 
 ## Tests
 

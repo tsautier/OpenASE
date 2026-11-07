@@ -12,3 +12,6 @@ openase_settings.json
 *.dat
 filters.txt
 countries.txt
+
+# Rust build output
+target/
