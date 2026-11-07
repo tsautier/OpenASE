@@ -374,7 +374,7 @@
       <div class="cta">
         <a class="btn primary" href="https://github.com/tsautier/OpenASE/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-          Download for Windows
+          Download · Windows · Linux · macOS
         </a>
         <a class="btn" href="#manual">Read the manual</a>
       </div>
@@ -503,7 +503,7 @@
         <div class="card reveal">
           <h3>Quick start</h3>
           <ol>
-            <li>Download, unzip, run <code>OpenASE.exe</code>. The setup wizard asks for your connection and your name.</li>
+            <li>Download the package for your system (Windows, Linux or macOS), unzip, run OpenASE. The setup wizard asks for your connection and your name.</li>
             <li>Click a game in the tree. OpenASE downloads the list and pings everything.</li>
             <li>Sort by Ping, tick filters (game type, mods, maps, Kill Cam, country...).</li>
             <li>Double-click a server, or press <kbd>Enter</kbd>. The game starts and connects.</li>
@@ -549,7 +549,7 @@
       <h2>Compile <em>&amp; play.</em></h2>
       <div class="install">
         <div class="term reveal">
-          <div class="c"># Windows, Linux · Rust 1.88+</div>
+          <div class="c"># Windows, Linux, macOS · Rust 1.88+</div>
           <div><span class="p">$</span> git clone https://github.com/tsautier/OpenASE</div>
           <div><span class="p">$</span> cd OpenASE/rust</div>
           <div><span class="p">$</span> cargo run --release</div>
@@ -571,7 +571,7 @@
       <details class="reveal"><summary>Is this the original All-Seeing Eye?</summary><p>No. OpenASE is new code written from scratch, inspired by the original. It contains nothing from the Yahoo program and is not affiliated with Yahoo or the original authors.</p></details>
       <details class="reveal"><summary>Is it free? Any ads, accounts or tracking?</summary><p>Free software under the GPL-3.0. No ads, no account. OpenASE talks to game master servers and game servers, downloads the DB-IP country database once a month (can be turned off) and checks GitHub for a new release (can be turned off). That's it.</p></details>
       <details class="reveal"><summary>Why does Counter-Strike 1.6 need a Steam key?</summary><p>Valve shut down the old UDP master. The server list now comes from the Steam Web API, which needs a free personal key. Servers you add by hand work without one.</p></details>
-      <details class="reveal"><summary>Linux? macOS?</summary><p>OpenASE is native Rust and builds on Linux (tested in CI). Windows builds are published on GitHub Releases. macOS should build but is untested.</p></details>
+      <details class="reveal"><summary>Linux? macOS?</summary><p>Yes. Every release ships Windows, Linux (x64) and macOS (universal, Apple Silicon and Intel) builds, all tested in CI. On macOS the app is not notarized yet: right-click it and choose Open the first time. Your games still need to run on your system: ioquake3, Urban Terror, OpenArena, ET: Legacy, UT99 (OldUnreal) and CS 1.6 have native versions; Call of Duty needs Windows or Wine / Proton.</p></details>
       <details class="reveal"><summary>My game is missing.</summary><p>Games live in one JSON file. If yours speaks the Quake 3, GameSpy or Valve query protocol and still has a live master, it is often a few lines. Open an issue on GitHub.</p></details>
     </div>
   </section>

@@ -45,6 +45,20 @@ jobs:
           workspaces: rust
       - run: cargo test
 
+  rust-macos:
+    name: Rust (macOS)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo test
+
   python:
     name: Python
     runs-on: ubuntu-latest

@@ -52,12 +52,24 @@ game types, filter groups, registry detection and the command line used to join.
 
 ## Download
 
-Windows builds are attached to [GitHub Releases](https://github.com/tsautier/OpenASE/releases)
-when a version tag is pushed.
+Every [GitHub release](https://github.com/tsautier/OpenASE/releases/latest) ships three packages:
+
+| System | Package | How to run |
+| --- | --- | --- |
+| Windows 10/11 (x64) | `OpenASE-<version>-windows-x64.zip` | Unzip, run `OpenASE.exe`. |
+| Linux (x64) | `OpenASE-<version>-linux-x64.tar.gz` | Extract, run `./openase`. An `openase.desktop` file and icon are included. |
+| macOS 11+ (Apple Silicon and Intel) | `OpenASE-<version>-macos-universal.zip` | Unzip, move `OpenASE.app` to Applications. The app is not notarized: the first time, right-click it and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/OpenASE.app`. |
+
+The games themselves still need to run on your system: native Linux and macOS
+builds exist for ioquake3, Urban Terror, OpenArena, ET: Legacy, Unreal
+Tournament (OldUnreal patch) and Counter-Strike 1.6 (Steam). Call of Duty runs
+on Windows only, or through Wine / Proton.
 
 ## Build from source (Rust)
 
-Requires Rust 1.88 or newer.
+Requires Rust 1.88 or newer. On Linux, install the GUI libraries first
+(Debian / Ubuntu: `sudo apt install libxcb-render0-dev libxcb-shape0-dev
+libxcb-xfixes0-dev libxkbcommon-dev libgtk-3-dev`).
 
 ```powershell
 cd rust
@@ -74,7 +86,7 @@ cargo test
 ```
 
 Settings are stored in `%APPDATA%\OpenASE\settings.json` on Windows
-(`~/.config/OpenASE` on Linux).
+(`~/.config/OpenASE` on Linux, `~/Library/Application Support/OpenASE` on macOS).
 
 ### Counter-Strike 1.6
 

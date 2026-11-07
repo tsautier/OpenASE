@@ -60,8 +60,31 @@ pub fn search_roots() -> Vec<PathBuf> {
                 roots.push(drive);
             }
         }
-    } else if let Some(home) = std::env::var_os("HOME") {
-        roots.push(PathBuf::from(home));
+    } else {
+        let home = std::env::var_os("HOME").map(PathBuf::from);
+        if let Some(home) = &home {
+            // Steam libraries first: that is where most games live.
+            for steam in [
+                ".steam/steam/steamapps/common",
+                ".local/share/Steam/steamapps/common",
+                ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common",
+                "Library/Application Support/Steam/steamapps/common",
+            ] {
+                let dir = home.join(steam);
+                if dir.is_dir() {
+                    roots.push(dir);
+                }
+            }
+        }
+        for system in ["/Applications", "/usr/games", "/usr/local/games", "/opt"] {
+            let dir = PathBuf::from(system);
+            if dir.is_dir() {
+                roots.push(dir);
+            }
+        }
+        if let Some(home) = home {
+            roots.push(home);
+        }
     }
     let mut seen = std::collections::HashSet::new();
     roots.retain(|root| seen.insert(root.to_string_lossy().to_lowercase()));
@@ -100,7 +123,15 @@ fn walk(
         .is_some_and(|name| {
             matches!(
                 name.as_str(),
-                "windows" | "$recycle.bin" | "system volume information" | "winsxs"
+                "windows"
+                    | "$recycle.bin"
+                    | "system volume information"
+                    | "winsxs"
+                    | ".cache"
+                    | ".git"
+                    | "node_modules"
+                    | ".trash"
+                    | "proc"
             )
         });
     if skip {

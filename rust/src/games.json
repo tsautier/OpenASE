@@ -29,7 +29,7 @@
       { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Id\\Quake III Arena", "value": "INSTALLPATH", "exe": "quake3.exe" },
       { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Quake 3 Arena\\quake3.exe" }
     ],
-    "exe_names": ["quake3.exe", "quake3e.x64.exe", "ioquake3.x86_64.exe", "ioquake3.exe"],
+    "exe_names": ["quake3.exe", "quake3e.x64.exe", "ioquake3.x86_64.exe", "ioquake3.exe", "ioquake3.x86_64", "ioquake3.aarch64", "ioquake3", "quake3e.x64", "quake3e.aarch64", "quake3e"],
     "join": "[+set fs_game {mod} ][+exec \"{config}\" ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
@@ -65,7 +65,7 @@
       { "name": "Maps", "key": "mapname", "dynamic": true }
     ],
     "registry": [],
-    "exe_names": ["Quake3-UrT.exe", "Quake3-UrT.x86_64.exe"],
+    "exe_names": ["Quake3-UrT.exe", "Quake3-UrT.x86_64.exe", "Quake3-UrT.x86_64", "Quake3-UrT.aarch64", "Quake3-UrT"],
     "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
@@ -100,7 +100,7 @@
       { "name": "Maps", "key": "mapname", "dynamic": true }
     ],
     "registry": [],
-    "exe_names": ["openarena.exe", "openarena.x86_64.exe", "omp-x86_64.exe"],
+    "exe_names": ["openarena.exe", "openarena.x86_64.exe", "omp-x86_64.exe", "openarena.x86_64", "openarena.ub", "openarena"],
     "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
@@ -131,7 +131,7 @@
       { "name": "Maps", "key": "mapname", "dynamic": true }
     ],
     "registry": [],
-    "exe_names": ["ET.exe", "etl.exe", "etl_x64.exe"],
+    "exe_names": ["ET.exe", "etl.exe", "etl_x64.exe", "etl", "etl.x86_64", "etl.aarch64", "et.x86"],
     "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
@@ -270,7 +270,7 @@
     "registry": [
       { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\UnrealTournament", "value": "Folder", "exe": "System\\UnrealTournament.exe" }
     ],
-    "exe_names": ["UnrealTournament.exe"],
+    "exe_names": ["UnrealTournament.exe", "ut-bin-amd64", "ut-bin-arm64", "ut-bin", "UnrealTournament"],
     "join": "{address}[?Name={name}][?Password={password}]"
   },
   {
@@ -296,7 +296,7 @@
     "registry": [
       { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
     ],
-    "exe_names": ["hl.exe"],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
     "join": "-game cstrike [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   }
 ]
