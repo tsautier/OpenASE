@@ -185,7 +185,8 @@ jobs:
 
   publish:
     needs: [windows, linux, macos]
-    if: ${{ inputs.publish != false }}
+    # Tag pushes have no inputs (and null == false in expressions), so test the event.
+    if: ${{ github.event_name == 'push' || inputs.publish }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
