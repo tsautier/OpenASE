@@ -94,19 +94,6 @@ Valve's old UDP master no longer answers, so the list comes from the Steam Web
 API. Get a free key at https://steamcommunity.com/dev/apikey and paste it in
 Options > General. Servers added by hand work without a key.
 
-## Python version
-
-The first prototype, in [`openase/`](openase/), is kept as a reference for the
-Quake 3 protocol. It only receives protocol fixes; new features go to Rust.
-
-```powershell
-python -m openase
-python -m unittest discover -s tests
-```
-
-It reads its game tree from an original ASE `filters.txt` placed next to the
-project, if there is one.
-
 ## References
 
 - Quake 3 connectionless queries: Jacek Fedorynski, "Quake 3 Network Protocol"

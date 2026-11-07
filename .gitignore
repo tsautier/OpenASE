@@ -1,9 +1,3 @@
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.pytest_cache/
-
 # Local user settings (generated at runtime)
 openase_settings.json
 

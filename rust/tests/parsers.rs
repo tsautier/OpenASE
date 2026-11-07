@@ -1,4 +1,4 @@
-//! Offline parser tests, ported from the Python test suite.
+//! Offline parser tests.
 
 use openase::ase_filters::{parse_filter_paths, parse_game_definitions};
 use openase::colors::{first_quake_color, quake_color_segments, strip_quake_colors};

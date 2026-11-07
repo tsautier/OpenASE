@@ -3,8 +3,8 @@
 Goal: one open-source browser for the classic online games that still have
 players, with the look and feel of The All-Seeing Eye.
 
-Rust (`rust/`) is the main version. The Python version stays as a reference and
-receives protocol fixes only.
+OpenASE is written in Rust (`rust/`). The first Python prototype was retired
+in v0.6; it remains in the git history.
 
 ## v0.1 — Quake 3 browsing (done)
 
@@ -18,7 +18,7 @@ receives protocol fixes only.
 - [x] Real ping, plus ASE's Flux and PL from several samples per server
 - [x] Several masters per game, queried in parallel and merged
 - [x] Sort ascending/descending; window, panel and column sizes remembered
-- [x] CI on GitHub Actions (fmt, clippy, tests on Windows and Linux, Python tests)
+- [x] CI on GitHub Actions (fmt, clippy, tests on Windows, Linux and macOS)
 - [x] Windows build attached to a GitHub Release when a `v*` tag is pushed
 
 ## v0.3 — The id Tech 3 family (done)
