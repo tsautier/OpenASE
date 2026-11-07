@@ -735,13 +735,16 @@ impl OpenAseApp {
             .collect();
 
         let (col, ascending) = self.sort;
+        // Servers that answered always come first, whatever the sort direction.
         rows.sort_by(|a, b| {
-            let ordering = compare(col, a, b);
-            if ascending {
-                ordering
-            } else {
-                ordering.reverse()
-            }
+            b.online.cmp(&a.online).then_with(|| {
+                let ordering = compare(col, a, b);
+                if ascending {
+                    ordering
+                } else {
+                    ordering.reverse()
+                }
+            })
         });
         rows
     }
