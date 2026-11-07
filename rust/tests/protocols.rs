@@ -337,3 +337,153 @@ fn favorites_and_recent_are_managed() {
     assert_eq!(settings.recent.len(), openase::settings::RECENT_LIMIT);
     assert_eq!(settings.recent[0].address, "1.1.1.10:27960");
 }
+
+// --- GeoIP and countries ---
+
+#[test]
+fn geoip_lookup_uses_ranges_and_skips_reserved() {
+    use openase::geoip::GeoIp;
+    let geoip = GeoIp::parse(
+        "0.0.0.0,0.255.255.255,ZZ\n1.0.0.0,1.0.0.255,AU\n2.26.0.0,2.26.0.255,FI\n2001:200::,2001:200:ffff:ffff:ffff:ffff:ffff:ffff,JP\n",
+    );
+    assert_eq!(geoip.len(), 3);
+    assert_eq!(geoip.lookup_host("1.0.0.42"), Some("AU"));
+    assert_eq!(geoip.lookup_host("2.26.0.255"), Some("FI"));
+    assert_eq!(geoip.lookup_host("2.26.1.0"), None);
+    assert_eq!(geoip.lookup_host("0.1.2.3"), None);
+    assert_eq!(geoip.lookup_host("example.org"), None);
+}
+
+#[test]
+fn geoip_month_and_url() {
+    use openase::geoip::{download_url, year_month_from_days};
+    assert_eq!(year_month_from_days(0), (1970, 1));
+    assert_eq!(year_month_from_days(20_399), (2025, 11)); // 2025-11-07
+    assert_eq!(year_month_from_days(20_818), (2026, 12)); // 2026-12-31
+    assert_eq!(year_month_from_days(19_782), (2024, 2)); // 2024-02-29
+    assert_eq!(
+        download_url(2026, 1),
+        "https://download.db-ip.com/free/dbip-country-lite-2026-01.csv.gz"
+    );
+}
+
+#[test]
+fn country_names_are_short_and_sorted() {
+    use openase::countries::{COUNTRIES, country_name};
+    assert!(COUNTRIES.windows(2).all(|pair| pair[0].0 < pair[1].0));
+    assert_eq!(country_name("FR"), Some("France"));
+    assert_eq!(country_name("KR"), Some("South Korea"));
+    assert_eq!(country_name("ZZ"), None);
+}
+
+// --- custom filters, LAN, updates, lists ---
+
+#[test]
+fn custom_filter_rules_match_numbers_text_and_rules() {
+    use openase::rules::{CustomFilter, Op, Rule};
+    let mut server = Server::new("cod2", "1.2.3.4", 28960);
+    server.name = "^1Big ^7Server".into();
+    server.map = "mp_toujane".into();
+    server.num_players = 12;
+    server.ping = Some(40);
+    server.game_type = "sd".into();
+    server.rules.insert("scr_killcam".into(), "1".into());
+    let rule = |key: &str, op, value: &str| Rule {
+        key: key.into(),
+        op,
+        value: value.into(),
+    };
+
+    assert!(rule("name", Op::Contains, "big server").matches(&server));
+    assert!(rule("players", Op::Greater, "10").matches(&server));
+    assert!(!rule("ping", Op::Greater, "50").matches(&server));
+    assert!(rule("gametype", Op::Equals, "Search and Destroy").matches(&server));
+    assert!(rule("scr_killcam", Op::Equals, "1").matches(&server));
+    assert!(rule("missing_key", Op::NotEquals, "x").matches(&server));
+    assert!(!rule("missing_key", Op::Equals, "x").matches(&server));
+
+    let filter = CustomFilter {
+        name: "Busy S&D".into(),
+        game: "cod2".into(),
+        rules: vec![
+            rule("players", Op::Greater, "5"),
+            rule("map", Op::Contains, "toujane"),
+        ],
+        color: Some("#ffe0a0".into()),
+    };
+    assert!(filter.matches(&server));
+    assert!(
+        !CustomFilter {
+            game: "q3".into(),
+            ..filter.clone()
+        }
+        .matches(&server)
+    );
+}
+
+#[test]
+fn lan_answers_are_mapped_to_games() {
+    use openase::lan::guess_quake3_game;
+    let info = |pairs: &[(&str, &str)]| -> BTreeMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    };
+    assert_eq!(
+        guess_quake3_game(&info(&[("protocol", "68"), ("gamename", "baseq3")]), 27960),
+        "q3"
+    );
+    assert_eq!(
+        guess_quake3_game(&info(&[("protocol", "68"), ("gamename", "q3urt43")]), 27960),
+        "urt"
+    );
+    assert_eq!(guess_quake3_game(&info(&[("protocol", "71")]), 27960), "oa");
+    assert_eq!(guess_quake3_game(&info(&[("protocol", "84")]), 27960), "et");
+    assert_eq!(
+        guess_quake3_game(&info(&[("protocol", "118")]), 28960),
+        "cod2"
+    );
+    assert_eq!(
+        guess_quake3_game(&info(&[("protocol", "6"), ("shortversion", "1.7")]), 28960),
+        "cod4"
+    );
+    assert_eq!(
+        guess_quake3_game(&info(&[("protocol", "6"), ("shortversion", "1.5")]), 28960),
+        "cod"
+    );
+}
+
+#[test]
+fn update_versions_compare() {
+    use openase::update::{is_newer, parse_version};
+    assert_eq!(parse_version("v0.6.1"), Some((0, 6, 1)));
+    assert!(is_newer("v0.7.0", "0.6.0"));
+    assert!(is_newer("1.0", "0.9.9"));
+    assert!(!is_newer("v0.6.0", "0.6.0"));
+    assert!(!is_newer("garbage", "0.6.0"));
+}
+
+#[test]
+fn server_list_files_are_parsed() {
+    use openase::settings::parse_address_list;
+    let text = "1.2.3.4:27960\n\\ip\\5.6.7.8:7778\\ip\\ 5.6.7.8:7778\nplay.example.org:28960 junk 999.1:2 nohost:12";
+    assert_eq!(
+        parse_address_list(text),
+        vec!["1.2.3.4:27960", "5.6.7.8:7778", "play.example.org:28960"]
+    );
+}
+
+#[test]
+fn favorite_groups_default_and_move() {
+    let mut settings = Settings::default();
+    let server = ServerRef {
+        game: "q3".into(),
+        address: "1.1.1.1:27960".into(),
+    };
+    settings.toggle_favorite(server.clone());
+    assert_eq!(settings.favorite_group(&server), "Favorites1");
+    settings.add_favorite_to(server.clone(), "Favorites3");
+    assert_eq!(settings.favorites.len(), 1);
+    assert_eq!(settings.favorites_in("Favorites3"), vec![server]);
+}

@@ -1,0 +1,107 @@
+//! LAN server discovery by UDP broadcast, like ASE's "LAN servers".
+
+use std::collections::{BTreeMap, HashSet};
+use std::io;
+use std::net::{Ipv4Addr, SocketAddrV4, UdpSocket};
+use std::time::{Duration, Instant};
+
+use crate::quake3::{OUT_OF_BAND_PREFIX, latin1, parse_info_response};
+
+/// Ports probed for each protocol family.
+const QUAKE3_PORTS: [u16; 8] = [27960, 27961, 27962, 27963, 28960, 28961, 28962, 28963];
+const GAMESPY_PORTS: [u16; 3] = [7778, 7788, 7798];
+const A2S_PORTS: [u16; 4] = [27015, 27016, 27017, 27018];
+
+/// A server that answered on the local network, with the catalog game it
+/// most likely runs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LanServer {
+    pub game: String,
+    pub address: String,
+}
+
+/// Guess the catalog game of a Quake 3 family `infoResponse`.
+pub fn guess_quake3_game(info: &BTreeMap<String, String>, port: u16) -> &'static str {
+    let get = |key: &str| {
+        info.get(key)
+            .map(|value| value.to_lowercase())
+            .unwrap_or_default()
+    };
+    let gamename = get("gamename");
+    let protocol = get("protocol");
+    if gamename.starts_with("q3urt") {
+        return "urt";
+    }
+    match protocol.as_str() {
+        "71" => "oa",
+        "84" | "83" | "82" => "et",
+        "118" | "117" | "116" | "115" => "cod2",
+        "5" | "6" if port >= 28960 || gamename.contains("call of duty") => {
+            if get("shortversion").starts_with("1.7") || gamename.contains("4") {
+                "cod4"
+            } else {
+                "cod"
+            }
+        }
+        _ => "q3",
+    }
+}
+
+/// Broadcast queries and collect the servers that answer within `wait`.
+pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
+    let socket = UdpSocket::bind("0.0.0.0:0")?;
+    socket.set_broadcast(true)?;
+    let broadcast = Ipv4Addr::BROADCAST;
+
+    let mut getinfo = OUT_OF_BAND_PREFIX.to_vec();
+    getinfo.extend_from_slice(b"getinfo openase-lan");
+    for port in QUAKE3_PORTS {
+        let _ = socket.send_to(&getinfo, SocketAddrV4::new(broadcast, port));
+    }
+    for port in GAMESPY_PORTS {
+        let _ = socket.send_to(b"\\status\\", SocketAddrV4::new(broadcast, port));
+    }
+    let mut a2s = vec![0xff; 4];
+    a2s.extend_from_slice(b"TSource Engine Query\0");
+    for port in A2S_PORTS {
+        let _ = socket.send_to(&a2s, SocketAddrV4::new(broadcast, port));
+    }
+
+    let deadline = Instant::now() + wait;
+    let mut seen = HashSet::new();
+    let mut found = Vec::new();
+    let mut buffer = [0u8; 4096];
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            break;
+        }
+        socket.set_read_timeout(Some(remaining))?;
+        let Ok((size, from)) = socket.recv_from(&mut buffer) else {
+            break;
+        };
+        let packet = &buffer[..size];
+        let address = from.to_string();
+        if !seen.insert(address.clone()) {
+            continue;
+        }
+        let game = if let Ok(info) = parse_info_response(packet) {
+            Some(guess_quake3_game(&info, from.port()))
+        } else if packet.starts_with(b"\\") || latin1(packet).contains("\\final\\") {
+            Some("ut99")
+        } else if packet.starts_with(&[0xff; 4])
+            && matches!(packet.get(4), Some(b'I' | b'm' | b'A'))
+        {
+            Some("cs16")
+        } else {
+            None
+        };
+        if let Some(game) = game {
+            found.push(LanServer {
+                game: game.to_string(),
+                address,
+            });
+        }
+    }
+    Ok(found)
+}

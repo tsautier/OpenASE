@@ -44,12 +44,20 @@ receives protocol fixes only.
 - [x] Counter-Strike 1.6 (Valve A2S queries, Steam Web API list)
 - [x] Protocol layer: a new Quake 3, GameSpy or A2S game is a `games.json` entry
 
+## v0.6 — The full ASE feel (done)
+
+- [x] Location column and country filter (DB-IP GeoIP, monthly download)
+- [x] Favorites1..8, Friends1..4 groups, Special lists, LAN servers
+- [x] Custom filters with rules and color filters
+- [x] File menu: profile export/import, server list save/import, update check
+- [x] First-run setup wizard, Filter menu shortcuts (Ctrl+E/D/Q), Help menu
+- [x] New website with manual
+
 ## Not done yet
 
 - [ ] Unreal Tournament 2004 (different master protocol)
 - [ ] Steam server list checked with a real API key (code is unit-tested only)
 - [ ] Customizable toolbar, per-friend sounds, Colors options tab
-- [ ] Location column from GeoIP (only shown when the server reports it)
 
 ## v1.0 — Polished release
 

@@ -3,31 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OpenASE | Open-source game server browser</title>
-  <meta name="description" content="OpenASE is an open-source game server browser inspired by The All-Seeing Eye. Browse Quake 3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike 1.6 servers. Native Rust, GPL-3.0.">
-  <meta property="og:title" content="OpenASE">
-  <meta property="og:description" content="The classic game server browser, reborn as open source.">
-  <meta property="og:image" content="screenshot.png">
-  <meta name="theme-color" content="#0b0d10">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z' fill='none' stroke='%2333d6ff' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23ff3b3b'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%230b0d10'/%3E%3C/svg%3E">
+  <title>OpenASE | The Eye is back</title>
+  <meta name="description" content="OpenASE is the open-source successor in spirit to The All-Seeing Eye. Find Quake 3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike 1.6 servers, with ping, flux, packet loss, friends and one-click join.">
+  <meta property="og:title" content="OpenASE: the Eye is back">
+  <meta property="og:description" content="The legendary game server browser, reborn as free software. 9 games, 4,500+ live servers, one double-click to frag.">
+  <meta property="og:image" content="https://tsautier.github.io/OpenASE/screenshot.png">
+  <meta name="theme-color" content="#05060a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z' fill='none' stroke='%2300f0ff' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23ff2d55'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%2305060a'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0d10;
-      --bg-2: #11151a;
-      --panel: #151a21;
-      --line: #232a33;
-      --text: #e6e9ee;
-      --muted: #8b95a3;
-      --q1: #ff3b3b;   /* ^1 red */
-      --q2: #38e86b;   /* ^2 green */
-      --q3: #ffd23f;   /* ^3 yellow */
-      --q5: #33d6ff;   /* ^5 cyan */
-      --q6: #ff4fd8;   /* ^6 magenta */
-      --radius: 10px;
+      --bg: #05060a;
+      --bg2: #0a0d14;
+      --panel: rgba(16, 20, 30, .72);
+      --line: rgba(0, 240, 255, .16);
+      --text: #e8edf5;
+      --muted: #8a96a8;
+      --cyan: #00f0ff;
+      --red: #ff2d55;
+      --yellow: #ffd60a;
+      --green: #39ff14;
+      --magenta: #ff2bd6;
+      --orange: #ff8a00;
       --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      --display: "Orbitron", "Rajdhani", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -35,283 +36,455 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-      -webkit-font-smoothing: antialiased;
+      font: 500 18px/1.55 "Rajdhani", system-ui, "Segoe UI", sans-serif;
+      overflow-x: hidden;
     }
-    a { color: var(--q5); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-shadow: 0 0 12px var(--cyan); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+    /* CRT overlay */
+    body::after {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,.025) 0 1px, transparent 1px 3px);
+      mix-blend-mode: overlay;
+    }
+    .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 99;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%); }
 
     /* nav */
     header.nav {
-      position: sticky; top: 0; z-index: 10;
-      background: rgba(11, 13, 16, .82);
-      backdrop-filter: blur(10px);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      backdrop-filter: blur(12px);
+      background: linear-gradient(to bottom, rgba(5,6,10,.9), rgba(5,6,10,.55));
       border-bottom: 1px solid var(--line);
     }
-    header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--text); font-size: 18px; }
-    .brand:hover { text-decoration: none; }
-    .brand svg { width: 28px; height: 28px; }
+    header.nav .wrap { display: flex; align-items: center; gap: 22px; height: 62px; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 900 19px var(--display); letter-spacing: .08em; color: var(--text); }
+    .brand svg { width: 30px; height: 30px; filter: drop-shadow(0 0 8px var(--cyan)); }
     header.nav nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
-    header.nav nav a { color: var(--muted); font-size: 14px; font-weight: 500; }
-    header.nav nav a:hover { color: var(--text); text-decoration: none; }
-    .gh-btn {
-      border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px;
-      color: var(--text) !important; display: inline-flex; gap: 8px; align-items: center;
+    header.nav nav a { color: var(--muted); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; }
+    header.nav nav a:hover { color: var(--text); }
+    .pill {
+      border: 1px solid var(--cyan); color: var(--cyan) !important; padding: 7px 14px; border-radius: 3px;
+      box-shadow: 0 0 12px rgba(0,240,255,.35), inset 0 0 12px rgba(0,240,255,.12);
     }
-    .gh-btn:hover { border-color: var(--muted); }
 
     /* hero */
-    .hero { position: relative; overflow: hidden; padding: 96px 0 72px; }
-    .hero::before {
-      content: ""; position: absolute; inset: 0;
+    .hero { position: relative; min-height: 100vh; display: flex; align-items: center; padding: 110px 0 60px; overflow: hidden; }
+    #radar { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+    .grid-floor {
+      position: absolute; left: -50%; right: -50%; bottom: -40%; height: 70%; z-index: 0;
       background:
-        radial-gradient(600px 300px at 80% 20%, rgba(51, 214, 255, .14), transparent 70%),
-        radial-gradient(500px 260px at 15% 80%, rgba(255, 59, 59, .12), transparent 70%),
-        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 100% 32px,
-        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 32px 100%;
-      pointer-events: none;
+        linear-gradient(rgba(0,240,255,.22) 1px, transparent 1px) 0 0 / 60px 60px,
+        linear-gradient(90deg, rgba(0,240,255,.22) 1px, transparent 1px) 0 0 / 60px 60px;
+      transform: perspective(420px) rotateX(62deg);
+      mask-image: linear-gradient(to top, black 10%, transparent 85%);
+      animation: floor 2.4s linear infinite;
     }
-    .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
-    .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--q5); }
-    .eyebrow::before { content: "● "; color: var(--q2); }
-    h1 { font-size: clamp(48px, 8vw, 84px); line-height: 1; margin: 16px 0 20px; letter-spacing: -.03em; font-weight: 800; }
-    h1 .r { color: var(--q1); }
-    .lead { font-size: 19px; color: #c4cbd5; max-width: 34em; margin: 0 0 28px; }
-    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 18px; border-radius: 8px; font-weight: 600; font-size: 15px;
-      border: 1px solid var(--line); color: var(--text); background: var(--panel);
+    @keyframes floor { to { background-position: 0 60px, 0 0; } }
+    .hero .wrap { position: relative; z-index: 2; width: 100%; }
+    .tag {
+      display: inline-flex; gap: 10px; align-items: center; font: 700 13px var(--mono); letter-spacing: .14em;
+      color: var(--green); text-transform: uppercase; border: 1px solid rgba(57,255,20,.35); padding: 6px 12px; border-radius: 3px;
+      background: rgba(57,255,20,.06);
     }
-    .btn:hover { text-decoration: none; border-color: var(--muted); }
-    .btn.primary { background: var(--q5); color: #04121a; border-color: var(--q5); }
-    .btn.primary:hover { filter: brightness(1.08); }
-    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; max-width: 520px; }
-    .facts b { display: block; font-size: 15px; }
-    .facts span { color: var(--muted); font-size: 13px; }
+    .tag .blink { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
 
-    .shot {
-      border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
-      background: var(--panel);
-      box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(51,214,255,.06);
-      transform: perspective(1400px) rotateY(-6deg) rotateX(2deg);
+    .glitch {
+      position: relative; display: inline-block; margin: 22px 0 6px;
+      font: 900 clamp(38px, 13.5vw, 168px)/0.9 var(--display); letter-spacing: .02em; text-transform: uppercase;
+      color: var(--text);
+      text-shadow: 0 0 22px rgba(0,240,255,.45);
     }
-    .shot .bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
-    .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: #2c343e; }
-    .shot img { display: block; width: 100%; height: auto; }
+    .glitch .o { color: var(--red); text-shadow: 0 0 26px rgba(255,45,85,.7); }
+    .glitch::before, .glitch::after {
+      content: attr(data-text); position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .glitch::before { color: var(--cyan); transform: translate(-3px, 0); clip-path: inset(0 0 60% 0); animation: g1 3.2s infinite steps(1); opacity: .8; }
+    .glitch::after { color: var(--magenta); transform: translate(3px, 0); clip-path: inset(55% 0 0 0); animation: g2 2.7s infinite steps(1); opacity: .8; }
+    @keyframes g1 { 0%, 88% { clip-path: inset(0 0 100% 0); } 89% { clip-path: inset(10% 0 55% 0); transform: translate(-6px, -2px); } 92% { clip-path: inset(40% 0 30% 0); transform: translate(5px, 1px); } 95% { clip-path: inset(70% 0 5% 0); } }
+    @keyframes g2 { 0%, 84% { clip-path: inset(100% 0 0 0); } 85% { clip-path: inset(60% 0 10% 0); transform: translate(6px, 2px); } 90% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, -1px); } 93% { clip-path: inset(80% 0 2% 0); } }
+
+    .kicker { font: 800 clamp(22px, 3.4vw, 40px) var(--display); letter-spacing: .1em; margin: 0 0 16px; }
+    .kicker .c1 { color: var(--red); } .kicker .c3 { color: var(--yellow); } .kicker .c5 { color: var(--cyan); }
+    .lead { font-size: clamp(19px, 2vw, 23px); max-width: 38em; color: #c6cfdc; margin: 0 0 30px; }
+    .cta { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .btn {
+      position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 15px 26px;
+      font: 800 15px var(--display); letter-spacing: .12em; text-transform: uppercase; border-radius: 3px;
+      color: var(--text); border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.04);
+      transition: transform .15s, box-shadow .2s, background .2s;
+    }
+    .btn:hover { transform: translateY(-2px); text-shadow: none; background: rgba(255,255,255,.08); }
+    .btn.primary {
+      color: #031014; background: linear-gradient(90deg, var(--cyan), #6dfcff); border: 0;
+      box-shadow: 0 0 28px rgba(0,240,255,.55), 0 0 80px rgba(0,240,255,.2);
+      clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+    }
+    .btn.primary:hover { box-shadow: 0 0 40px rgba(0,240,255,.85), 0 0 120px rgba(0,240,255,.35); }
+    .btn svg { width: 18px; height: 18px; }
+    .sub-cta { font: 400 13px var(--mono); color: var(--muted); margin-top: 12px; }
+
+    .stats { display: flex; gap: 38px; margin-top: 46px; flex-wrap: wrap; }
+    .stat b { display: block; font: 900 clamp(30px, 4vw, 46px) var(--display); color: var(--text); text-shadow: 0 0 18px rgba(0,240,255,.4); }
+    .stat span { font: 700 12px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+    /* ticker */
+    .ticker { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(0,240,255,.04); overflow: hidden; white-space: nowrap; }
+    .ticker .track { display: inline-block; padding: 14px 0; animation: ticker 38s linear infinite; font: 700 15px var(--mono); letter-spacing: .14em; }
+    .ticker span { margin: 0 26px; }
+    @keyframes ticker { to { transform: translateX(-50%); } }
 
     /* sections */
-    section { padding: 88px 0; border-top: 1px solid var(--line); }
-    section.alt { background: var(--bg-2); }
-    .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--q3); margin: 0 0 10px; }
-    h2 { font-size: clamp(30px, 4vw, 42px); line-height: 1.15; margin: 0 0 16px; letter-spacing: -.02em; }
-    .sub { color: var(--muted); max-width: 46em; margin: 0 0 40px; font-size: 17px; }
+    section { position: relative; padding: 110px 0; }
+    .eyebrow { font: 700 13px var(--mono); letter-spacing: .22em; color: var(--cyan); text-transform: uppercase; margin: 0 0 12px; }
+    .eyebrow::before { content: "// "; color: var(--red); }
+    h2 { font: 900 clamp(34px, 5vw, 60px)/1.02 var(--display); margin: 0 0 18px; text-transform: uppercase; letter-spacing: .02em; }
+    h2 em { font-style: normal; color: var(--cyan); text-shadow: 0 0 22px rgba(0,240,255,.5); }
+    .sub { color: var(--muted); font-size: 20px; max-width: 44em; margin: 0 0 48px; }
 
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    .card {
-      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-      padding: 22px; transition: border-color .2s, transform .2s;
+    /* showcase */
+    .showcase { perspective: 1600px; }
+    .screen {
+      position: relative; border-radius: 6px; border: 1px solid rgba(0,240,255,.35); background: #0b0f18;
+      transform: rotateX(10deg) rotateY(-8deg) scale(.96); transform-style: preserve-3d;
+      box-shadow: 0 50px 120px rgba(0,0,0,.7), 0 0 60px rgba(0,240,255,.25);
+      transition: transform .6s cubic-bezier(.2,.8,.2,1);
     }
-    .card:hover { border-color: #33404d; transform: translateY(-2px); }
-    .card h3 { margin: 0 0 8px; font-size: 17px; display: flex; align-items: center; gap: 10px; }
-    .card p { margin: 0; color: var(--muted); font-size: 15px; }
-    .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+    .screen:hover { transform: rotateX(0) rotateY(0) scale(1); }
+    .screen .chrome { display: flex; gap: 7px; padding: 10px 12px; border-bottom: 1px solid rgba(0,240,255,.2); }
+    .screen .chrome i { width: 11px; height: 11px; border-radius: 50%; background: #263042; }
+    .screen .chrome i:first-child { background: var(--red); } .screen .chrome i:nth-child(2) { background: var(--yellow); } .screen .chrome i:nth-child(3) { background: var(--green); }
+    .screen img { display: block; width: 100%; height: auto; border-radius: 0 0 6px 6px; }
+    .hot { position: absolute; display: flex; align-items: center; gap: 8px; font: 700 13px var(--mono); color: var(--text); pointer-events: none; }
+    .hot i { width: 14px; height: 14px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 0 rgba(255,45,85,.7); animation: ping 1.8s infinite; flex: none; }
+    .hot span { background: rgba(5,6,10,.85); border: 1px solid rgba(255,45,85,.5); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
+    @keyframes ping { 70% { box-shadow: 0 0 0 16px rgba(255,45,85,0); } 100% { box-shadow: 0 0 0 0 rgba(255,45,85,0); } }
 
-    /* color code demo */
-    .demo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
-    .term {
-      background: #07090b; border: 1px solid var(--line); border-radius: var(--radius);
-      font-family: var(--mono); font-size: 14px; padding: 18px 20px; overflow-x: auto;
+    /* games */
+    .games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .game {
+      position: relative; padding: 22px 22px 20px; border: 1px solid rgba(255,255,255,.08); border-radius: 4px; background: var(--panel);
+      overflow: hidden; transition: transform .2s, border-color .2s;
     }
-    .term .label { color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; display: block; }
-    .term .row { white-space: pre; line-height: 1.9; }
-    .c1 { color: var(--q1); } .c2 { color: var(--q2); } .c3 { color: var(--q3); }
-    .c5 { color: var(--q5); } .c6 { color: var(--q6); } .c7 { color: #fff; } .cm { color: var(--muted); }
+    .game::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, var(--c) 160%); opacity: .18; transition: opacity .2s; }
+    .game:hover { transform: translateY(-4px); border-color: var(--c); box-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent); }
+    .game:hover::before { opacity: .38; }
+    .game .badge { position: relative; display: inline-block; padding: 4px 9px; font: 800 13px var(--display); color: #fff; background: var(--c); border-radius: 3px; letter-spacing: .06em; }
+    .game h3 { position: relative; font: 800 20px var(--display); margin: 14px 0 4px; letter-spacing: .03em; }
+    .game p { position: relative; margin: 0; font: 400 13px var(--mono); color: var(--muted); }
 
-    /* install tabs */
-    .tabs { display: flex; gap: 6px; margin-bottom: -1px; position: relative; z-index: 1; flex-wrap: wrap; }
-    .tabs button {
-      font: 600 14px Inter, sans-serif; color: var(--muted); background: transparent;
-      border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0;
-      padding: 10px 16px; cursor: pointer;
-    }
-    .tabs button[aria-selected="true"] { color: var(--text); background: #07090b; border-color: var(--line); }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .panel .term { border-top-left-radius: 0; }
-    .copy {
-      float: right; font: 600 12px Inter, sans-serif; color: var(--muted); background: var(--panel);
-      border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer;
-    }
-    .copy:hover { color: var(--text); }
-    .note {
-      margin-top: 18px; padding: 14px 16px; border-radius: 8px; font-size: 14px; color: #c4cbd5;
-      background: rgba(255, 210, 63, .07); border: 1px solid rgba(255, 210, 63, .25);
-    }
-    .note b { color: var(--q3); }
+    /* features */
+    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .feat { padding: 26px 22px; border-radius: 4px; background: var(--panel); border: 1px solid rgba(255,255,255,.07); position: relative; overflow: hidden; }
+    .feat::after { content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: var(--c, var(--cyan)); box-shadow: 0 0 18px var(--c, var(--cyan)); transform: scaleX(.25); transform-origin: left; transition: transform .35s; }
+    .feat:hover::after { transform: scaleX(1); }
+    .feat svg { width: 36px; height: 36px; color: var(--c, var(--cyan)); filter: drop-shadow(0 0 8px currentColor); }
+    .feat h3 { font: 800 18px var(--display); margin: 14px 0 8px; letter-spacing: .05em; text-transform: uppercase; }
+    .feat p { margin: 0; color: #b7c1d0; font-size: 17px; }
+    .feat.big { grid-column: span 2; }
+    .meter { display: flex; gap: 18px; margin-top: 16px; font: 700 14px var(--mono); }
+    .meter div b { display: block; font: 900 28px var(--display); }
 
-    /* roadmap */
-    .roadmap { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-    .roadmap li {
-      display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: baseline;
-      background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;
-    }
-    .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-    .tag.done { color: var(--q2); } .tag.next { color: var(--q5); } .tag.later { color: var(--muted); }
-    .roadmap b { display: block; }
-    .roadmap span { color: var(--muted); font-size: 14px; }
+    /* then / now */
+    .timeline { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .era { padding: 28px; border-left: 3px solid var(--c); background: var(--panel); }
+    .era .year { font: 900 44px var(--display); color: var(--c); text-shadow: 0 0 20px var(--c); }
+    .era p { margin: 6px 0 0; color: #c2cbd8; }
 
-    footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
-    footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-    footer p { margin: 0 0 6px; max-width: 44em; }
+    /* manual */
+    .manual { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .card { padding: 26px; border-radius: 4px; background: var(--panel); border: 1px solid rgba(255,255,255,.07); }
+    .card h3 { font: 800 18px var(--display); margin: 0 0 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--yellow); }
+    .card ol, .card ul { margin: 0; padding-left: 20px; color: #c2cbd8; }
+    .card li { margin: 6px 0; }
+    kbd { font: 700 13px var(--mono); padding: 2px 7px; border-radius: 3px; border: 1px solid rgba(255,255,255,.25); border-bottom-width: 3px; background: #121826; color: var(--text); }
+    table.keys { width: 100%; border-collapse: collapse; font-size: 17px; }
+    table.keys td { padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,.06); color: #c2cbd8; }
+    table.keys td:first-child { width: 120px; }
 
-    @media (max-width: 900px) {
-      .hero { padding: 64px 0 48px; }
-      .hero .wrap, .demo { grid-template-columns: 1fr; }
-      .shot { transform: none; }
-      .grid { grid-template-columns: 1fr 1fr; }
-      header.nav nav a:not(.gh-btn) { display: none; }
+    /* install */
+    .term { background: #020305; border: 1px solid rgba(57,255,20,.3); border-radius: 4px; padding: 20px 22px; font: 400 15px/1.9 var(--mono); color: #b9ffb0; box-shadow: inset 0 0 40px rgba(57,255,20,.06); overflow-x: auto; }
+    .term .p { color: var(--green); }
+    .term .c { color: #4d5a66; }
+    .install { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+
+    /* faq */
+    details { border-bottom: 1px solid rgba(255,255,255,.08); padding: 18px 0; }
+    summary { cursor: pointer; font: 800 18px var(--display); letter-spacing: .04em; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
+    summary::after { content: "+"; color: var(--cyan); }
+    details[open] summary::after { content: "−"; }
+    details p { color: #b7c1d0; margin: 12px 0 0; max-width: 60em; }
+
+    footer { border-top: 1px solid var(--line); padding: 40px 0 60px; color: var(--muted); font-size: 15px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 30px; flex-wrap: wrap; }
+    footer p { margin: 0 0 6px; max-width: 46em; }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s, transform .8s; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* quad damage */
+    .quad { position: fixed; inset: 0; z-index: 200; pointer-events: none; display: grid; place-items: center; opacity: 0;
+      background: radial-gradient(circle, rgba(90,40,255,.35), rgba(30,0,90,.75)); }
+    .quad.on { animation: quad 2.6s ease-out; }
+    .quad b { font: 900 clamp(40px, 9vw, 120px) var(--display); color: #b9a4ff; text-shadow: 0 0 40px #7b5cff, 0 0 90px #7b5cff; letter-spacing: .08em; }
+    @keyframes quad { 0% { opacity: 0; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+
+    @media (max-width: 980px) {
+      .games { grid-template-columns: 1fr 1fr; }
+      .features { grid-template-columns: 1fr 1fr; }
+      .timeline, .manual, .install { grid-template-columns: 1fr; }
+      header.nav nav a:not(.pill) { display: none; }
+      .hot { display: none; }
     }
     @media (max-width: 600px) {
-      .grid { grid-template-columns: 1fr; }
-      .facts { grid-template-columns: 1fr 1fr; }
-      .roadmap li { grid-template-columns: 1fr; gap: 4px; }
-      section { padding: 64px 0; }
+      body { font-size: 17px; }
+      .games, .features { grid-template-columns: 1fr; }
+      .feat.big { grid-column: auto; }
+      section { padding: 80px 0; }
+      .stats { gap: 24px; }
+      .btn { width: 100%; justify-content: center; }
     }
     @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      .card { transition: none; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+      .screen { transform: none; }
     }
   </style>
 </head>
 <body>
+<div class="vignette"></div>
+<div class="quad" id="quad"><b>QUAD DAMAGE</b></div>
 
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="OpenASE home">
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z" fill="none" stroke="#33d6ff" stroke-width="5"/>
-        <circle cx="32" cy="32" r="11" fill="#ff3b3b"/><circle cx="32" cy="32" r="4" fill="#0b0d10"/>
-      </svg>
-      OpenASE
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z" fill="none" stroke="#00f0ff" stroke-width="5"/><circle cx="32" cy="32" r="11" fill="#ff2d55"/><circle cx="32" cy="32" r="4" fill="#05060a"/></svg>
+      OPENASE
     </a>
     <nav>
+      <a href="#games">Games</a>
       <a href="#features">Features</a>
-      <a href="#colors">Color codes</a>
-      <a href="#install">Install</a>
-      <a href="#roadmap">Roadmap</a>
-      <a class="gh-btn" href="https://github.com/tsautier/OpenASE">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
+      <a href="#manual">Manual</a>
+      <a href="#faq">FAQ</a>
+      <a class="pill" href="https://github.com/tsautier/OpenASE">GitHub</a>
     </nav>
   </div>
 </header>
 
 <main id="top">
   <div class="hero">
+    <canvas id="radar" aria-hidden="true"></canvas>
+    <div class="grid-floor" aria-hidden="true"></div>
     <div class="wrap">
-      <div>
-        <div class="eyebrow">Open source / GPL-3.0 / v0.5</div>
-        <h1><span class="r">Open</span>ASE</h1>
-        <p class="lead">The classic game server browser, reborn. Quake&nbsp;3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike&nbsp;1.6 servers, with ping, flux and packet loss, your friends, and one-click join.</p>
-        <div class="cta">
-          <a class="btn primary" href="#install">Get started</a>
-          <a class="btn" href="https://github.com/tsautier/OpenASE">View source</a>
-        </div>
-        <div class="facts">
-          <div><b>9 games</b><span>3 query protocols</span></div>
-          <div><b>4,500+ servers</b><span>from 13 live masters</span></div>
-          <div><b>Native Rust</b><span>Windows, Linux buildable</span></div>
-        </div>
+      <span class="tag"><span class="blink"></span>Masters online · free &amp; open source</span>
+      <h1 class="glitch" data-text="OPENASE">OPEN<span class="o">ASE</span></h1>
+      <p class="kicker"><span class="c1">THE</span> <span class="c3">EYE</span> <span class="c5">IS BACK.</span></p>
+      <p class="lead">The legendary server browser from the LAN-party days, rebuilt from scratch. Find a server, check the ping, spot your mates, double-click, frag. Quake&nbsp;3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike&nbsp;1.6.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/tsautier/OpenASE/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          Download for Windows
+        </a>
+        <a class="btn" href="#manual">Read the manual</a>
       </div>
-      <figure class="shot" style="margin:0">
-        <div class="bar"><i></i><i></i><i></i></div>
-        <img src="screenshot.png" width="1279" height="790" alt="OpenASE window: game filter tree on the left, a list of live Quake 3 servers with colored names, ping, players, game, map and address, and player and server info panels below.">
-      </figure>
+      <div class="sub-cta">GPL-3.0 · no account · no ads · native Rust, starts instantly</div>
+      <div class="stats">
+        <div class="stat"><b data-count="4500" data-suffix="+">0</b><span>live servers</span></div>
+        <div class="stat"><b data-count="9">0</b><span>games</span></div>
+        <div class="stat"><b data-count="13">0</b><span>master servers</span></div>
+        <div class="stat"><b>3</b><span>protocols</span></div>
+      </div>
     </div>
   </div>
 
-  <section id="features" class="alt">
+  <div class="ticker" aria-hidden="true">
+    <div class="track">
+      <span style="color:var(--red)">QUAKE 3 ARENA</span><span style="color:var(--cyan)">URBAN TERROR</span><span style="color:var(--orange)">OPENARENA</span><span style="color:var(--green)">ENEMY TERRITORY</span><span style="color:var(--yellow)">CALL OF DUTY</span><span style="color:var(--red)">COD2</span><span style="color:var(--cyan)">COD4</span><span style="color:var(--magenta)">UNREAL TOURNAMENT</span><span style="color:var(--yellow)">COUNTER-STRIKE 1.6</span><span style="color:var(--muted)">PING · FLUX · PL</span>
+      <span style="color:var(--red)">QUAKE 3 ARENA</span><span style="color:var(--cyan)">URBAN TERROR</span><span style="color:var(--orange)">OPENARENA</span><span style="color:var(--green)">ENEMY TERRITORY</span><span style="color:var(--yellow)">CALL OF DUTY</span><span style="color:var(--red)">COD2</span><span style="color:var(--cyan)">COD4</span><span style="color:var(--magenta)">UNREAL TOURNAMENT</span><span style="color:var(--yellow)">COUNTER-STRIKE 1.6</span><span style="color:var(--muted)">PING · FLUX · PL</span>
+    </div>
+  </div>
+
+  <section class="showcase">
     <div class="wrap">
-      <p class="kicker">Features</p>
-      <h2>What made ASE great, rebuilt from scratch</h2>
-      <p class="sub">The familiar layout is back: filter tree on the left, servers on the right, friends, players and server rules below. The code is new and contains nothing from the original Yahoo program.</p>
-      <div class="grid">
-        <div class="card"><h3><span class="dot" style="background:var(--q5)"></span>Ping, Flux and PL</h3><p>Every server is pinged several times: average round-trip, its variation and packet loss, like ASE measured them.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q3)"></span>The filter tree</h3><p>Game types as folders, and checkbox filters per game: Mods, Friendly Fire, Kill Cam, PunkBuster, Version, Maps.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q2)"></span>One-click join</h3><p>Double-click a server and the game starts with the right mod, name and password. Favorites and recently played included.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q6)"></span>Friends</h3><p>OpenASE spots your friends on every scanned server, shows where they play and can ping you when one joins. Find any player in seconds.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q1)"></span>Full color names</h3><p>Quake <code>^1</code> colors, extended <code>^A</code> codes and <code>^xRRGGBB</code> hex colors, drawn for servers and players.</p></div>
-        <div class="card"><h3><span class="dot" style="background:#bfbfbf"></span>Auto-Search</h3><p>Finds installed games through the registry, Steam folders or a full disk search, and remembers paths and player names per game.</p></div>
+      <p class="eyebrow">Muscle memory</p>
+      <h2>Exactly where <em>you left it.</em></h2>
+      <p class="sub">Filter tree on the left. Servers on the right. Friends, players and rules at the bottom. Colored names, padlocks, your favorites starred. Your hands still know the way.</p>
+      <div class="screen reveal">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <img src="screenshot.png" width="1279" height="790" alt="OpenASE showing Call of Duty 2 servers with location, colored names, ping, flux, packet loss, players, game type, map and address, and the filter tree with game types, mods, kill cam and punkbuster filters." loading="lazy">
+        <div class="hot" style="left:18%;top:42%"><i></i><span>Game types + checkbox filters</span></div>
+        <div class="hot" style="left:57%;top:11%"><i></i><span>Ping · Flux · PL</span></div>
+        <div class="hot" style="left:22%;top:20%"><i></i><span>Country from GeoIP</span></div>
+        <div class="hot" style="left:7%;top:80%"><i></i><span>Friends · Players · Rules</span></div>
       </div>
     </div>
   </section>
 
-  <section id="colors">
+  <section id="games" style="background:linear-gradient(180deg,transparent,rgba(0,240,255,.03),transparent)">
     <div class="wrap">
-      <p class="kicker">Color codes</p>
-      <h2>Names the way servers meant them</h2>
-      <p class="sub">Quake 3 servers style their names with caret codes. A plain browser shows the raw string; OpenASE draws the colors.</p>
-      <div class="demo">
-        <div class="term">
-          <span class="label">Raw sv_hostname</span>
-          <div class="row cm">^3*^1A51^3* ^5Freeze Tag</div>
-          <div class="row cm">^2[2s2h] ^7- ^1Museo</div>
-          <div class="row cm">^xff9919Orange ^7Hex ^5Server</div>
+      <p class="eyebrow">Pick your poison</p>
+      <h2>9 games. <em>Live masters.</em></h2>
+      <p class="sub">Every list below comes from a master server that is still answering today. Pick a game, hit F5, watch the list fill up.</p>
+      <div class="games">
+        <div class="game reveal" style="--c:#c8321e"><span class="badge">Q3</span><h3>Quake III Arena</h3><p>quake3arena · excessiveplus · dpmaster</p></div>
+        <div class="game reveal" style="--c:#3c78c8"><span class="badge">UrT</span><h3>Urban Terror</h3><p>master.urbanterror.info</p></div>
+        <div class="game reveal" style="--c:#e08a1e"><span class="badge">OA</span><h3>OpenArena</h3><p>dpmaster.deathmask.net</p></div>
+        <div class="game reveal" style="--c:#6e7d3c"><span class="badge">ET</span><h3>Enemy Territory</h3><p>idsoftware · etlegacy masters</p></div>
+        <div class="game reveal" style="--c:#8c6e3c"><span class="badge">CoD</span><h3>Call of Duty</h3><p>Activision master</p></div>
+        <div class="game reveal" style="--c:#7a5a2a"><span class="badge">CoD2</span><h3>Call of Duty 2</h3><p>Activision master</p></div>
+        <div class="game reveal" style="--c:#4a5a3a"><span class="badge">CoD4</span><h3>Call of Duty 4</h3><p>Activision master</p></div>
+        <div class="game reveal" style="--c:#5a3c8c"><span class="badge">UT</span><h3>Unreal Tournament</h3><p>GameSpy via 333networks</p></div>
+        <div class="game reveal" style="--c:#d2a01e"><span class="badge">CS</span><h3>Counter-Strike 1.6</h3><p>Valve A2S · Steam Web API key</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <p class="eyebrow">Loadout</p>
+      <h2>Everything ASE did. <em>Then some.</em></h2>
+      <p class="sub">No ads, no account, no tracking. Just the tool you remember, written in fast native Rust.</p>
+      <div class="features">
+        <div class="feat big reveal" style="--c:var(--cyan)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+          <h3>Ping. Flux. PL.</h3>
+          <p>Every server is pinged several times. You get the average, how much it jumps around and how many packets got lost. Pick the server that won't rubber-band.</p>
+          <div class="meter"><div><b style="color:var(--green)">17</b>ping</div><div><b style="color:var(--yellow)">±1</b>flux</div><div><b style="color:var(--cyan)">0%</b>PL</div></div>
         </div>
-        <div class="term">
-          <span class="label">In OpenASE</span>
-          <div class="row"><span class="c3">*</span><span class="c1">A51</span><span class="c3">*</span> <span class="c5">Freeze Tag</span></div>
-          <div class="row"><span class="c2">[2s2h]</span> <span class="c7">-</span> <span class="c1">Museo</span></div>
-          <div class="row"><span style="color:#ff9919">Orange</span> <span class="c7">Hex</span> <span class="c5">Server</span></div>
+        <div class="feat reveal" style="--c:var(--yellow)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+          <h3>The Tree</h3>
+          <p>Game types as folders. Tick Mods, Maps, Kill Cam, PunkBuster, country. Build your own filters and color filters.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <h3>Double-click. Frag.</h3>
+          <p>OpenASE launches the game with the right mod, your name and the password. Enter works too.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--magenta)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M14 20c0-2.5 1.5-4.5 3.5-4.5S21 17.5 21 20"/></svg>
+          <h3>Where are my mates?</h3>
+          <p>Friends tracked on every server you scan, in groups, with a ping when one starts playing. Find any player in a second.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--orange)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
+          <h3>Location</h3>
+          <p>Country for every server and a country filter, from a free monthly GeoIP database. Play where the ping is.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--red)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>
+          <h3>LAN party mode</h3>
+          <p>Special &gt; LAN servers broadcasts on your network and lists every game server it hears. Plug in, play.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--cyan)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/></svg>
+          <h3>Favorites ×8</h3>
+          <p>Favorites1 to 8 like the old days, recently joined, recently added, import and export server lists and your whole profile.</p>
+        </div>
+        <div class="feat reveal" style="--c:var(--green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>
+          <h3>Auto-Search</h3>
+          <p>Finds your installed games in the registry, Steam folders or a full disk sweep. Then it just works.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="install" class="alt">
+  <section style="background:linear-gradient(180deg,transparent,rgba(255,45,85,.04),transparent)">
     <div class="wrap">
-      <p class="kicker">Install</p>
-      <h2>Get OpenASE</h2>
-      <p class="sub">Windows builds are published on <a href="https://github.com/tsautier/OpenASE/releases">GitHub Releases</a>. You can also build it yourself in a minute.</p>
-
-      <div class="tabs" role="tablist">
-        <button role="tab" aria-selected="true" data-tab="rust">Rust (recommended)</button>
-        <button role="tab" aria-selected="false" data-tab="python">Python</button>
-        <button role="tab" aria-selected="false" data-tab="cli">Command line</button>
+      <p class="eyebrow">Respawn</p>
+      <h2>The servers never <em>left.</em></h2>
+      <p class="sub">The browser did. Thousands of servers are still up, run by communities that never stopped playing.</p>
+      <div class="timeline">
+        <div class="era reveal" style="--c:var(--yellow)"><div class="year">200X</div><p>The All-Seeing Eye arrives. Every clan, every LAN party, every late night starts with its server list.</p></div>
+        <div class="era reveal" style="--c:var(--red)"><div class="year">2004</div><p>Yahoo buys it. The masters go dark one by one, and the Eye slowly closes.</p></div>
+        <div class="era reveal" style="--c:var(--cyan)"><div class="year">2026</div><p>OpenASE. Open source, live community masters, native and fast. The Eye opens again, for good this time.</p></div>
       </div>
-      <div class="panel active" id="tab-rust" role="tabpanel">
-        <div class="term"><button class="copy">Copy</button><span class="label">Requires Rust 1.88+</span>
-<div class="row">git clone https://github.com/tsautier/OpenASE.git</div><div class="row">cd OpenASE/rust</div><div class="row">cargo run --release</div></div>
-      </div>
-      <div class="panel" id="tab-python" role="tabpanel">
-        <div class="term"><button class="copy">Copy</button><span class="label">Requires Python 3.10+ with Tkinter</span>
-<div class="row">git clone https://github.com/tsautier/OpenASE.git</div><div class="row">cd OpenASE</div><div class="row">python -m openase</div></div>
-      </div>
-      <div class="panel" id="tab-cli" role="tabpanel">
-        <div class="term"><button class="copy">Copy</button><span class="label">List live servers without the GUI</span>
-<div class="row">cd OpenASE/rust</div><div class="row">cargo run --example scan -- cod2 20</div><div class="row">cargo run --example query -- ut99 1.2.3.4:7778</div></div>
-      </div>
-
-      <div class="note"><b>Counter-Strike 1.6:</b> Valve's old master no longer answers, so its server list comes from the Steam Web API. Paste your own free key from <a href="https://steamcommunity.com/dev/apikey">steamcommunity.com/dev/apikey</a> in Options &gt; General. Every other game works out of the box.</div>
     </div>
   </section>
 
-  <section id="roadmap">
+  <section id="manual">
     <div class="wrap">
-      <p class="kicker">Roadmap</p>
-      <h2>Where it's going</h2>
-      <p class="sub">The goal: one browser for the old-school online games that still have players.</p>
-      <ul class="roadmap">
-        <li><span class="tag done">v0.2</span><div><b>Usable by anyone</b><span>Built-in game catalog, real ping with flux and packet loss, several masters per game, CI and Windows builds.</span></div></li>
-        <li><span class="tag done">v0.3</span><div><b>The id Tech 3 family</b><span>Urban Terror, OpenArena, Enemy Territory, Call of Duty 1, 2 and 4.</span></div></li>
-        <li><span class="tag done">v0.4</span><div><b>The ASE experience</b><span>Filter tree, favorites, one-click join, friends, find player, Auto-Search.</span></div></li>
-        <li><span class="tag done">v0.5</span><div><b>More engines</b><span>Unreal Tournament (GameSpy) and Counter-Strike 1.6 (Valve A2S).</span></div></li>
-        <li><span class="tag next">Next</span><div><b>Toward 1.0</b><span>Unreal Tournament 2004, signed installer, Linux packages, French interface.</span></div></li>
-      </ul>
+      <p class="eyebrow">RTFM</p>
+      <h2>The <em>manual.</em></h2>
+      <p class="sub">Two minutes and you're in. Press F1 in OpenASE to land here.</p>
+      <div class="manual">
+        <div class="card reveal">
+          <h3>Quick start</h3>
+          <ol>
+            <li>Download, unzip, run <code>OpenASE.exe</code>. The setup wizard asks for your connection and your name.</li>
+            <li>Click a game in the tree. OpenASE downloads the list and pings everything.</li>
+            <li>Sort by Ping, tick filters (game type, mods, maps, Kill Cam, country...).</li>
+            <li>Double-click a server, or press <kbd>Enter</kbd>. The game starts and connects.</li>
+            <li>No game path yet? Tools &gt; Options &gt; Games &gt; Auto-Search.</li>
+          </ol>
+        </div>
+        <div class="card reveal">
+          <h3>Keys</h3>
+          <table class="keys">
+            <tr><td><kbd>F5</kbd></td><td>Refresh the selected game or list</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>Join the selected server</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Show the selected server</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Clear every filter</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Q</kbd></td><td>Collapse the whole tree</td></tr>
+            <tr><td><kbd>F1</kbd></td><td>This manual</td></tr>
+          </table>
+        </div>
+        <div class="card reveal">
+          <h3>Friends &amp; lists</h3>
+          <ul>
+            <li>Friends &gt; Add friend: name (colors ignored, partial match), game, group Friends1 to 4.</li>
+            <li>Right-click a server: join, refresh, favorite, add to Favorites1 to 8, copy address.</li>
+            <li>File &gt; Import server list reads any text with <code>ip:port</code> entries.</li>
+            <li>File &gt; Export user profile saves everything to one JSON file.</li>
+          </ul>
+        </div>
+        <div class="card reveal">
+          <h3>Good to know</h3>
+          <ul>
+            <li><b>Ping</b> average round-trip, <b>Flux</b> its variation, <b>PL</b> lost packets.</li>
+            <li>Filter &gt; New filter builds rules like <code>players greater than 4</code>. Tick “color filter” to highlight matches everywhere.</li>
+            <li>Counter-Strike 1.6 lists need your free <a href="https://steamcommunity.com/dev/apikey">Steam Web API key</a> in Options &gt; General.</li>
+            <li>Settings live in <code>%APPDATA%\OpenASE</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" style="padding-top:20px">
+    <div class="wrap">
+      <p class="eyebrow">Build it yourself</p>
+      <h2>Compile <em>&amp; play.</em></h2>
+      <div class="install">
+        <div class="term reveal">
+          <div class="c"># Windows, Linux · Rust 1.88+</div>
+          <div><span class="p">$</span> git clone https://github.com/tsautier/OpenASE</div>
+          <div><span class="p">$</span> cd OpenASE/rust</div>
+          <div><span class="p">$</span> cargo run --release</div>
+        </div>
+        <div class="term reveal">
+          <div class="c"># no GUI, straight to the point</div>
+          <div><span class="p">$</span> cargo run --example scan -- cod2 20</div>
+          <div><span class="p">$</span> cargo run --example query -- ut99 1.2.3.4:7778</div>
+          <div><span class="p">$</span> cargo test</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <p class="eyebrow">FAQ</p>
+      <h2>Questions <em>&amp; answers.</em></h2>
+      <details class="reveal"><summary>Is this the original All-Seeing Eye?</summary><p>No. OpenASE is new code written from scratch, inspired by the original. It contains nothing from the Yahoo program and is not affiliated with Yahoo or the original authors.</p></details>
+      <details class="reveal"><summary>Is it free? Any ads, accounts or tracking?</summary><p>Free software under the GPL-3.0. No ads, no account. OpenASE talks to game master servers and game servers, downloads the DB-IP country database once a month (can be turned off) and checks GitHub for a new release (can be turned off). That's it.</p></details>
+      <details class="reveal"><summary>Why does Counter-Strike 1.6 need a Steam key?</summary><p>Valve shut down the old UDP master. The server list now comes from the Steam Web API, which needs a free personal key. Servers you add by hand work without one.</p></details>
+      <details class="reveal"><summary>Linux? macOS?</summary><p>OpenASE is native Rust and builds on Linux (tested in CI). Windows builds are published on GitHub Releases. macOS should build but is untested.</p></details>
+      <details class="reveal"><summary>My game is missing.</summary><p>Games live in one JSON file. If yours speaks the Quake 3, GameSpy or Valve query protocol and still has a live master, it is often a few lines. Open an issue on GitHub.</p></details>
     </div>
   </section>
 </main>
@@ -320,33 +493,109 @@
   <div class="wrap">
     <div>
       <p><b style="color:var(--text)">OpenASE</b> is free software under the <a href="https://github.com/tsautier/OpenASE/blob/main/LICENSE">GNU GPL v3</a>.</p>
-      <p>Not affiliated with Yahoo or the original All-Seeing Eye authors. Quake is a trademark of id Software. No original ASE files are distributed.</p>
+      <p>Not affiliated with Yahoo or the original All-Seeing Eye authors. Game names are trademarks of their owners.</p>
+      <p><a href="https://db-ip.com">IP Geolocation by DB-IP</a></p>
     </div>
     <div>
-      <p><a href="https://github.com/tsautier/OpenASE">Source</a> · <a href="https://github.com/tsautier/OpenASE/issues">Issues</a></p>
+      <p><a href="https://github.com/tsautier/OpenASE">Source</a> · <a href="https://github.com/tsautier/OpenASE/releases">Releases</a> · <a href="https://github.com/tsautier/OpenASE/issues">Issues</a></p>
+      <p style="font:400 12px var(--mono)">psst… ↑↑↓↓←→←→BA</p>
     </div>
   </div>
 </footer>
 
 <script>
-  document.querySelectorAll('.tabs button').forEach(function (button) {
-    button.addEventListener('click', function () {
-      document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', b === button); });
-      document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + button.dataset.tab); });
-    });
-  });
-  document.querySelectorAll('.copy').forEach(function (button) {
-    button.addEventListener('click', function () {
-      var rows = button.parentElement.querySelectorAll('.row');
-      var text = Array.prototype.map.call(rows, function (r) { return r.textContent; }).join('\n');
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function () {
-          button.textContent = 'Copied';
-          setTimeout(function () { button.textContent = 'Copy'; }, 1500);
-        });
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Radar: a sweeping beam over blips, like servers lighting up.
+  var canvas = document.getElementById('radar');
+  var ctx = canvas.getContext('2d');
+  var w, h, cx, cy, radius, blips = [];
+  var labels = ['Q3', 'UrT', 'OA', 'ET', 'CoD', 'CoD2', 'CoD4', 'UT', 'CS'];
+  var colors = ['#ff2d55', '#00f0ff', '#ff8a00', '#39ff14', '#ffd60a', '#ff2bd6'];
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = w > 900 ? w * 0.74 : w * 0.5; cy = h * 0.46; radius = Math.min(w, h) * (w > 900 ? 0.42 : 0.55);
+    blips = [];
+    for (var i = 0; i < 46; i++) {
+      var a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * radius * 0.95;
+      blips.push({ a: a, r: r, life: 0, c: colors[i % colors.length], l: labels[i % labels.length] });
+    }
+  }
+  var angle = 0;
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = 'rgba(0,240,255,0.12)';
+    ctx.lineWidth = 1;
+    for (var k = 1; k <= 4; k++) { ctx.beginPath(); ctx.arc(0, 0, radius * k / 4, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(-radius, 0); ctx.lineTo(radius, 0); ctx.moveTo(0, -radius); ctx.lineTo(0, radius); ctx.stroke();
+    var grad = ctx.createConicGradient ? ctx.createConicGradient(angle - 0.9, 0, 0) : null;
+    if (grad) {
+      grad.addColorStop(0, 'rgba(0,240,255,0)');
+      grad.addColorStop(0.14, 'rgba(0,240,255,0.22)');
+      grad.addColorStop(0.145, 'rgba(0,240,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(0,240,255,0.7)';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius); ctx.stroke();
+    ctx.font = '700 10px JetBrains Mono, monospace';
+    blips.forEach(function (b) {
+      var diff = (angle - b.a) % (Math.PI * 2); if (diff < 0) diff += Math.PI * 2;
+      if (diff < 0.05) b.life = 1;
+      if (b.life > 0) {
+        var x = Math.cos(b.a) * b.r, y = Math.sin(b.a) * b.r;
+        ctx.globalAlpha = b.life;
+        ctx.fillStyle = b.c; ctx.shadowColor = b.c; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillText(b.l, x + 6, y - 6);
+        b.life = Math.max(0, b.life - 0.006);
       }
     });
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    angle = (angle + 0.012) % (Math.PI * 2);
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  resize(); window.addEventListener('resize', resize); frame();
+
+  // Count-up stats.
+  function countUp(el) {
+    var target = +el.dataset.count, suffix = el.dataset.suffix || '', start = null;
+    if (reduce) { el.textContent = target.toLocaleString('en') + suffix; return; }
+    function step(t) {
+      if (!start) start = t;
+      var p = Math.min((t - start) / 1400, 1), v = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      el.textContent = v.toLocaleString('en') + (p === 1 ? suffix : '');
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  document.querySelectorAll('[data-count]').forEach(countUp);
+
+  // Reveal on scroll.
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 }) : null;
+  document.querySelectorAll('.reveal').forEach(function (el) { io ? io.observe(el) : el.classList.add('in'); });
+
+  // Konami code: QUAD DAMAGE.
+  var code = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'], pos = 0;
+  window.addEventListener('keydown', function (e) {
+    pos = (e.key === code[pos] || e.key.toLowerCase() === code[pos]) ? pos + 1 : (e.key === code[0] ? 1 : 0);
+    if (pos === code.length) {
+      pos = 0;
+      var q = document.getElementById('quad');
+      q.classList.remove('on'); void q.offsetWidth; q.classList.add('on');
+    }
   });
+})();
 </script>
 </body>
 </html>

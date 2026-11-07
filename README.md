@@ -30,18 +30,25 @@ game types, filter groups, registry detection and the command line used to join.
 
 - **Ping, Flux and PL** measured like ASE: several queries per server, average
   round-trip time, half the spread between fastest and slowest, and packet loss.
-- **Filter tree**: game types as folders, and checkbox groups per game such as
-  Mods, Friendly Fire, Kill Cam, Pure, PunkBuster, Version and Maps.
-  **Modifiers** hide empty, full, passworded or silent servers and cap the ping.
-- **Favorites**, **Recently played**, **Add server** by address.
-- **Join** with a double-click or Enter. OpenASE starts the game with the right
-  mod, player name, config and password. Steam games fall back to `steam://connect`.
-- **Friends**: names searched on every scanned server, a Friends pane, a notice
-  (and optional sound) when one starts playing. **Find player** across all servers.
-- **Options**: Network (timeouts, pings, retries, parallel queries), Events
-  (friend notices, auto-refresh of the selected server) and Games (installed /
-  not installed, player name, config, program location, **Auto-Search**).
-- Quake color codes (`^1`, `^A`, `^xRRGGBB`) drawn in server and player names.
+- **Filter tree**: game types as folders, checkbox groups per game (Mods,
+  Friendly Fire, Kill Cam, Pure, PunkBuster, Version, Maps) and **Modifiers**
+  (not empty, not full, no password, unresponsive, ping, **country**).
+- **Location** column and country filter from the free DB-IP country database,
+  downloaded once a month (can be turned off in Options > General).
+- **My filters**: build rules such as `players greater than 4` or
+  `map contains toujane`; tick *color filter* to highlight matching servers.
+- **Favorites1 to 8**, **Special** lists (recently added, imported, joined)
+  and **LAN servers** found by broadcast.
+- **Join** with a double-click or Enter, with the right mod, player name, config
+  and password. Steam games fall back to `steam://connect`.
+- **Friends** in groups Friends1 to 4, optionally per game, with a Friends pane,
+  notices and sound. **Friend name search** across every scanned server.
+- **File menu**: export / import your whole profile, save / import server lists,
+  update check against GitHub Releases, setup wizard.
+- **Options**: General (Steam key, GeoIP), Network (timeouts, pings, retries,
+  parallel queries), Events, Games (installed / not installed, **Auto-Search**).
+- Shortcuts: F5 refresh, Enter join, Ctrl+E show selected, Ctrl+D clear
+  modifiers, Ctrl+Q collapse all, F1 manual.
 
 ## Download
 
@@ -107,5 +114,7 @@ Foundation, either version 3 of the License, or (at your option) any later
 version. See [LICENSE](LICENSE) for the full text.
 
 OpenASE is not affiliated with Yahoo or the original All-Seeing Eye authors.
-Game names are trademarks of their owners. No original ASE files are distributed
+Game names are trademarks of their owners.
+
+IP geolocation by [DB-IP](https://db-ip.com) (CC BY 4.0), downloaded at runtime. No original ASE files are distributed
 with this project.

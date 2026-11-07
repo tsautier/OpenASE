@@ -35,7 +35,10 @@ pub struct Server {
     pub max_players: Option<usize>,
     pub bots: usize,
     pub password: bool,
+    /// Location reported by the server itself, or `Unknown`.
     pub location: String,
+    /// ISO country code from GeoIP, when known.
+    pub country: Option<String>,
 
     /// Average round-trip time in milliseconds.
     pub ping: Option<u32>,

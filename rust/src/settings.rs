@@ -8,6 +8,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::query::QueryOptions;
+use crate::rules::CustomFilter;
 
 /// Per-game options (ASE's Options > Games).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -116,6 +117,8 @@ pub struct FilterSettings {
     pub max_ping: Option<u32>,
     /// Checked options, keyed by `game_id/group name`.
     pub checked: BTreeMap<String, BTreeSet<String>>,
+    /// Country codes to show (`??` for unknown); empty shows all.
+    pub countries: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -132,9 +135,73 @@ pub struct Settings {
     pub open_nav: BTreeSet<String>,
     /// Game selected at startup.
     pub last_game: String,
+    /// Download the DB-IP country database for the Location column.
+    pub geoip_disabled: bool,
+    /// Favorite group of each favorite, keyed by [`ServerRef::key`].
+    pub favorite_groups: BTreeMap<String, String>,
+    /// Friend group of each friend, keyed by lowercase name.
+    pub friend_groups: BTreeMap<String, String>,
+    /// Game a friend is tracked in (empty = any), keyed by lowercase name.
+    pub friend_games: BTreeMap<String, String>,
+    /// Servers added by hand ("recently added").
+    pub recently_added: Vec<ServerRef>,
+    /// Servers from imported lists ("recently imported").
+    pub recently_imported: Vec<ServerRef>,
+    /// User filters, also used as color filters.
+    pub custom_filters: Vec<CustomFilter>,
+    /// Do not look for a new release at startup.
+    pub skip_update_check: bool,
+    /// The first-run setup wizard has been completed or skipped.
+    pub wizard_done: bool,
 }
 
 pub const RECENT_LIMIT: usize = 20;
+pub const LIST_LIMIT: usize = 200;
+pub const FAVORITE_GROUPS: [&str; 8] = [
+    "Favorites1",
+    "Favorites2",
+    "Favorites3",
+    "Favorites4",
+    "Favorites5",
+    "Favorites6",
+    "Favorites7",
+    "Favorites8",
+];
+pub const FRIEND_GROUPS: [&str; 4] = ["Friends1", "Friends2", "Friends3", "Friends4"];
+
+impl ServerRef {
+    /// Stable map key, `game|address`.
+    pub fn key(&self) -> String {
+        format!("{}|{}", self.game, self.address)
+    }
+}
+
+/// Extract every `a.b.c.d:port` (or `host:port` line) from a server list file.
+pub fn parse_address_list(text: &str) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for token in text.split(|c: char| {
+        c.is_whitespace() || matches!(c, ',' | ';' | '"' | '\'' | '\\' | '/' | '=')
+    }) {
+        let token = token.trim();
+        let Some((host, port)) = token.rsplit_once(':') else {
+            continue;
+        };
+        let valid_host = host.parse::<std::net::Ipv4Addr>().is_ok()
+            || (host.contains('.')
+                && host.chars().any(|c| c.is_ascii_alphabetic())
+                && host
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-'));
+        if valid_host
+            && port.parse::<u16>().is_ok_and(|port| port > 0)
+            && seen.insert(token.to_string())
+        {
+            out.push(token.to_string());
+        }
+    }
+    out
+}
 
 impl Settings {
     pub fn path() -> PathBuf {
@@ -177,6 +244,63 @@ impl Settings {
         self.recent.retain(|entry| *entry != server);
         self.recent.insert(0, server);
         self.recent.truncate(RECENT_LIMIT);
+    }
+
+    pub fn favorite_group(&self, server: &ServerRef) -> String {
+        self.favorite_groups
+            .get(&server.key())
+            .cloned()
+            .unwrap_or_else(|| FAVORITE_GROUPS[0].to_string())
+    }
+
+    /// Add to favorites (if needed) and put in `group`.
+    pub fn add_favorite_to(&mut self, server: ServerRef, group: &str) {
+        self.favorite_groups.insert(server.key(), group.to_string());
+        if !self.favorites.contains(&server) {
+            self.favorites.push(server);
+        }
+    }
+
+    pub fn favorites_in(&self, group: &str) -> Vec<ServerRef> {
+        self.favorites
+            .iter()
+            .filter(|server| self.favorite_group(server) == group)
+            .cloned()
+            .collect()
+    }
+
+    pub fn friend_group(&self, friend: &str) -> String {
+        self.friend_groups
+            .get(&friend.to_lowercase())
+            .cloned()
+            .unwrap_or_else(|| FRIEND_GROUPS[0].to_string())
+    }
+
+    pub fn friend_game(&self, friend: &str) -> String {
+        self.friend_games
+            .get(&friend.to_lowercase())
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Prepend to a bounded "recently ..." list.
+    pub fn push_front(list: &mut Vec<ServerRef>, server: ServerRef) {
+        list.retain(|entry| *entry != server);
+        list.insert(0, server);
+        list.truncate(LIST_LIMIT);
+    }
+
+    /// Save to any path (File > Export user profile).
+    pub fn export_to(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let text = serde_json::to_string_pretty(self).map_err(std::io::Error::other)?;
+        std::fs::write(path, text)
+    }
+
+    /// Read a profile written by [`Settings::export_to`].
+    pub fn import_from(path: &std::path::Path) -> std::io::Result<Self> {
+        let text = std::fs::read_to_string(path)?;
+        serde_json::from_str(&text)
+            .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))
     }
 }
 

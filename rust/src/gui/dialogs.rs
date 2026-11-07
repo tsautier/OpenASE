@@ -73,6 +73,13 @@ impl Dialogs {
         self.add = Some((game, String::new()));
     }
 
+    pub fn open_options_at(&mut self, settings: &Settings, tab: usize) {
+        self.open_options(settings);
+        if let Some(options) = &mut self.options {
+            options.tab = tab.min(OPTION_TABS.len() - 1);
+        }
+    }
+
     pub fn open_options(&mut self, settings: &Settings) {
         self.options = Some(OptionsDraft {
             tab: 0,
@@ -157,6 +164,7 @@ impl OpenAseApp {
             ui.label("An open-source game server browser in the spirit of The All-Seeing Eye.");
             ui.label("New code, not affiliated with Yahoo or the original authors.");
             ui.label("Free software under the GNU GPL v3 or later.");
+            ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
             ui.hyperlink_to(
                 "tsautier.github.io/OpenASE",
                 "https://tsautier.github.io/OpenASE/",
@@ -425,6 +433,7 @@ impl OpenAseApp {
         let Some(mut draft) = self.dialogs.options.take() else {
             return;
         };
+        let geoip_status = self.geoip_status.clone();
         let mut ok = false;
         let mut cancel = false;
         let mut start_search: Option<String> = None;
@@ -440,7 +449,7 @@ impl OpenAseApp {
             ui.allocate_ui(vec2(560.0, 330.0), |ui| {
                 ui.set_min_height(330.0);
                 match OPTION_TABS[draft.tab] {
-                    "General" => general_tab(ui, &mut draft.settings),
+                    "General" => general_tab(ui, &mut draft.settings, &geoip_status),
                     "Network" => network_tab(ui, &mut draft.settings.network),
                     "Events" => events_tab(ui, &mut draft.settings),
                     _ => start_search = games_tab(ui, &mut draft),
@@ -462,6 +471,7 @@ impl OpenAseApp {
             self.settings.steam_api_key = new.steam_api_key;
             self.settings.network = new.network;
             self.settings.events = new.events;
+            self.settings.geoip_disabled = new.geoip_disabled;
             self.mark_dirty();
             if self
                 .nav
@@ -590,7 +600,7 @@ impl OpenAseApp {
     }
 }
 
-fn general_tab(ui: &mut egui::Ui, settings: &mut Settings) {
+fn general_tab(ui: &mut egui::Ui, settings: &mut Settings, geoip_status: &str) {
     ui.strong("Steam");
     ui.label("Counter-Strike 1.6 server lists come from the Steam Web API, which needs your own free key.");
     ui.horizontal(|ui| {
@@ -605,6 +615,19 @@ fn general_tab(ui: &mut egui::Ui, settings: &mut Settings) {
         "Get a key at steamcommunity.com/dev/apikey",
         "https://steamcommunity.com/dev/apikey",
     );
+    ui.add_space(12.0);
+    ui.strong("Location");
+    let mut enabled = !settings.geoip_disabled;
+    ui.checkbox(
+        &mut enabled,
+        "Show server countries (downloads a free IP-to-country database once a month)",
+    );
+    settings.geoip_disabled = !enabled;
+    ui.horizontal(|ui| {
+        ui.label(format!("Database: {geoip_status}."));
+        ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
+    });
+    ui.weak("Takes effect at the next start.");
     ui.add_space(12.0);
     ui.strong("Settings file");
     ui.label(openase::settings::Settings::path().display().to_string());

@@ -2,6 +2,7 @@
 //! server list on the right, friends / players / rules panes at the bottom.
 
 mod dialogs;
+mod extra;
 mod icons;
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
@@ -18,11 +19,13 @@ use egui_extras::{Column, TableBuilder};
 
 use openase::catalog::{self, Game, Protocol};
 use openase::colors::{parse_hex, quake_color_segments, strip_quake_colors};
+use openase::countries::country_name;
 use openase::detect;
+use openase::geoip::{self, GeoIp};
 use openase::model::Server;
 use openase::quake3::parse_address;
 use openase::query::{fetch_all_masters, query_server};
-use openase::settings::{ServerRef, Settings};
+use openase::settings::{FAVORITE_GROUPS, FRIEND_GROUPS, ServerRef, Settings};
 
 use dialogs::Dialogs;
 use icons::{Tool, TreeIcon};
@@ -66,10 +69,34 @@ impl ServerKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Nav {
     Favorites,
+    FavoriteGroup(String),
     Recent,
     Friends,
+    FriendGroup(String),
+    Special(Special),
+    Custom(usize),
     Game(String),
     GameType(String, String),
+}
+
+/// ASE's "Special" folder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Special {
+    Added,
+    Imported,
+    Lan,
+}
+
+impl Special {
+    const ALL: [Special; 3] = [Special::Added, Special::Imported, Special::Lan];
+
+    fn label(self) -> &'static str {
+        match self {
+            Special::Added => "recently added",
+            Special::Imported => "recently imported",
+            Special::Lan => "LAN servers",
+        }
+    }
 }
 
 impl Nav {
@@ -127,6 +154,12 @@ pub enum Msg {
     SearchProgress(String),
     SearchFound(String),
     SearchDone,
+    GeoIp(Result<Arc<GeoIp>, String>),
+    Lan(Result<Vec<openase::lan::LanServer>, String>),
+    Update {
+        result: Result<Option<String>, String>,
+        manual: bool,
+    },
 }
 
 struct Scan {
@@ -144,6 +177,7 @@ enum Action {
     ToggleFavorite(ServerKey),
     Refresh(ServerKey),
     Copy(String),
+    FavoriteGroup(ServerKey, String),
 }
 
 pub struct OpenAseApp {
@@ -163,6 +197,11 @@ pub struct OpenAseApp {
     last_auto_refresh: Instant,
     show_toolbar: bool,
     started: bool,
+    geoip: Option<Arc<GeoIp>>,
+    pub(crate) geoip_status: String,
+    lan_servers: Vec<ServerKey>,
+    scroll_to_selected: bool,
+    pub(crate) extra: extra::Extra,
     pub(crate) dialogs: Dialogs,
 }
 
@@ -207,6 +246,11 @@ impl OpenAseApp {
             last_auto_refresh: Instant::now(),
             show_toolbar: true,
             started: false,
+            geoip: None,
+            geoip_status: "Loading...".to_string(),
+            lan_servers: Vec::new(),
+            scroll_to_selected: false,
+            extra: extra::Extra::default(),
             dialogs: Dialogs::default(),
         }
     }
@@ -220,7 +264,8 @@ impl OpenAseApp {
             .find(|server| server.address() == key.address)
     }
 
-    fn upsert(&mut self, server: Server) {
+    fn upsert(&mut self, mut server: Server) {
+        annotate(self.geoip.as_deref(), &mut server);
         self.check_friends(&server);
         let list = self.store.entry(server.game.clone()).or_default();
         let address = server.address();
@@ -242,10 +287,9 @@ impl OpenAseApp {
             return;
         };
         if let Ok((host, port)) = parse_address(&key.address, game.default_port) {
-            self.store
-                .entry(key.game.clone())
-                .or_default()
-                .push(Server::new(&key.game, &host, port));
+            let mut server = Server::new(&key.game, &host, port);
+            annotate(self.geoip.as_deref(), &mut server);
+            self.store.entry(key.game.clone()).or_default().push(server);
         }
     }
 
@@ -253,7 +297,9 @@ impl OpenAseApp {
         let key = ServerKey::of(server);
         for friend in &self.settings.friends {
             let needle = friend.to_lowercase();
+            let game = self.settings.friend_game(friend);
             let present = server.online
+                && (game.is_empty() || game == server.game)
                 && server.players.iter().any(|player| {
                     strip_quake_colors(&player.name)
                         .to_lowercase()
@@ -290,38 +336,72 @@ impl OpenAseApp {
 
     // ----- scanning --------------------------------------------------------
 
+    /// Remembered server lists behind list-type tree entries.
+    fn nav_list(&self, nav: &Nav) -> Option<Vec<ServerKey>> {
+        let refs = match nav {
+            Nav::Favorites => self.settings.favorites.clone(),
+            Nav::FavoriteGroup(group) => self.settings.favorites_in(group),
+            Nav::Recent => self.settings.recent.clone(),
+            Nav::Special(Special::Added) => self.settings.recently_added.clone(),
+            Nav::Special(Special::Imported) => self.settings.recently_imported.clone(),
+            Nav::Special(Special::Lan) => return Some(self.lan_servers.clone()),
+            _ => return None,
+        };
+        Some(refs.iter().map(ServerKey::from_ref).collect())
+    }
+
+    fn known_servers(&self) -> Vec<ServerKey> {
+        self.store
+            .values()
+            .flatten()
+            .filter(|server| server.online)
+            .map(ServerKey::of)
+            .collect()
+    }
+
     fn refresh(&mut self, ctx: &egui::Context) {
-        match self.nav.clone() {
+        let nav = self.nav.clone();
+        if let Some(keys) = self.nav_list(&nav) {
+            if nav == Nav::Special(Special::Lan) {
+                self.scan_lan(ctx);
+            } else {
+                self.scan_list(ctx, keys, "servers");
+            }
+            return;
+        }
+        match nav {
             Nav::Game(game) | Nav::GameType(game, _) => self.scan_game(ctx, &game),
-            Nav::Favorites => {
-                let keys: Vec<ServerKey> = self
+            Nav::Custom(index) => {
+                let game = self
                     .settings
-                    .favorites
-                    .iter()
-                    .map(ServerKey::from_ref)
-                    .collect();
-                self.scan_list(ctx, keys, "favorites");
+                    .custom_filters
+                    .get(index)
+                    .map(|filter| filter.game.clone());
+                match game.filter(|game| !game.is_empty()) {
+                    Some(game) => self.scan_game(ctx, &game),
+                    None => {
+                        let keys = self.known_servers();
+                        self.scan_list(ctx, keys, "known servers");
+                    }
+                }
             }
-            Nav::Recent => {
-                let keys: Vec<ServerKey> = self
-                    .settings
-                    .recent
-                    .iter()
-                    .map(ServerKey::from_ref)
-                    .collect();
-                self.scan_list(ctx, keys, "recently played servers");
-            }
-            Nav::Friends => {
-                let keys: Vec<ServerKey> = self
-                    .store
-                    .values()
-                    .flatten()
-                    .filter(|server| server.online)
-                    .map(ServerKey::of)
-                    .collect();
+            _ => {
+                let keys = self.known_servers();
                 self.scan_list(ctx, keys, "known servers");
             }
         }
+    }
+
+    fn scan_lan(&mut self, ctx: &egui::Context) {
+        self.status = "Looking for servers on the local network...".to_string();
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let result = openase::lan::discover(Duration::from_millis(1500))
+                .map_err(|error| error.to_string());
+            let _ = tx.send(Msg::Lan(result));
+            ctx.request_repaint();
+        });
     }
 
     fn stop_scan(&mut self) {
@@ -417,7 +497,7 @@ impl OpenAseApp {
         });
     }
 
-    fn drain_messages(&mut self) {
+    fn drain_messages(&mut self, ctx: &egui::Context) {
         while let Ok(msg) = self.rx.try_recv() {
             let current = self.scan.as_ref().map(|scan| scan.generation);
             match msg {
@@ -441,7 +521,9 @@ impl OpenAseApp {
                             && let Ok((host, port)) =
                                 parse_address(address, definition.default_port)
                         {
-                            list.push(Server::new(&game, &host, port));
+                            let mut server = Server::new(&game, &host, port);
+                            annotate(self.geoip.as_deref(), &mut server);
+                            list.push(server);
                         }
                     }
                     self.store.insert(game, list);
@@ -484,6 +566,48 @@ impl OpenAseApp {
                 Msg::SearchProgress(dir) => self.dialogs.search_progress(dir),
                 Msg::SearchFound(path) => self.dialogs.search_found(path),
                 Msg::SearchDone => self.dialogs.search_done(),
+                Msg::GeoIp(result) => match result {
+                    Ok(geoip) => {
+                        self.geoip_status = format!("{} IPv4 ranges loaded", geoip.len());
+                        for server in self.store.values_mut().flatten() {
+                            annotate(Some(&geoip), server);
+                        }
+                        self.geoip = Some(geoip);
+                    }
+                    Err(error) => {
+                        self.geoip_status = format!("Not available: {error}");
+                        self.status = format!("GeoIP database not available: {error}");
+                    }
+                },
+                Msg::Lan(result) => match result {
+                    Ok(found) => {
+                        self.lan_servers = found
+                            .into_iter()
+                            .map(|server| ServerKey {
+                                game: server.game,
+                                address: server.address,
+                            })
+                            .collect();
+                        if self.lan_servers.is_empty() {
+                            self.status = "No server found on the local network".to_string();
+                        } else {
+                            let keys = self.lan_servers.clone();
+                            self.scan_list(ctx, keys, "LAN servers");
+                        }
+                    }
+                    Err(error) => self.dialogs.error = Some(format!("LAN search failed: {error}")),
+                },
+                Msg::Update { result, manual } => match result {
+                    Ok(Some(tag)) => self.extra.update_available = Some(tag),
+                    Ok(None) if manual => self.dialogs.notify(format!(
+                        "OpenASE {} is up to date.",
+                        env!("CARGO_PKG_VERSION")
+                    )),
+                    Err(error) if manual => {
+                        self.dialogs.error = Some(format!("Could not check for updates: {error}"))
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }
@@ -491,33 +615,82 @@ impl OpenAseApp {
 
     // ----- view ------------------------------------------------------------
 
-    fn visible_rows(&self) -> Vec<&Server> {
-        let filters = &self.settings.filters;
-        let candidates: Vec<&Server> = match &self.nav {
+    /// Servers of the current tree selection, before filters.
+    fn candidates(&self) -> Vec<&Server> {
+        if let Some(keys) = self.nav_list(&self.nav) {
+            return keys.iter().filter_map(|key| self.find(key)).collect();
+        }
+        match &self.nav {
             Nav::Game(game) | Nav::GameType(game, _) => self
                 .store
                 .get(game)
                 .map(|list| list.iter().collect())
                 .unwrap_or_default(),
-            Nav::Favorites => self
-                .settings
-                .favorites
-                .iter()
-                .filter_map(|r| self.find(&ServerKey::from_ref(r)))
-                .collect(),
-            Nav::Recent => self
-                .settings
-                .recent
-                .iter()
-                .filter_map(|r| self.find(&ServerKey::from_ref(r)))
-                .collect(),
             Nav::Friends => self
                 .store
                 .values()
                 .flatten()
                 .filter(|server| self.server_has_friend(server))
                 .collect(),
-        };
+            Nav::FriendGroup(group) => {
+                let keys: Vec<&ServerKey> = self
+                    .settings
+                    .friends
+                    .iter()
+                    .filter(|friend| self.settings.friend_group(friend) == *group)
+                    .filter_map(|friend| self.friend_location(friend))
+                    .collect();
+                self.store
+                    .values()
+                    .flatten()
+                    .filter(|server| keys.contains(&&ServerKey::of(server)))
+                    .collect()
+            }
+            Nav::Custom(index) => match self.settings.custom_filters.get(*index) {
+                Some(filter) => self
+                    .store
+                    .iter()
+                    .filter(|(game, _)| filter.game.is_empty() || **game == filter.game)
+                    .flat_map(|(_, list)| list.iter())
+                    .filter(|server| filter.matches(server))
+                    .collect(),
+                None => Vec::new(),
+            },
+            _ => Vec::new(),
+        }
+    }
+
+    /// Highlight color of the first color filter matching a server.
+    fn color_filter(&self, server: &Server) -> Option<Color32> {
+        self.settings
+            .custom_filters
+            .iter()
+            .filter(|filter| filter.color.is_some() && !filter.rules.is_empty())
+            .find(|filter| filter.matches(server))
+            .and_then(|filter| parse_hex(filter.color.as_deref()?))
+            .map(|[r, g, b]| Color32::from_rgb(r, g, b))
+    }
+
+    /// Countries present in the current selection: (code, label, count), by label.
+    fn country_options(&self) -> Vec<(String, String, usize)> {
+        let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+        for server in self.candidates() {
+            *counts.entry(country_code(server).to_string()).or_default() += 1;
+        }
+        let mut options: Vec<(String, String, usize)> = counts
+            .into_iter()
+            .map(|(code, count)| {
+                let label = country_label(&code);
+                (code, label, count)
+            })
+            .collect();
+        options.sort_by(|a, b| a.1.cmp(&b.1));
+        options
+    }
+
+    fn visible_rows(&self) -> Vec<&Server> {
+        let filters = &self.settings.filters;
+        let candidates = self.candidates();
         let game = self.nav.game().and_then(catalog::game);
 
         let mut rows: Vec<&Server> = candidates
@@ -525,6 +698,11 @@ impl OpenAseApp {
             .filter(|server| {
                 let unanswered = server.error.is_some();
                 if filters.hide_offline && unanswered {
+                    return false;
+                }
+                if !filters.countries.is_empty()
+                    && !filters.countries.contains(country_code(server))
+                {
                     return false;
                 }
                 // Unscanned or silent servers cannot satisfy content filters.
@@ -609,6 +787,11 @@ impl OpenAseApp {
                 self.settings_dirty = true;
             }
             Action::Refresh(key) => self.query_single(ctx, &key),
+            Action::FavoriteGroup(key, group) => {
+                self.settings.add_favorite_to(key.to_ref(), &group);
+                self.settings_dirty = true;
+                self.status = format!("Added to {group}");
+            }
             Action::Copy(text) => {
                 ctx.copy_text(text.clone());
                 self.status = format!("Copied {text}");
@@ -648,35 +831,11 @@ impl OpenAseApp {
 
     fn menu_bar(&mut self, ui: &mut egui::Ui) {
         egui::MenuBar::new().ui(ui, |ui| {
-            ui.menu_button("File", |ui| {
-                if ui.button("Exit").clicked() {
-                    ui.send_viewport_cmd(egui::ViewportCommand::Close);
-                }
-            });
+            ui.menu_button("File", |ui| self.file_menu(ui));
             ui.menu_button("View", |ui| {
                 ui.checkbox(&mut self.show_toolbar, "Toolbar");
             });
-            ui.menu_button("Filter", |ui| {
-                let filters = &mut self.settings.filters;
-                let mut changed = false;
-                changed |= ui.checkbox(&mut filters.not_empty, "Not empty").changed();
-                changed |= ui.checkbox(&mut filters.not_full, "Not full").changed();
-                changed |= ui
-                    .checkbox(&mut filters.no_password, "No password")
-                    .changed();
-                changed |= ui
-                    .checkbox(&mut filters.hide_offline, "Hide unresponsive servers")
-                    .changed();
-                ui.separator();
-                if ui.button("Clear all filters").clicked() {
-                    *filters = Default::default();
-                    changed = true;
-                    ui.close();
-                }
-                if changed {
-                    self.settings_dirty = true;
-                }
-            });
+            ui.menu_button("Filter", |ui| self.filter_menu(ui));
             ui.menu_button("Server", |ui| {
                 let selected = self.selected.clone();
                 if ui.button("Refresh list\tF5").clicked() {
@@ -739,6 +898,11 @@ impl OpenAseApp {
                     self.dialogs.open_add(self.nav.game());
                     ui.close();
                 }
+                if ui.button("Find LAN servers").clicked() {
+                    self.nav = Nav::Special(Special::Lan);
+                    self.scan_lan(ui.ctx());
+                    ui.close();
+                }
             });
             ui.menu_button("Player", |ui| {
                 if ui.button("Find player...").clicked() {
@@ -746,28 +910,14 @@ impl OpenAseApp {
                     ui.close();
                 }
             });
-            ui.menu_button("Friends", |ui| {
-                if ui.button("Manage friends...").clicked() {
-                    self.dialogs.friends = Some(String::new());
-                    ui.close();
-                }
-                if ui.button("Show servers with friends").clicked() {
-                    self.nav = Nav::Friends;
-                    ui.close();
-                }
-            });
+            ui.menu_button("Friends", |ui| self.friends_menu(ui));
             ui.menu_button("Tools", |ui| {
                 if ui.button("Options...").clicked() {
                     self.dialogs.open_options(&self.settings);
                     ui.close();
                 }
             });
-            ui.menu_button("Help", |ui| {
-                if ui.button("About OpenASE").clicked() {
-                    self.dialogs.about = true;
-                    ui.close();
-                }
-            });
+            ui.menu_button("Help", |ui| self.help_menu(ui));
         });
     }
 
@@ -836,6 +986,7 @@ impl OpenAseApp {
         let mut toggles: Vec<String> = Vec::new();
         let mut filter_clicks: Vec<(String, String)> = Vec::new();
         let mut modifier_clicks: Vec<&'static str> = Vec::new();
+        let mut country_clicks: Vec<String> = Vec::new();
 
         let mut row = |ui: &mut egui::Ui,
                        depth: usize,
@@ -852,35 +1003,114 @@ impl OpenAseApp {
             clicked
         };
 
+        // Favorites, with ASE's Favorites1..8 groups.
         if row(
             ui,
             0,
-            None,
+            Some("Favorites"),
             TreeIcon::Star,
             "Favorites",
             self.nav == Nav::Favorites,
         ) {
             new_nav = Some(Nav::Favorites);
         }
-        if row(
-            ui,
-            0,
-            None,
-            TreeIcon::Clock,
-            "Recently played",
-            self.nav == Nav::Recent,
-        ) {
-            new_nav = Some(Nav::Recent);
+        if self.settings.open_nav.contains("Favorites") {
+            for group in FAVORITE_GROUPS {
+                let count = self.settings.favorites_in(group).len();
+                let label = if count > 0 {
+                    format!("{group} ({count})")
+                } else {
+                    group.to_string()
+                };
+                let nav = Nav::FavoriteGroup(group.to_string());
+                if row(ui, 1, None, TreeIcon::Folder, &label, self.nav == nav) {
+                    new_nav = Some(nav);
+                }
+            }
         }
+
+        // Friends, with Friends1..4 groups.
         if row(
             ui,
             0,
-            None,
+            Some("Friends"),
             TreeIcon::Friends,
             "Friends",
             self.nav == Nav::Friends,
         ) {
             new_nav = Some(Nav::Friends);
+        }
+        if self.settings.open_nav.contains("Friends") {
+            for group in FRIEND_GROUPS {
+                let online = self
+                    .settings
+                    .friends
+                    .iter()
+                    .filter(|friend| self.settings.friend_group(friend) == group)
+                    .filter(|friend| self.friend_location(friend).is_some())
+                    .count();
+                let label = if online > 0 {
+                    format!("{group} ({online} on)")
+                } else {
+                    group.to_string()
+                };
+                let nav = Nav::FriendGroup(group.to_string());
+                if row(ui, 1, None, TreeIcon::Folder, &label, self.nav == nav) {
+                    new_nav = Some(nav);
+                }
+            }
+        }
+
+        // Special lists.
+        row(ui, 0, Some("Special"), TreeIcon::Folder, "Special", false);
+        if self.settings.open_nav.contains("Special") {
+            for special in Special::ALL {
+                let nav = Nav::Special(special);
+                if row(
+                    ui,
+                    1,
+                    None,
+                    TreeIcon::Folder,
+                    special.label(),
+                    self.nav == nav,
+                ) {
+                    new_nav = Some(nav);
+                }
+            }
+            if row(
+                ui,
+                1,
+                None,
+                TreeIcon::Clock,
+                "recently joined",
+                self.nav == Nav::Recent,
+            ) {
+                new_nav = Some(Nav::Recent);
+            }
+        }
+
+        // User filters.
+        if !self.settings.custom_filters.is_empty() {
+            row(
+                ui,
+                0,
+                Some("My filters"),
+                TreeIcon::Funnel,
+                "My filters",
+                false,
+            );
+            if self.settings.open_nav.contains("My filters") {
+                for (index, filter) in self.settings.custom_filters.iter().enumerate() {
+                    let label = match &filter.color {
+                        Some(_) => format!("{} (color)", filter.name),
+                        None => filter.name.clone(),
+                    };
+                    let nav = Nav::Custom(index);
+                    if row(ui, 1, None, TreeIcon::Folder, &label, self.nav == nav) {
+                        new_nav = Some(nav);
+                    }
+                }
+            }
         }
 
         for game in catalog::games() {
@@ -1023,8 +1253,43 @@ impl OpenAseApp {
                     }
                 }
             }
+            let any_country = !filters.countries.is_empty();
+            row(
+                ui,
+                1,
+                Some("Modifiers/Country"),
+                TreeIcon::Folder,
+                if any_country { "Country *" } else { "Country" },
+                false,
+            );
+            if self.settings.open_nav.contains("Modifiers/Country") {
+                let options = self.country_options();
+                if options.is_empty() {
+                    row(ui, 2, None, TreeIcon::None, "(refresh to fill)", false);
+                }
+                for (code, label, count) in options {
+                    let checked = filters.countries.contains(&code);
+                    if row(
+                        ui,
+                        2,
+                        None,
+                        TreeIcon::Check(checked),
+                        &format!("{label} ({count})"),
+                        false,
+                    ) {
+                        country_clicks.push(code);
+                    }
+                }
+            }
         }
 
+        for code in country_clicks {
+            let countries = &mut self.settings.filters.countries;
+            if !countries.remove(&code) {
+                countries.insert(code);
+            }
+            self.settings_dirty = true;
+        }
         for path in toggles {
             if !self.settings.open_nav.remove(&path) {
                 self.settings.open_nav.insert(path);
@@ -1072,17 +1337,17 @@ impl OpenAseApp {
                     self.scan_game(ui.ctx(), &game);
                 }
             } else {
-                if matches!(nav, Nav::Favorites | Nav::Recent) {
-                    let refs = if nav == Nav::Favorites {
-                        self.settings.favorites.clone()
-                    } else {
-                        self.settings.recent.clone()
-                    };
-                    for server in &refs {
-                        self.ensure_placeholder(&ServerKey::from_ref(server));
+                if let Some(keys) = self.nav_list(&nav) {
+                    for key in &keys {
+                        self.ensure_placeholder(key);
                     }
                 }
+                let lan_first_visit =
+                    nav == Nav::Special(Special::Lan) && self.lan_servers.is_empty();
                 self.nav = nav;
+                if lan_first_visit {
+                    self.scan_lan(ui.ctx());
+                }
             }
             self.settings_dirty = true;
         }
@@ -1091,6 +1356,7 @@ impl OpenAseApp {
     // ----- UI: server list ---------------------------------------------------
 
     fn server_list(&mut self, ui: &mut egui::Ui) {
+        let want_scroll = std::mem::take(&mut self.scroll_to_selected);
         let rows = self.visible_rows();
         let mut actions: Vec<Action> = Vec::new();
         let mut sort_click: Option<Col> = None;
@@ -1098,7 +1364,29 @@ impl OpenAseApp {
         let selected = self.selected.clone();
         let text_color = ui.visuals().text_color();
 
-        let mut table = TableBuilder::new(ui)
+        if rows.is_empty() && self.scan.is_none() {
+            ui.add_space(30.0);
+            ui.vertical_centered(|ui| {
+                ui.label(
+                    RichText::new("<- select a game and click Refresh, or add a server")
+                        .color(Color32::from_gray(0x70)),
+                );
+            });
+            return;
+        }
+        let scroll_to = if want_scroll {
+            selected
+                .as_ref()
+                .and_then(|key| rows.iter().position(|server| ServerKey::of(server) == *key))
+        } else {
+            None
+        };
+
+        let mut table = TableBuilder::new(ui);
+        if let Some(index) = scroll_to {
+            table = table.scroll_to_row(index, Some(Align::Center));
+        }
+        let mut table = table
             .id_salt("server-list")
             .striped(false)
             .resizable(true)
@@ -1151,6 +1439,11 @@ impl OpenAseApp {
                     let game = catalog::game(&server.game);
                     let favorite = self.settings.is_favorite(&key.to_ref());
                     let friend = self.server_has_friend(server);
+                    let highlight = if friend {
+                        Some(Color32::from_rgb(0xe0, 0xf5, 0xe0))
+                    } else {
+                        self.color_filter(server)
+                    };
                     let color = if is_selected {
                         Color32::WHITE
                     } else if !server.online {
@@ -1167,11 +1460,11 @@ impl OpenAseApp {
                                     CornerRadius::ZERO,
                                     SELECTION,
                                 );
-                            } else if friend {
+                            } else if let Some(fill) = highlight {
                                 ui.painter().rect_filled(
                                     ui.max_rect().expand2(vec2(4.0, 1.0)),
                                     CornerRadius::ZERO,
-                                    Color32::from_rgb(0xe0, 0xf5, 0xe0),
+                                    fill,
                                 );
                             }
                             match col {
@@ -1253,6 +1546,17 @@ impl OpenAseApp {
                             actions.push(Action::ToggleFavorite(key.clone()));
                             ui.close();
                         }
+                        ui.menu_button("Add to favorites group", |ui| {
+                            for group in FAVORITE_GROUPS {
+                                if ui.button(group).clicked() {
+                                    actions.push(Action::FavoriteGroup(
+                                        key.clone(),
+                                        group.to_string(),
+                                    ));
+                                    ui.close();
+                                }
+                            }
+                        });
                         if ui.button("Copy address").clicked() {
                             actions.push(Action::Copy(address.clone()));
                             ui.close();
@@ -1472,11 +1776,25 @@ impl OpenAseApp {
 
 impl eframe::App for OpenAseApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        self.drain_messages();
         let ctx = ui.ctx().clone();
+        self.drain_messages(&ctx);
         if !self.started {
             self.started = true;
             self.refresh(&ctx);
+            if self.settings.geoip_disabled {
+                self.geoip_status = "Disabled".to_string();
+            } else {
+                let tx = self.tx.clone();
+                let ctx = ctx.clone();
+                std::thread::spawn(move || {
+                    let result = geoip::load_or_download(Duration::from_secs(60))
+                        .map(Arc::new)
+                        .map_err(|error| error.to_string());
+                    let _ = tx.send(Msg::GeoIp(result));
+                    ctx.request_repaint();
+                });
+            }
+            self.startup_tasks(&ctx);
         }
 
         if self.settings.events.auto_refresh_selected
@@ -1497,6 +1815,9 @@ impl eframe::App for OpenAseApp {
         }
 
         let no_dialog = !self.dialogs.any_modal();
+        if no_dialog && !self.extra.any_modal() {
+            self.shortcuts(&ctx);
+        }
         if no_dialog && ctx.input(|input| input.key_pressed(egui::Key::F5)) && self.scan.is_none() {
             self.refresh(&ctx);
         }
@@ -1571,6 +1892,7 @@ impl eframe::App for OpenAseApp {
             .show(ui, |ui| self.server_list(ui));
 
         self.show_dialogs(&ctx);
+        self.show_extra(&ctx);
 
         if self.settings_dirty {
             self.settings_dirty = false;
@@ -1808,10 +2130,16 @@ fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
     match col {
         Col::Icon => String::new(),
         Col::Location => {
-            if server.online && server.location != openase::location::UNKNOWN_LOCATION {
+            if server.location != openase::location::UNKNOWN_LOCATION && !server.location.is_empty()
+            {
                 server.location.clone()
             } else {
-                String::new()
+                server
+                    .country
+                    .as_deref()
+                    .and_then(country_name)
+                    .unwrap_or_default()
+                    .to_string()
             }
         }
         Col::Name => display_name(server),
@@ -1982,3 +2310,21 @@ fn beep() {
 
 #[cfg(not(windows))]
 fn beep() {}
+
+/// Fill the GeoIP country of a server once.
+fn annotate(geoip: Option<&GeoIp>, server: &mut Server) {
+    if server.country.is_none()
+        && let Some(geoip) = geoip
+    {
+        server.country = geoip.lookup_host(&server.host).map(str::to_string);
+    }
+}
+
+/// Country code used by the Country filter, `??` when unknown.
+fn country_code(server: &Server) -> &str {
+    server.country.as_deref().unwrap_or("??")
+}
+
+fn country_label(code: &str) -> String {
+    country_name(code).map_or_else(|| "Unknown".to_string(), str::to_string)
+}
