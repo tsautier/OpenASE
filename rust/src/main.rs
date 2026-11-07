@@ -3,8 +3,12 @@
 mod gui;
 
 fn main() -> eframe::Result {
+    let mut viewport = eframe::egui::ViewportBuilder::default();
+    if let Ok(icon) = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon.png")) {
+        viewport = viewport.with_icon(icon);
+    }
     let options = eframe::NativeOptions {
-        viewport: eframe::egui::ViewportBuilder::default()
+        viewport: viewport
             .with_title("OpenASE")
             .with_inner_size([1280.0, 760.0])
             .with_min_inner_size([960.0, 560.0]),

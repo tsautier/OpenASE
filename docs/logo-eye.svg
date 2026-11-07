@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>OpenASE demon eye</title>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff2a00" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#7a0000" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sclera" cx="50%" cy="45%" r="60%">
+      <stop offset="0" stop-color="#f3e6b0"/>
+      <stop offset=".45" stop-color="#d9a860"/>
+      <stop offset=".7" stop-color="#b8361a"/>
+      <stop offset=".88" stop-color="#6e0a00"/>
+      <stop offset="1" stop-color="#3a0600"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff26a"/>
+      <stop offset=".28" stop-color="#ffb000"/>
+      <stop offset=".55" stop-color="#ff4d00"/>
+      <stop offset=".82" stop-color="#b30000"/>
+      <stop offset="1" stop-color="#2a0000"/>
+    </radialGradient>
+    <linearGradient id="blood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d10000"/>
+      <stop offset="1" stop-color="#5c0000"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6e6e6"/>
+      <stop offset=".45" stop-color="#7d7d7d"/>
+      <stop offset=".5" stop-color="#2b2b2b"/>
+      <stop offset="1" stop-color="#9a9a9a"/>
+    </linearGradient>
+    <clipPath id="eyeClip">
+      <path d="M40 256 C120 150 190 112 256 112 C322 112 392 150 472 256 C392 362 322 400 256 400 C190 400 120 362 40 256 Z"/>
+    </clipPath>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="7"/>
+    </filter>
+  </defs>
+
+  <!-- hellish glow -->
+  <circle cx="256" cy="256" r="250" fill="url(#glow)"/>
+
+  <!-- thorns / spikes around the eye -->
+  <g fill="url(#metal)" stroke="#000" stroke-width="4" stroke-linejoin="miter">
+    <path d="M256 6 L278 104 L234 104 Z"/>
+    <path d="M256 506 L234 408 L278 408 Z"/>
+    <path d="M96 60 L176 132 L142 156 Z"/>
+    <path d="M416 60 L370 156 L336 132 Z"/>
+    <path d="M96 452 L142 356 L176 380 Z"/>
+    <path d="M416 452 L336 380 L370 356 Z"/>
+    <path d="M10 196 L86 214 L74 248 Z"/>
+    <path d="M502 196 L438 248 L426 214 Z"/>
+    <path d="M10 316 L74 264 L86 298 Z"/>
+    <path d="M502 316 L426 298 L438 264 Z"/>
+  </g>
+
+  <!-- ragged dark eyelids -->
+  <path filter="url(#rough)" fill="#1a0000" stroke="#000" stroke-width="6"
+        d="M18 256 C108 128 186 86 256 86 C326 86 404 128 494 256 C404 384 326 426 256 426 C186 426 108 384 18 256 Z"/>
+
+  <!-- the eye -->
+  <g clip-path="url(#eyeClip)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#sclera)"/>
+    <!-- bloodshot veins -->
+    <g fill="none" stroke="#a00000" stroke-linecap="round" opacity=".9">
+      <path stroke-width="4" d="M44 256 C90 240 120 262 150 246 C170 236 182 248 196 240"/>
+      <path stroke-width="3" d="M90 210 C120 222 136 210 160 222 C176 230 186 226 198 232"/>
+      <path stroke-width="2" d="M120 300 C140 286 160 296 176 284 C186 278 194 282 202 276"/>
+      <path stroke-width="3" d="M468 256 C420 270 392 248 362 264 C342 274 330 262 316 270"/>
+      <path stroke-width="2" d="M430 208 C404 222 384 210 360 222 C344 230 334 226 320 234"/>
+      <path stroke-width="3" d="M412 308 C388 294 368 304 350 290 C338 282 326 286 314 280"/>
+      <path stroke-width="2" d="M150 246 C156 226 170 222 172 206"/>
+      <path stroke-width="2" d="M362 264 C368 286 384 290 386 306"/>
+      <path stroke-width="1.5" d="M160 222 C150 206 156 196 148 184"/>
+      <path stroke-width="1.5" d="M350 290 C356 306 352 318 362 330"/>
+    </g>
+    <!-- iris -->
+    <circle cx="256" cy="256" r="104" fill="url(#iris)" stroke="#1a0000" stroke-width="6"/>
+    <g stroke="#ffde59" stroke-opacity=".55" stroke-width="2" fill="none">
+      <path d="M256 160 L256 196 M256 316 L256 352 M160 256 L196 256 M316 256 L352 256"/>
+      <path d="M188 188 L212 212 M324 188 L300 212 M188 324 L212 300 M324 324 L300 300"/>
+      <path d="M222 164 L230 198 M290 164 L282 198 M222 348 L230 314 M290 348 L282 314"/>
+      <path d="M164 222 L198 230 M164 290 L198 282 M348 222 L314 230 M348 290 L314 282"/>
+    </g>
+    <circle cx="256" cy="256" r="72" fill="none" stroke="#7a0000" stroke-width="3" opacity=".7"/>
+    <!-- slit pupil -->
+    <path d="M256 168 C276 210 280 236 280 256 C280 276 276 302 256 344 C236 302 232 276 232 256 C232 236 236 210 256 168 Z" fill="#050000"/>
+    <path d="M256 186 C266 220 268 240 268 256" fill="none" stroke="#ff2a00" stroke-width="2" opacity=".6"/>
+    <!-- wet highlights -->
+    <ellipse cx="214" cy="206" rx="22" ry="12" fill="#fff" opacity=".85" transform="rotate(-30 214 206)"/>
+    <circle cx="300" cy="300" r="6" fill="#fff" opacity=".6"/>
+    <!-- lid shadow -->
+    <path d="M40 256 C120 150 190 112 256 112 C322 112 392 150 472 256 C392 180 322 150 256 150 C190 150 120 180 40 256 Z" fill="#000" opacity=".45"/>
+  </g>
+
+  <!-- eye outline -->
+  <path d="M40 256 C120 150 190 112 256 112 C322 112 392 150 472 256 C392 362 322 400 256 400 C190 400 120 362 40 256 Z" fill="none" stroke="#000" stroke-width="8"/>
+
+  <!-- blood dripping from the lower lid -->
+  <g fill="url(#blood)" stroke="#2a0000" stroke-width="2">
+    <path d="M168 372 C170 392 166 420 172 444 C175 458 190 458 192 444 C196 420 188 396 190 380 Z"/>
+    <path d="M246 400 C246 430 240 466 248 488 C252 500 268 500 270 486 C274 462 266 432 268 402 Z"/>
+    <path d="M318 384 C318 400 314 418 320 432 C323 442 336 441 337 431 C339 414 333 400 336 380 Z"/>
+    <path d="M118 334 C118 346 114 360 120 370 C123 377 133 376 134 368 C135 356 130 346 132 330 Z"/>
+    <path d="M386 344 C386 352 384 362 388 370 C390 375 398 374 398 368 C399 358 396 352 398 342 Z"/>
+  </g>
+  <g fill="#ff6a6a" opacity=".55">
+    <ellipse cx="177" cy="430" rx="3" ry="8"/>
+    <ellipse cx="253" cy="470" rx="3" ry="10"/>
+    <ellipse cx="324" cy="420" rx="2" ry="6"/>
+  </g>
+</svg>
