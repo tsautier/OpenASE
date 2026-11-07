@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OpenASE | Open-source game server browser</title>
-  <meta name="description" content="OpenASE is an open-source game server browser inspired by The All-Seeing Eye. Browse live Quake 3 servers, players and colored names. Python and Rust, GPL-3.0.">
+  <meta name="description" content="OpenASE is an open-source game server browser inspired by The All-Seeing Eye. Browse Quake 3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike 1.6 servers. Native Rust, GPL-3.0.">
   <meta property="og:title" content="OpenASE">
   <meta property="og:description" content="The classic game server browser, reborn as open source.">
   <meta property="og:image" content="screenshot.png">
@@ -214,17 +214,17 @@
   <div class="hero">
     <div class="wrap">
       <div>
-        <div class="eyebrow">Open source / GPL-3.0 / v0.1</div>
+        <div class="eyebrow">Open source / GPL-3.0 / v0.5</div>
         <h1><span class="r">Open</span>ASE</h1>
-        <p class="lead">The classic game server browser, reborn. Find live Quake&nbsp;3 servers, see who is playing and read their names in full color, the way it looked in 2004.</p>
+        <p class="lead">The classic game server browser, reborn. Quake&nbsp;3, Urban Terror, Enemy Territory, Call of Duty, Unreal Tournament and Counter-Strike&nbsp;1.6 servers, with ping, flux and packet loss, your friends, and one-click join.</p>
         <div class="cta">
           <a class="btn primary" href="#install">Get started</a>
           <a class="btn" href="https://github.com/tsautier/OpenASE">View source</a>
         </div>
         <div class="facts">
-          <div><b>Rust + Python</b><span>native egui or Tkinter</span></div>
-          <div><b>1,000+ servers</b><span>listed by the Q3 master</span></div>
-          <div><b>Windows first</b><span>Linux and macOS buildable</span></div>
+          <div><b>9 games</b><span>3 query protocols</span></div>
+          <div><b>4,500+ servers</b><span>from 13 live masters</span></div>
+          <div><b>Native Rust</b><span>Windows, Linux buildable</span></div>
         </div>
       </div>
       <figure class="shot" style="margin:0">
@@ -238,14 +238,14 @@
     <div class="wrap">
       <p class="kicker">Features</p>
       <h2>What made ASE great, rebuilt from scratch</h2>
-      <p class="sub">OpenASE keeps the familiar three-pane layout: filters on the left, servers on top, players and server rules below. The code is new and contains nothing from the original Yahoo program.</p>
+      <p class="sub">The familiar layout is back: filter tree on the left, servers on the right, friends, players and server rules below. The code is new and contains nothing from the original Yahoo program.</p>
       <div class="grid">
-        <div class="card"><h3><span class="dot" style="background:var(--q5)"></span>Master server discovery</h3><p>Pulls full server lists from Quake 3 masters, including lists split over many UDP packets.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q2)"></span>Fast parallel scan</h3><p>The Rust version queries 16 servers at once, so hundreds of servers come in within seconds.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q1)"></span>Full color names</h3><p>Renders <code>^1</code> indexed colors, extended <code>^A</code> codes and <code>^xRRGGBB</code> hex colors for servers and players.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q3)"></span>Players and server rules</h3><p>Click a server to see every player's score and ping, plus all of its cvars.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--q6)"></span>Quick filters</h3><p>Hide empty or full servers, cap the ping, or filter by reported country. OpenASE never guesses a location from an IP address.</p></div>
-        <div class="card"><h3><span class="dot" style="background:#bfbfbf"></span>Game detection</h3><p>Finds installed games through the Windows registry or a deep search, and lets you set paths and player names per game.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q5)"></span>Ping, Flux and PL</h3><p>Every server is pinged several times: average round-trip, its variation and packet loss, like ASE measured them.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q3)"></span>The filter tree</h3><p>Game types as folders, and checkbox filters per game: Mods, Friendly Fire, Kill Cam, PunkBuster, Version, Maps.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q2)"></span>One-click join</h3><p>Double-click a server and the game starts with the right mod, name and password. Favorites and recently played included.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q6)"></span>Friends</h3><p>OpenASE spots your friends on every scanned server, shows where they play and can ping you when one joins. Find any player in seconds.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q1)"></span>Full color names</h3><p>Quake <code>^1</code> colors, extended <code>^A</code> codes and <code>^xRRGGBB</code> hex colors, drawn for servers and players.</p></div>
+        <div class="card"><h3><span class="dot" style="background:#bfbfbf"></span>Auto-Search</h3><p>Finds installed games through the registry, Steam folders or a full disk search, and remembers paths and player names per game.</p></div>
       </div>
     </div>
   </section>
@@ -275,8 +275,8 @@
   <section id="install" class="alt">
     <div class="wrap">
       <p class="kicker">Install</p>
-      <h2>Run it from source</h2>
-      <p class="sub">Prebuilt downloads are coming. Until then, building takes a minute.</p>
+      <h2>Get OpenASE</h2>
+      <p class="sub">Windows builds are published on <a href="https://github.com/tsautier/OpenASE/releases">GitHub Releases</a>. You can also build it yourself in a minute.</p>
 
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="rust">Rust (recommended)</button>
@@ -293,10 +293,10 @@
       </div>
       <div class="panel" id="tab-cli" role="tabpanel">
         <div class="term"><button class="copy">Copy</button><span class="label">List live servers without the GUI</span>
-<div class="row">cd OpenASE/rust</div><div class="row">cargo run --example scan -- master.quake3arena.com 20</div></div>
+<div class="row">cd OpenASE/rust</div><div class="row">cargo run --example scan -- cod2 20</div><div class="row">cargo run --example query -- ut99 1.2.3.4:7778</div></div>
       </div>
 
-      <div class="note"><b>Game list:</b> the full game tree is read from an original ASE <code>filters.txt</code> if one sits next to OpenASE. Without it, OpenASE still browses Quake 3 servers. A built-in game list is on the roadmap.</div>
+      <div class="note"><b>Counter-Strike 1.6:</b> Valve's old master no longer answers, so its server list comes from the Steam Web API. Paste your own free key from <a href="https://steamcommunity.com/dev/apikey">steamcommunity.com/dev/apikey</a> in Options &gt; General. Every other game works out of the box.</div>
     </div>
   </section>
 
@@ -306,11 +306,11 @@
       <h2>Where it's going</h2>
       <p class="sub">The goal: one browser for the old-school online games that still have players.</p>
       <ul class="roadmap">
-        <li><span class="tag done">Done</span><div><b>Quake 3 browsing</b><span>Master discovery, server status, players, color names, filters, Python and Rust versions.</span></div></li>
-        <li><span class="tag next">Next</span><div><b>The id Tech 3 family</b><span>Urban Terror, OpenArena, Wolfenstein: Enemy Territory, Call of Duty 1 and 2.</span></div></li>
-        <li><span class="tag next">Next</span><div><b>Built-in game list and real ping</b><span>No dependency on original ASE files, and round-trip time measured per server.</span></div></li>
-        <li><span class="tag next">Next</span><div><b>Downloads</b><span>Signed Windows builds on GitHub Releases.</span></div></li>
-        <li><span class="tag later">Later</span><div><b>Favorites, buddies and one-click join</b><span>See when friends are online and launch the game straight onto their server.</span></div></li>
+        <li><span class="tag done">v0.2</span><div><b>Usable by anyone</b><span>Built-in game catalog, real ping with flux and packet loss, several masters per game, CI and Windows builds.</span></div></li>
+        <li><span class="tag done">v0.3</span><div><b>The id Tech 3 family</b><span>Urban Terror, OpenArena, Enemy Territory, Call of Duty 1, 2 and 4.</span></div></li>
+        <li><span class="tag done">v0.4</span><div><b>The ASE experience</b><span>Filter tree, favorites, one-click join, friends, find player, Auto-Search.</span></div></li>
+        <li><span class="tag done">v0.5</span><div><b>More engines</b><span>Unreal Tournament (GameSpy) and Counter-Strike 1.6 (Valve A2S).</span></div></li>
+        <li><span class="tag next">Next</span><div><b>Toward 1.0</b><span>Unreal Tournament 2004, signed installer, Linux packages, French interface.</span></div></li>
       </ul>
     </div>
   </section>

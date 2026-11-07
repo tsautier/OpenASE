@@ -57,6 +57,13 @@ pub struct Quake3Server {
     pub info: BTreeMap<String, String>,
     pub players: Vec<Quake3Player>,
     pub error: Option<String>,
+    /// Round-trip time of the query.
+    pub ping_ms: Option<u32>,
+}
+
+/// Convert a duration to whole milliseconds, saturating.
+pub fn millis(duration: Duration) -> u32 {
+    duration.as_millis().min(u128::from(u32::MAX)) as u32
 }
 
 impl Quake3Server {
@@ -99,15 +106,20 @@ impl Quake3Client {
     pub fn status(&self, host: &str, port: u16) -> Quake3Server {
         let result = self
             .query(host, port, &format!("getstatus {CHALLENGE}"))
-            .and_then(|packet| parse_status_response(&packet).map_err(io::Error::from));
+            .and_then(|(packet, rtt)| {
+                parse_status_response(&packet)
+                    .map(|parsed| (parsed, rtt))
+                    .map_err(io::Error::from)
+            });
         match result {
-            Ok((info, players)) => Quake3Server {
+            Ok(((info, players), rtt)) => Quake3Server {
                 host: host.to_string(),
                 port,
                 online: true,
                 info,
                 players,
                 error: None,
+                ping_ms: Some(millis(rtt)),
             },
             Err(error) => Quake3Server::offline(host, port, error.to_string()),
         }
@@ -117,13 +129,18 @@ impl Quake3Client {
     pub fn info(&self, host: &str, port: u16) -> Quake3Server {
         let result = self
             .query(host, port, &format!("getinfo {CHALLENGE}"))
-            .and_then(|packet| parse_info_response(&packet).map_err(io::Error::from));
+            .and_then(|(packet, rtt)| {
+                parse_info_response(&packet)
+                    .map(|info| (info, rtt))
+                    .map_err(io::Error::from)
+            });
         match result {
-            Ok(info) => Quake3Server {
+            Ok((info, rtt)) => Quake3Server {
                 host: host.to_string(),
                 port,
                 online: true,
                 info,
+                ping_ms: Some(millis(rtt)),
                 ..Quake3Server::default()
             },
             Err(error) => Quake3Server::offline(host, port, error.to_string()),
@@ -136,7 +153,14 @@ impl Quake3Client {
     /// `EOT`, so packets are read until an `EOF` marker, a short silence
     /// ([`MASTER_IDLE_TIMEOUT`]) or the overall timeout. Duplicates are dropped.
     pub fn master_servers(&self, host: &str, port: u16, protocol: u32) -> io::Result<Vec<String>> {
-        let socket = self.send(host, port, &format!("getservers {protocol} empty full\n"))?;
+        self.master_query(host, port, &format!("getservers {protocol} empty full"))
+    }
+
+    /// Send a raw master request such as `getservers 84 empty full` and collect
+    /// the advertised addresses. Works for Quake 3, Urban Terror, OpenArena,
+    /// Enemy Territory and Call of Duty masters.
+    pub fn master_query(&self, host: &str, port: u16, command: &str) -> io::Result<Vec<String>> {
+        let socket = self.send(host, port, &format!("{}\n", command.trim_end()))?;
         let deadline = Instant::now() + self.timeout;
         let mut addresses = Vec::new();
         let mut seen = HashSet::new();
@@ -155,7 +179,11 @@ impl Quake3Client {
                 Ok((size, _)) => {
                     received = true;
                     let (entries, end_of_list) = parse_getservers_packet(&buffer[..size])?;
-                    addresses.extend(entries.into_iter().filter(|address| seen.insert(address.clone())));
+                    addresses.extend(
+                        entries
+                            .into_iter()
+                            .filter(|address| seen.insert(address.clone())),
+                    );
                     if end_of_list {
                         break;
                     }
@@ -171,7 +199,12 @@ impl Quake3Client {
         let target = (host, port)
             .to_socket_addrs()?
             .find(|address| address.is_ipv4())
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, format!("no IPv4 address for {host}")))?;
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("no IPv4 address for {host}"),
+                )
+            })?;
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.set_read_timeout(Some(self.timeout))?;
         let mut payload = OUT_OF_BAND_PREFIX.to_vec();
@@ -180,11 +213,12 @@ impl Quake3Client {
         Ok(socket)
     }
 
-    fn query(&self, host: &str, port: u16, command: &str) -> io::Result<Vec<u8>> {
+    fn query(&self, host: &str, port: u16, command: &str) -> io::Result<(Vec<u8>, Duration)> {
         let socket = self.send(host, port, command)?;
-        let mut buffer = [0u8; 8192];
+        let started = Instant::now();
+        let mut buffer = [0u8; 16384];
         let (size, _) = socket.recv_from(&mut buffer)?;
-        Ok(buffer[..size].to_vec())
+        Ok((buffer[..size].to_vec(), started.elapsed()))
     }
 }
 
@@ -218,7 +252,9 @@ pub fn parse_status_response(
         return err("statusResponse did not contain an info string");
     };
     let info = parse_info_string(first)?;
-    let players = lines.map(parse_player_line).collect::<Result<Vec<_>, _>>()?;
+    let players = lines
+        .map(parse_player_line)
+        .collect::<Result<Vec<_>, _>>()?;
     Ok((info, players))
 }
 
@@ -257,7 +293,10 @@ fn parse_getservers_packet(packet: &[u8]) -> Result<(Vec<String>, bool), ParseEr
             return err("truncated getserversResponse address entry");
         }
         let port = u16::from_be_bytes([chunk[4], chunk[5]]);
-        addresses.push(format!("{}.{}.{}.{}:{port}", chunk[0], chunk[1], chunk[2], chunk[3]));
+        addresses.push(format!(
+            "{}.{}.{}.{}:{port}",
+            chunk[0], chunk[1], chunk[2], chunk[3]
+        ));
         index += 7;
     }
     Ok((addresses, false))
@@ -274,7 +313,11 @@ pub fn decode_connectionless(packet: &[u8], expected_command: &str) -> Result<St
         if command != expected_command {
             return err(format!(
                 "expected {expected_command}, got {}",
-                if command.is_empty() { "empty response" } else { command }
+                if command.is_empty() {
+                    "empty response"
+                } else {
+                    command
+                }
             ));
         }
         return err(format!("{expected_command} response is missing a body"));
@@ -283,7 +326,11 @@ pub fn decode_connectionless(packet: &[u8], expected_command: &str) -> Result<St
     if command != expected_command {
         return err(format!(
             "expected {expected_command}, got {}",
-            if command.is_empty() { "empty response" } else { command }
+            if command.is_empty() {
+                "empty response"
+            } else {
+                command
+            }
         ));
     }
     Ok(body.to_string())
@@ -320,7 +367,10 @@ pub fn parse_player_line(line: &str) -> Result<Quake3Player, ParseError> {
     let invalid = || ParseError(format!("invalid player row: {line}"));
     let line = line.trim();
     let (score, rest) = line.split_once(char::is_whitespace).ok_or_else(invalid)?;
-    let (ping, name) = rest.trim_start().split_once(char::is_whitespace).ok_or_else(invalid)?;
+    let (ping, name) = rest
+        .trim_start()
+        .split_once(char::is_whitespace)
+        .ok_or_else(invalid)?;
     let name = name.trim();
     if name.is_empty() {
         return Err(invalid());

@@ -9,7 +9,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-static HEX_COLOR_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\^[xX][0-9a-fA-F]{6}").unwrap());
+static HEX_COLOR_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\^[xX][0-9a-fA-F]{6}").unwrap());
 static CONTROL_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\^[BbFfNn]").unwrap());
 static ANY_CARET_CODE_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\^.").unwrap());
 

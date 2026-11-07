@@ -1,0 +1,302 @@
+[
+  {
+    "id": "q3",
+    "name": "Quake 3: Arena",
+    "short": "Q3",
+    "color": "#c8321e",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "master.quake3arena.com:27950", "query": "getservers 68 empty full" },
+      { "kind": "quake3", "address": "master0.excessiveplus.net:27950", "query": "getservers 68 empty full" },
+      { "kind": "quake3", "address": "dpmaster.deathmask.net:27950", "query": "getservers 68 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "FFA" },
+      { "value": "1", "name": "Duel" },
+      { "value": "3", "name": "Team DM" },
+      { "value": "4", "name": "CTF" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "baseq3",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Id\\Quake III Arena", "value": "INSTALLPATH", "exe": "quake3.exe" },
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Quake 3 Arena\\quake3.exe" }
+    ],
+    "exe_names": ["quake3.exe", "quake3e.x64.exe", "ioquake3.x86_64.exe", "ioquake3.exe"],
+    "join": "[+set fs_game {mod} ][+exec \"{config}\" ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "urt",
+    "name": "Urban Terror",
+    "short": "UrT",
+    "color": "#3c78c8",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "master.urbanterror.info:27900", "query": "getservers 68 empty full" },
+      { "kind": "quake3", "address": "master2.urbanterror.info:27900", "query": "getservers 68 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "Free For All" },
+      { "value": "1", "name": "Last Man Standing" },
+      { "value": "3", "name": "Team Deathmatch" },
+      { "value": "4", "name": "Team Survivor" },
+      { "value": "5", "name": "Follow the Leader" },
+      { "value": "6", "name": "Capture and Hold" },
+      { "value": "7", "name": "Capture the Flag" },
+      { "value": "8", "name": "Bomb Mode" },
+      { "value": "9", "name": "Jump" },
+      { "value": "10", "name": "Freeze Tag" },
+      { "value": "11", "name": "Gun Game" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "q3urt43",
+    "filters": [
+      { "name": "Auth", "key": "auth_enable", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Version", "key": "g_modversion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["Quake3-UrT.exe", "Quake3-UrT.x86_64.exe"],
+    "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "oa",
+    "name": "OpenArena",
+    "short": "OA",
+    "color": "#e08a1e",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "dpmaster.deathmask.net:27950", "query": "getservers 71 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "FFA" },
+      { "value": "1", "name": "Tourney" },
+      { "value": "3", "name": "Team DM" },
+      { "value": "4", "name": "CTF" },
+      { "value": "5", "name": "One Flag CTF" },
+      { "value": "6", "name": "Overload" },
+      { "value": "7", "name": "Harvester" },
+      { "value": "8", "name": "Elimination" },
+      { "value": "9", "name": "CTF Elimination" },
+      { "value": "10", "name": "Last Man Standing" },
+      { "value": "11", "name": "Double Domination" },
+      { "value": "12", "name": "Domination" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "baseoa",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["openarena.exe", "openarena.x86_64.exe", "omp-x86_64.exe"],
+    "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "et",
+    "name": "Wolfenstein: Enemy Territory",
+    "short": "ET",
+    "color": "#6e7d3c",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "etmaster.idsoftware.com:27950", "query": "getservers 84 empty full" },
+      { "kind": "quake3", "address": "etmaster.etlegacy.com:27950", "query": "getservers 84 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "2", "name": "Objective" },
+      { "value": "3", "name": "Stopwatch" },
+      { "value": "4", "name": "Campaign" },
+      { "value": "5", "name": "Last Man Standing" },
+      { "value": "6", "name": "Map Voting" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "etmain",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Friendly Fire", "key": "g_friendlyFire", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "PunkBuster", "key": "sv_punkbuster", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["ET.exe", "etl.exe", "etl_x64.exe"],
+    "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "cod",
+    "name": "Call of Duty",
+    "short": "CoD",
+    "color": "#8c6e3c",
+    "protocol": "quake3",
+    "default_port": 28960,
+    "masters": [
+      { "kind": "quake3", "address": "codmaster.activision.com:20510", "query": "getservers 6 full empty" },
+      { "kind": "quake3", "address": "codmaster.activision.com:20510", "query": "getservers 5 full empty" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "dm", "name": "Deathmatch" },
+      { "value": "tdm", "name": "Team Deathmatch" },
+      { "value": "sd", "name": "Search and Destroy" },
+      { "value": "re", "name": "Retrieval" },
+      { "value": "bel", "name": "Behind Enemy Lines" },
+      { "value": "hq", "name": "Headquarters" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Friendly Fire", "key": "scr_friendlyfire", "options": [ { "label": "On", "values": ["1", "2", "3"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Kill Cam", "key": "scr_killcam", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "PunkBuster", "key": "sv_punkbuster", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Version", "key": "shortversion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Activision\\Call of Duty", "value": "InstallPath", "exe": "CoDMP.exe" }
+    ],
+    "exe_names": ["CoDMP.exe"],
+    "join": "[+set fs_game {mod} ][+exec \"{config}\" ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "cod2",
+    "name": "Call of Duty 2",
+    "short": "CoD2",
+    "color": "#7a5a2a",
+    "protocol": "quake3",
+    "default_port": 28960,
+    "masters": [
+      { "kind": "quake3", "address": "cod2master.activision.com:20710", "query": "getservers 118 full empty" },
+      { "kind": "quake3", "address": "cod2master.activision.com:20710", "query": "getservers 115 full empty" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "dm", "name": "Deathmatch" },
+      { "value": "tdm", "name": "Team Deathmatch" },
+      { "value": "sd", "name": "Search and Destroy" },
+      { "value": "ctf", "name": "Capture the Flag" },
+      { "value": "hq", "name": "Headquarters" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Friendly Fire", "key": "scr_friendlyfire", "options": [ { "label": "On", "values": ["1", "2", "3"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Kill Cam", "key": "scr_killcam", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "PunkBuster", "key": "sv_punkbuster", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Version", "key": "shortversion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Activision\\Call of Duty 2", "value": "InstallPath", "exe": "CoD2MP_s.exe" },
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Call of Duty 2\\CoD2MP_s.exe" }
+    ],
+    "exe_names": ["CoD2MP_s.exe"],
+    "join": "[+set fs_game {mod} ][+exec \"{config}\" ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "cod4",
+    "name": "Call of Duty 4: Modern Warfare",
+    "short": "CoD4",
+    "color": "#4a5a3a",
+    "protocol": "quake3",
+    "default_port": 28960,
+    "masters": [
+      { "kind": "quake3", "address": "cod4master.activision.com:20810", "query": "getservers 6 full empty" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "dm", "name": "Free-for-all" },
+      { "value": "war", "name": "Team Deathmatch" },
+      { "value": "sd", "name": "Search and Destroy" },
+      { "value": "sab", "name": "Sabotage" },
+      { "value": "koth", "name": "Headquarters" },
+      { "value": "dom", "name": "Domination" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Hardcore", "key": "scr_hardcore", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "PunkBuster", "key": "sv_punkbuster", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Version", "key": "shortversion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Call of Duty 4\\iw3mp.exe" }
+    ],
+    "exe_names": ["iw3mp.exe"],
+    "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "ut99",
+    "name": "Unreal Tournament",
+    "short": "UT",
+    "color": "#5a3c8c",
+    "protocol": "gamespy",
+    "default_port": 7778,
+    "masters": [
+      { "kind": "gamespy", "address": "master.333networks.com:28900", "gamename": "ut", "key": "Z5Nfb0" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "DeathMatchPlus", "name": "Deathmatch" },
+      { "value": "TeamGamePlus", "name": "Team Deathmatch" },
+      { "value": "CTFGame", "name": "Capture the Flag" },
+      { "value": "Domination", "name": "Domination" },
+      { "value": "Assault", "name": "Assault" },
+      { "value": "LastManStanding", "name": "Last Man Standing" }
+    ],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Version", "key": "gamever", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\UnrealTournament", "value": "Folder", "exe": "System\\UnrealTournament.exe" }
+    ],
+    "exe_names": ["UnrealTournament.exe"],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "cs16",
+    "name": "Counter-Strike 1.6",
+    "short": "CS",
+    "color": "#d2a01e",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 10,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\10" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "cstrike",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe"],
+    "join": "-game cstrike [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  }
+]

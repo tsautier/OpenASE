@@ -4,8 +4,8 @@ use openase::ase_filters::{parse_filter_paths, parse_game_definitions};
 use openase::colors::{first_quake_color, quake_color_segments, strip_quake_colors};
 use openase::location::{UNKNOWN_LOCATION, load_countries, server_location};
 use openase::quake3::{
-    DEFAULT_PORT, OUT_OF_BAND_PREFIX, parse_address, parse_getservers_response, parse_info_response,
-    parse_info_string, parse_status_response,
+    DEFAULT_PORT, OUT_OF_BAND_PREFIX, parse_address, parse_getservers_response,
+    parse_info_response, parse_info_string, parse_status_response,
 };
 use std::collections::BTreeMap;
 
@@ -27,12 +27,18 @@ fn write_temp(dir: &tempfile::TempDir, name: &str, content: &str) -> std::path::
 
 #[test]
 fn parse_address_defaults_to_quake3_port() {
-    assert_eq!(parse_address("example.org", DEFAULT_PORT).unwrap(), ("example.org".into(), DEFAULT_PORT));
+    assert_eq!(
+        parse_address("example.org", DEFAULT_PORT).unwrap(),
+        ("example.org".into(), DEFAULT_PORT)
+    );
 }
 
 #[test]
 fn parse_address_accepts_explicit_port() {
-    assert_eq!(parse_address("example.org:27961", DEFAULT_PORT).unwrap(), ("example.org".into(), 27961));
+    assert_eq!(
+        parse_address("example.org:27961", DEFAULT_PORT).unwrap(),
+        ("example.org".into(), 27961)
+    );
 }
 
 #[test]
@@ -70,8 +76,17 @@ fn parse_status_response_reads_info_and_players() {
 
 #[test]
 fn parse_getservers_response_reads_addresses() {
-    let data = packet(&[b"getserversResponse", b"\\", &[127, 0, 0, 1], &27960u16.to_be_bytes(), b"\\EOT\0\0\0"]);
-    assert_eq!(parse_getservers_response(&data).unwrap(), vec!["127.0.0.1:27960".to_string()]);
+    let data = packet(&[
+        b"getserversResponse",
+        b"\\",
+        &[127, 0, 0, 1],
+        &27960u16.to_be_bytes(),
+        b"\\EOT\0\0\0",
+    ]);
+    assert_eq!(
+        parse_getservers_response(&data).unwrap(),
+        vec!["127.0.0.1:27960".to_string()]
+    );
 }
 
 // --- filters ---
@@ -87,7 +102,11 @@ fn parse_filter_paths_keeps_tree_lines() {
 
     assert_eq!(
         parse_filter_paths(&path).unwrap(),
-        vec!["Quake 3 Arena", "Half-Life 2: Source Mods", "Quake 3 Arena\\baseq3"]
+        vec![
+            "Quake 3 Arena",
+            "Half-Life 2: Source Mods",
+            "Quake 3 Arena\\baseq3"
+        ]
     );
 }
 
@@ -145,7 +164,10 @@ fn quake_color_segments_split_by_color() {
 fn quake_color_segments_keeps_literal_after_color_code() {
     let segments = quake_color_segments("^11", "#202020");
     assert_eq!(segments.len(), 1);
-    assert_eq!((segments[0].text.as_str(), segments[0].color.as_str()), ("1", "#ff0000"));
+    assert_eq!(
+        (segments[0].text.as_str(), segments[0].color.as_str()),
+        ("1", "#ff0000")
+    );
 }
 
 // --- location ---
@@ -153,7 +175,11 @@ fn quake_color_segments_keeps_literal_after_color_code() {
 #[test]
 fn load_countries_reads_code_and_name() {
     let dir = tempfile::tempdir().unwrap();
-    let path = write_temp(&dir, "countries.txt", "FR        France\nDE        Germany\n");
+    let path = write_temp(
+        &dir,
+        "countries.txt",
+        "FR        France\nDE        Germany\n",
+    );
 
     let countries = load_countries(&path).unwrap();
 
@@ -171,6 +197,14 @@ fn server_location_does_not_guess() {
 #[test]
 fn parse_getservers_response_accepts_unpadded_eot() {
     // id Software's master ends each packet with a bare `\EOT`.
-    let data = packet(&[b"getserversResponse\\", &[10, 0, 0, 2], &27961u16.to_be_bytes(), br"\EOT"]);
-    assert_eq!(parse_getservers_response(&data).unwrap(), vec!["10.0.0.2:27961".to_string()]);
+    let data = packet(&[
+        b"getserversResponse\\",
+        &[10, 0, 0, 2],
+        &27961u16.to_be_bytes(),
+        br"\EOT",
+    ]);
+    assert_eq!(
+        parse_getservers_response(&data).unwrap(),
+        vec!["10.0.0.2:27961".to_string()]
+    );
 }

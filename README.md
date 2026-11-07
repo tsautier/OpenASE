@@ -2,76 +2,100 @@
 
 Website: https://tsautier.github.io/OpenASE/
 
-OpenASE is a new implementation inspired by The All-Seeing Eye, starting with
-the original ASE navigation tree and Quake 3 server discovery/status queries.
+OpenASE is an open-source game server browser in the spirit of The All-Seeing
+Eye: a filter tree on the left, the server list with Ping, Flux and PL on the
+right, and friends, players and server rules at the bottom.
 
-This repository does not modify or depend on the original Yahoo executable.
-The original files in this workspace are treated as historical data only.
+It is new code. It does not use, modify or ship anything from the original
+Yahoo program.
 
-## Verified Scope
+![OpenASE](docs/screenshot.png)
 
-- Local `eye.exe` metadata identifies the archived binary as `Yahoo! All-Seeing Eye`
-  version `2.6.0.254`.
-- Local `history.txt` says Yahoo acquired The All-Seeing Eye in September 2004.
-- GameDeveloper reported on 2004-12-14 that Yahoo had acquired All-Seeing Eye
-  in September 2004 and planned integration with Yahoo Games and Yahoo Messenger:
-  https://www.gamedeveloper.com/game-platforms/yahoo-games-adds-all-seeing-eye-gamespot-syndication
-- ioquake3 documents that its engine is based on the released Quake 3 source:
-  https://ioquake3.org/
-- The Quake 3 connectionless query format is described by Jacek Fedorynski
-  in "Quake 3 Network Protocol" (January 2020):
-  https://www.jfedor.org/quake3/
-- ioquake community maintainers describe `getinfo` and `getstatus` UDP requests:
-  https://discourse.ioquake.org/t/how-to-get-server-status-with-python/1135
+## Supported games
 
-## Usage
+| Game | Protocol | Server list from |
+|---|---|---|
+| Quake 3: Arena | Quake 3 | master.quake3arena.com, master0.excessiveplus.net, dpmaster.deathmask.net |
+| Urban Terror | Quake 3 | master.urbanterror.info, master2.urbanterror.info |
+| OpenArena | Quake 3 | dpmaster.deathmask.net |
+| Wolfenstein: Enemy Territory | Quake 3 | etmaster.idsoftware.com, etmaster.etlegacy.com |
+| Call of Duty, CoD 2, CoD 4 | Quake 3 | Activision masters |
+| Unreal Tournament (99) | GameSpy | master.333networks.com |
+| Counter-Strike 1.6 | Valve A2S | Steam Web API (needs your own key) |
 
-From this folder:
+Games are described in [`rust/src/games.json`](rust/src/games.json): masters,
+game types, filter groups, registry detection and the command line used to join.
 
-```powershell
-python -m openase
-```
+## Features
 
-Or double-click `OpenASE.bat`.
+- **Ping, Flux and PL** measured like ASE: several queries per server, average
+  round-trip time, half the spread between fastest and slowest, and packet loss.
+- **Filter tree**: game types as folders, and checkbox groups per game such as
+  Mods, Friendly Fire, Kill Cam, Pure, PunkBuster, Version and Maps.
+  **Modifiers** hide empty, full, passworded or silent servers and cap the ping.
+- **Favorites**, **Recently played**, **Add server** by address.
+- **Join** with a double-click or Enter. OpenASE starts the game with the right
+  mod, player name, config and password. Steam games fall back to `steam://connect`.
+- **Friends**: names searched on every scanned server, a Friends pane, a notice
+  (and optional sound) when one starts playing. **Find player** across all servers.
+- **Options**: Network (timeouts, pings, retries, parallel queries), Events
+  (friend notices, auto-refresh of the selected server) and Games (installed /
+  not installed, player name, config, program location, **Auto-Search**).
+- Quake color codes (`^1`, `^A`, `^xRRGGBB`) drawn in server and player names.
 
-The left navigation is loaded from the original `filters.txt` when that file is
-available next to the archived ASE files. Games are hidden by default unless
-OpenASE verifies a local installation or the user marks the game visible from
-`Server > Options > Games`.
+## Download
 
-Quake-style color markers such as `^1`, extended indexed markers such as `^A`,
-and hex markers such as `^xff0000` are rendered as colored text segments in
-server names and player names.
+Windows builds are attached to [GitHub Releases](https://github.com/tsautier/OpenASE/releases)
+when a version tag is pushed.
 
-The `Location` column shows a reported server location when the queried protocol
-provides one. OpenASE does not guess countries from IP addresses without a
-verifiable GeoIP database.
+## Build from source (Rust)
 
-Default Quake 3 server port is `27960` when no port is provided.
-Default Quake 3 master server is `master.quake3arena.com:27950`.
-
-## Rust version
-
-A native Rust port lives in [`rust/`](rust/). It has the same features and the
-same `openase_settings.json` format, with an [egui](https://github.com/emilk/egui)
-interface. It also scans 16 servers in parallel and reads master lists split
-across several UDP packets.
+Requires Rust 1.88 or newer.
 
 ```powershell
 cd rust
-cargo run --release          # GUI
-cargo run --example scan     # command-line smoke test against the master
+cargo run --release
+```
+
+Command-line tools, useful to test a master or a server:
+
+```powershell
+cargo run --example scan -- list              # list game ids
+cargo run --example scan -- cod2 20           # scan 20 CoD2 servers
+cargo run --example query -- ut99 1.2.3.4:7778
 cargo test
 ```
 
-## Tests
+Settings are stored in `%APPDATA%\OpenASE\settings.json` on Windows
+(`~/.config/OpenASE` on Linux).
+
+### Counter-Strike 1.6
+
+Valve's old UDP master no longer answers, so the list comes from the Steam Web
+API. Get a free key at https://steamcommunity.com/dev/apikey and paste it in
+Options > General. Servers added by hand work without a key.
+
+## Python version
+
+The first prototype, in [`openase/`](openase/), is kept as a reference for the
+Quake 3 protocol. It only receives protocol fixes; new features go to Rust.
 
 ```powershell
+python -m openase
 python -m unittest discover -s tests
 ```
 
-The current tests are offline parser tests. They do not require a live Quake 3
-server.
+It reads its game tree from an original ASE `filters.txt` placed next to the
+project, if there is one.
+
+## References
+
+- Quake 3 connectionless queries: Jacek Fedorynski, "Quake 3 Network Protocol"
+  (2020), https://www.jfedor.org/quake3/
+- Valve server queries (A2S): Valve Developer Wiki, "Server queries".
+- GameSpy master protocol: 333networks, https://333networks.com/
+- Yahoo acquired The All-Seeing Eye in September 2004:
+  https://www.gamedeveloper.com/game-platforms/yahoo-games-adds-all-seeing-eye-gamespot-syndication
 
 ## License
 
@@ -83,4 +107,5 @@ Foundation, either version 3 of the License, or (at your option) any later
 version. See [LICENSE](LICENSE) for the full text.
 
 OpenASE is not affiliated with Yahoo or the original All-Seeing Eye authors.
-No original ASE files are distributed with this project.
+Game names are trademarks of their owners. No original ASE files are distributed
+with this project.

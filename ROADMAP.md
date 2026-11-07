@@ -1,53 +1,55 @@
 # OpenASE Roadmap
 
 Goal: one open-source browser for the classic online games that still have
-players, with the feel of The All-Seeing Eye.
+players, with the look and feel of The All-Seeing Eye.
 
-Rust (`rust/`) is the main version going forward. The Python version stays as a
-reference and receives protocol fixes only, so features are not built twice.
+Rust (`rust/`) is the main version. The Python version stays as a reference and
+receives protocol fixes only.
 
 ## v0.1 — Quake 3 browsing (done)
 
 - Quake 3 master discovery and `getstatus` queries
 - Colored server and player names (`^1`, `^A`, `^xRRGGBB`)
-- Filters: not empty, not full, max ping, country
-- Game detection through the Windows registry
 - Python (Tkinter) and Rust (egui) versions, GitHub Pages site
 
-## v0.2 — Usable by anyone
+## v0.2 — Usable by anyone (done)
 
-Make OpenASE downloadable and independent of the original ASE files.
+- [x] Built-in game catalog (`rust/src/games.json`) replacing `filters.txt`
+- [x] Real ping, plus ASE's Flux and PL from several samples per server
+- [x] Several masters per game, queried in parallel and merged
+- [x] Sort ascending/descending; window, panel and column sizes remembered
+- [x] CI on GitHub Actions (fmt, clippy, tests on Windows and Linux, Python tests)
+- [x] Windows build attached to a GitHub Release when a `v*` tag is pushed
 
-- [ ] Built-in game list (data file in the repo) replacing `filters.txt`
-- [ ] Real ping: measure round-trip time per server instead of using player pings
-- [ ] Several masters per game with fallback (ioquake3 master is down)
-- [ ] Sort ascending/descending, remember column widths and window layout
-- [ ] CI on GitHub Actions: `cargo test`, `cargo clippy`, Python tests
-- [ ] Windows release build attached to GitHub Releases
+## v0.3 — The id Tech 3 family (done)
 
-## v0.3 — The id Tech 3 family
+- [x] Urban Terror, OpenArena, Wolfenstein: Enemy Territory
+- [x] Call of Duty 1, 2 and 4
+- [x] Per-game badges and game type names (FFA, CTF, Search and Destroy...)
 
-Same protocol family, so a large gain in players for little code.
+## v0.4 — The ASE experience (done)
 
-- [ ] Urban Terror
-- [ ] OpenArena
-- [ ] Wolfenstein: Enemy Territory
-- [ ] Call of Duty 1, 2 and 4
-- [ ] Per-game icons and game type names (FFA, CTF, TDM...)
+- [x] ASE layout: filter tree, Ping/Flux/PL columns, Friends / Players / Rules panes
+- [x] Favorites and recently played servers, Add server
+- [x] Join with double-click or Enter (`+connect`, mod, name, password, config)
+- [x] Friends list, Friends pane, notice and sound when a friend is found
+- [x] Find player across scanned servers
+- [x] Auto-refresh of the selected server
+- [x] Filters by map, mod, version and per-game settings (Kill Cam, PunkBuster...)
+- [x] Options: Network, Events, Games with Auto-Search
 
-## v0.4 — The ASE experience
+## v0.5 — More engines (done)
 
-- [ ] Favorites and recently played servers
-- [ ] One-click join: launch the game with `+connect ip:port`
-- [ ] Buddy list: find friends by player name across scanned servers
-- [ ] Auto-refresh of the selected server
-- [ ] Filters by map and game type
+- [x] Unreal Tournament 99 (GameSpy protocol, 333networks master)
+- [x] Counter-Strike 1.6 (Valve A2S queries, Steam Web API list)
+- [x] Protocol layer: a new Quake 3, GameSpy or A2S game is a `games.json` entry
 
-## v0.5 — More engines
+## Not done yet
 
-- [ ] Unreal Tournament 99 / 2004 (GameSpy protocol, 333networks master)
-- [ ] Half-Life / Counter-Strike 1.6 (Source A2S queries)
-- [ ] Plugin-style protocol layer so new games are easy to add
+- [ ] Unreal Tournament 2004 (different master protocol)
+- [ ] Steam server list checked with a real API key (code is unit-tested only)
+- [ ] Customizable toolbar, per-friend sounds, Colors options tab
+- [ ] Location column from GeoIP (only shown when the server reports it)
 
 ## v1.0 — Polished release
 

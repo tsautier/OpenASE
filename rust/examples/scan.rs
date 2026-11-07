@@ -1,31 +1,77 @@
-//! Command-line smoke test: list servers from the ioquake3 master and query a few.
+//! Command-line scan of one catalog game, without the GUI.
 //!
-//! Usage: cargo run --example scan -- [master[:port]] [limit]
+//! Usage: cargo run --example scan -- <game-id> [limit]
+//!        cargo run --example scan -- list
+//! Set STEAM_API_KEY for Steam games (cs16).
 
-use std::time::Duration;
-
+use openase::catalog::{game, games};
 use openase::colors::strip_quake_colors;
-use openase::quake3::{DEFAULT_MASTER, DEFAULT_MASTER_PORT, DEFAULT_PORT, Quake3Client, parse_address};
+use openase::quake3::parse_address;
+use openase::query::{QueryOptions, fetch_all_masters, query_server};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
-    let master = args.next().unwrap_or_else(|| format!("{DEFAULT_MASTER}:{DEFAULT_MASTER_PORT}"));
-    let limit: usize = args.next().map_or(Ok(10), |raw| raw.parse())?;
+    let id = args.next().unwrap_or_else(|| "q3".to_string());
+    if id == "list" {
+        for game in games() {
+            println!("{:<6} {}", game.id, game.name);
+        }
+        return Ok(());
+    }
+    let limit: usize = args.next().map_or(Ok(8), |raw| raw.parse())?;
+    let game = game(&id).ok_or_else(|| format!("unknown game {id}; try `list`"))?;
+    let options = QueryOptions::default();
+    let steam_key = std::env::var("STEAM_API_KEY").unwrap_or_default();
 
-    let (host, port) = parse_address(&master, DEFAULT_MASTER_PORT)?;
-    let addresses = Quake3Client::new(Duration::from_secs(3)).master_servers(&host, port, 68)?;
-    println!("{} servers listed by {host}:{port}", addresses.len());
+    let (addresses, errors) = fetch_all_masters(game, options.timeout, &steam_key, 500);
+    for error in &errors {
+        eprintln!("master error: {error}");
+    }
+    println!("{}: {} servers listed", game.name, addresses.len());
 
-    let client = Quake3Client::new(Duration::from_secs(2));
-    for address in addresses.iter().take(limit) {
-        let (host, port) = parse_address(address, DEFAULT_PORT)?;
-        let server = client.status(&host, port);
+    let servers: Vec<_> = std::thread::scope(|scope| {
+        let handles: Vec<_> = addresses
+            .iter()
+            .take(limit)
+            .map(|address| {
+                let options = &options;
+                scope.spawn(move || {
+                    let (host, port) = parse_address(address, game.default_port).ok()?;
+                    Some(query_server(game, &host, port, options))
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .filter_map(|handle| handle.join().ok().flatten())
+            .collect()
+    });
+
+    for server in servers {
         if server.online {
-            let name = server.info.get("sv_hostname").map(String::as_str).unwrap_or("unknown");
-            let map = server.info.get("mapname").map(String::as_str).unwrap_or("");
-            println!("{address:<22} {:>2} players  {map:<12} {}", server.players.len(), strip_quake_colors(name));
+            println!(
+                "{:<22} ping {:>4} ±{:<3} PL {:>3}%  {:>2}/{:<2} {:<18} {:<14} {}",
+                server.address(),
+                server.ping.unwrap_or(0),
+                server.flux.unwrap_or(0),
+                server.packet_loss.unwrap_or(0),
+                server.num_players,
+                server
+                    .max_players
+                    .map_or("?".to_string(), |max| max.to_string()),
+                game.game_type_name(&server.game_type),
+                server.map,
+                strip_quake_colors(&server.name)
+                    .chars()
+                    .take(40)
+                    .collect::<String>(),
+            );
         } else {
-            println!("{address:<22} offline ({})", server.error.unwrap_or_default());
+            println!(
+                "{:<22} offline ({})",
+                server.address(),
+                server.error.unwrap_or_default()
+            );
         }
     }
     Ok(())

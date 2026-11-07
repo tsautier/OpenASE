@@ -1,0 +1,1984 @@
+//! Desktop GUI, laid out like The All-Seeing Eye: filter tree on the left,
+//! server list on the right, friends / players / rules panes at the bottom.
+
+mod dialogs;
+mod icons;
+
+use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use eframe::egui::{
+    self, Align, Color32, CornerRadius, FontId, Layout, RichText, Sense, Stroke, TextFormat,
+    TextStyle, text::LayoutJob, vec2,
+};
+use egui_extras::{Column, TableBuilder};
+
+use openase::catalog::{self, Game, Protocol};
+use openase::colors::{parse_hex, quake_color_segments, strip_quake_colors};
+use openase::detect;
+use openase::model::Server;
+use openase::quake3::parse_address;
+use openase::query::{fetch_all_masters, query_server};
+use openase::settings::{ServerRef, Settings};
+
+use dialogs::Dialogs;
+use icons::{Tool, TreeIcon};
+
+const ROW_HEIGHT: f32 = 18.0;
+const LIST_BG: Color32 = Color32::WHITE;
+const SELECTION: Color32 = Color32::from_rgb(0x31, 0x6a, 0xc5);
+const PING_LIMITS: [u32; 4] = [50, 100, 150, 250];
+
+/// Identifies a server across games.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ServerKey {
+    pub game: String,
+    pub address: String,
+}
+
+impl ServerKey {
+    fn of(server: &Server) -> Self {
+        Self {
+            game: server.game.clone(),
+            address: server.address(),
+        }
+    }
+
+    fn to_ref(&self) -> ServerRef {
+        ServerRef {
+            game: self.game.clone(),
+            address: self.address.clone(),
+        }
+    }
+
+    fn from_ref(server: &ServerRef) -> Self {
+        Self {
+            game: server.game.clone(),
+            address: server.address.clone(),
+        }
+    }
+}
+
+/// What the left tree has selected.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Nav {
+    Favorites,
+    Recent,
+    Friends,
+    Game(String),
+    GameType(String, String),
+}
+
+impl Nav {
+    fn game(&self) -> Option<&str> {
+        match self {
+            Nav::Game(game) | Nav::GameType(game, _) => Some(game),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Col {
+    Icon,
+    Location,
+    Name,
+    Ping,
+    Flux,
+    Loss,
+    Players,
+    GameType,
+    Map,
+    Address,
+}
+
+const COLUMNS: [(Col, &str, f32); 10] = [
+    (Col::Icon, "", 44.0),
+    (Col::Location, "Location", 80.0),
+    (Col::Name, "Name", 300.0),
+    (Col::Ping, "Ping", 46.0),
+    (Col::Flux, "Flux", 40.0),
+    (Col::Loss, "PL", 38.0),
+    (Col::Players, "Players", 58.0),
+    (Col::GameType, "Game", 120.0),
+    (Col::Map, "Map", 120.0),
+    (Col::Address, "Address", 150.0),
+];
+
+/// Messages from worker threads.
+pub enum Msg {
+    MasterList {
+        generation: u64,
+        game: String,
+        addresses: Vec<String>,
+        errors: Vec<String>,
+    },
+    Server {
+        generation: u64,
+        server: Server,
+    },
+    ScanDone {
+        generation: u64,
+    },
+    Single(Server),
+    SearchProgress(String),
+    SearchFound(String),
+    SearchDone,
+}
+
+struct Scan {
+    generation: u64,
+    stop: Arc<AtomicBool>,
+    done: Arc<AtomicUsize>,
+    total: usize,
+    label: String,
+}
+
+/// Row actions collected while drawing, applied afterwards.
+enum Action {
+    Select(ServerKey),
+    Join(ServerKey),
+    ToggleFavorite(ServerKey),
+    Refresh(ServerKey),
+    Copy(String),
+}
+
+pub struct OpenAseApp {
+    pub(crate) settings: Settings,
+    settings_dirty: bool,
+    pub(crate) tx: Sender<Msg>,
+    rx: Receiver<Msg>,
+    pub(crate) store: BTreeMap<String, Vec<Server>>,
+    nav: Nav,
+    pub(crate) selected: Option<ServerKey>,
+    sort: (Col, bool),
+    scan: Option<Scan>,
+    generation: u64,
+    pub(crate) status: String,
+    friend_seen: HashMap<String, ServerKey>,
+    single_in_flight: bool,
+    last_auto_refresh: Instant,
+    show_toolbar: bool,
+    started: bool,
+    pub(crate) dialogs: Dialogs,
+}
+
+impl OpenAseApp {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        setup_style(&cc.egui_ctx);
+        let (tx, rx) = channel();
+        let mut settings = Settings::load();
+
+        // Quick registry detection for games without a program location.
+        for game in catalog::games() {
+            let entry = settings.games.entry(game.id.clone()).or_default();
+            if entry.program_location.is_empty()
+                && let Some(path) = detect::detect_from_registry(game)
+            {
+                entry.program_location = path.display().to_string();
+            }
+        }
+        if settings.open_nav.is_empty() {
+            settings
+                .open_nav
+                .extend(["Modifiers".to_string(), "Modifiers/Players".to_string()]);
+        }
+        let first_game = catalog::game(&settings.last_game)
+            .map(|game| game.id.clone())
+            .unwrap_or_else(|| catalog::games()[0].id.clone());
+
+        Self {
+            settings,
+            settings_dirty: true,
+            tx,
+            rx,
+            store: BTreeMap::new(),
+            nav: Nav::Game(first_game),
+            selected: None,
+            sort: (Col::Ping, true),
+            scan: None,
+            generation: 0,
+            status: "Ready".to_string(),
+            friend_seen: HashMap::new(),
+            single_in_flight: false,
+            last_auto_refresh: Instant::now(),
+            show_toolbar: true,
+            started: false,
+            dialogs: Dialogs::default(),
+        }
+    }
+
+    // ----- data ------------------------------------------------------------
+
+    pub(crate) fn find(&self, key: &ServerKey) -> Option<&Server> {
+        self.store
+            .get(&key.game)?
+            .iter()
+            .find(|server| server.address() == key.address)
+    }
+
+    fn upsert(&mut self, server: Server) {
+        self.check_friends(&server);
+        let list = self.store.entry(server.game.clone()).or_default();
+        let address = server.address();
+        match list
+            .iter_mut()
+            .find(|existing| existing.address() == address)
+        {
+            Some(existing) => *existing = server,
+            None => list.push(server),
+        }
+    }
+
+    /// Make sure a remembered server has at least an "unscanned" row.
+    fn ensure_placeholder(&mut self, key: &ServerKey) {
+        if self.find(key).is_some() {
+            return;
+        }
+        let Some(game) = catalog::game(&key.game) else {
+            return;
+        };
+        if let Ok((host, port)) = parse_address(&key.address, game.default_port) {
+            self.store
+                .entry(key.game.clone())
+                .or_default()
+                .push(Server::new(&key.game, &host, port));
+        }
+    }
+
+    fn check_friends(&mut self, server: &Server) {
+        let key = ServerKey::of(server);
+        for friend in &self.settings.friends {
+            let needle = friend.to_lowercase();
+            let present = server.online
+                && server.players.iter().any(|player| {
+                    strip_quake_colors(&player.name)
+                        .to_lowercase()
+                        .contains(&needle)
+                });
+            let previous = self.friend_seen.get(&needle).cloned();
+            if present {
+                if previous.as_ref() != Some(&key) {
+                    self.friend_seen.insert(needle.clone(), key.clone());
+                    if self.settings.events.notify_friend_joins {
+                        self.dialogs.notify(format!(
+                            "{friend} is playing on {}",
+                            strip_quake_colors(&server.name)
+                        ));
+                    }
+                    if self.settings.events.sound_friend_joins {
+                        beep();
+                    }
+                }
+            } else if previous.as_ref() == Some(&key) {
+                self.friend_seen.remove(&needle);
+            }
+        }
+    }
+
+    pub(crate) fn friend_location(&self, friend: &str) -> Option<&ServerKey> {
+        self.friend_seen.get(&friend.to_lowercase())
+    }
+
+    fn server_has_friend(&self, server: &Server) -> bool {
+        let key = ServerKey::of(server);
+        self.friend_seen.values().any(|seen| *seen == key)
+    }
+
+    // ----- scanning --------------------------------------------------------
+
+    fn refresh(&mut self, ctx: &egui::Context) {
+        match self.nav.clone() {
+            Nav::Game(game) | Nav::GameType(game, _) => self.scan_game(ctx, &game),
+            Nav::Favorites => {
+                let keys: Vec<ServerKey> = self
+                    .settings
+                    .favorites
+                    .iter()
+                    .map(ServerKey::from_ref)
+                    .collect();
+                self.scan_list(ctx, keys, "favorites");
+            }
+            Nav::Recent => {
+                let keys: Vec<ServerKey> = self
+                    .settings
+                    .recent
+                    .iter()
+                    .map(ServerKey::from_ref)
+                    .collect();
+                self.scan_list(ctx, keys, "recently played servers");
+            }
+            Nav::Friends => {
+                let keys: Vec<ServerKey> = self
+                    .store
+                    .values()
+                    .flatten()
+                    .filter(|server| server.online)
+                    .map(ServerKey::of)
+                    .collect();
+                self.scan_list(ctx, keys, "known servers");
+            }
+        }
+    }
+
+    fn stop_scan(&mut self) {
+        if let Some(scan) = &self.scan {
+            scan.stop.store(true, Ordering::Relaxed);
+        }
+    }
+
+    fn start_scan(&mut self, label: String) -> (u64, Arc<AtomicBool>, Arc<AtomicUsize>) {
+        self.stop_scan();
+        self.generation += 1;
+        let stop = Arc::new(AtomicBool::new(false));
+        let done = Arc::new(AtomicUsize::new(0));
+        self.scan = Some(Scan {
+            generation: self.generation,
+            stop: stop.clone(),
+            done: done.clone(),
+            total: 0,
+            label,
+        });
+        (self.generation, stop, done)
+    }
+
+    fn scan_game(&mut self, ctx: &egui::Context, game_id: &str) {
+        let Some(game) = catalog::game(game_id) else {
+            return;
+        };
+        let (generation, stop, done) = self.start_scan(format!("Scanning {}", game.name));
+        self.status = format!("Querying {} master servers...", game.name);
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        let network = self.settings.network.clone();
+        let steam_key = self.settings.steam_api_key.clone();
+        std::thread::spawn(move || {
+            let options = network.query_options();
+            let (mut addresses, errors) =
+                fetch_all_masters(game, options.timeout, &steam_key, network.scan_limit);
+            addresses.truncate(network.scan_limit.max(1));
+            let _ = tx.send(Msg::MasterList {
+                generation,
+                game: game.id.clone(),
+                addresses: addresses.clone(),
+                errors,
+            });
+            ctx.request_repaint();
+            let targets = addresses
+                .into_iter()
+                .map(|address| (game.id.clone(), address))
+                .collect();
+            run_queries(targets, &network, &tx, &ctx, generation, &stop, &done);
+        });
+    }
+
+    fn scan_list(&mut self, ctx: &egui::Context, keys: Vec<ServerKey>, what: &str) {
+        if keys.is_empty() {
+            self.status = format!("No {what} to refresh");
+            return;
+        }
+        for key in &keys {
+            self.ensure_placeholder(key);
+        }
+        let (generation, stop, done) = self.start_scan(format!("Refreshing {what}"));
+        if let Some(scan) = &mut self.scan {
+            scan.total = keys.len();
+        }
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        let network = self.settings.network.clone();
+        std::thread::spawn(move || {
+            let targets = keys
+                .into_iter()
+                .map(|key| (key.game, key.address))
+                .collect();
+            run_queries(targets, &network, &tx, &ctx, generation, &stop, &done);
+        });
+    }
+
+    pub(crate) fn query_single(&mut self, ctx: &egui::Context, key: &ServerKey) {
+        let Some(game) = catalog::game(&key.game) else {
+            return;
+        };
+        let Ok((host, port)) = parse_address(&key.address, game.default_port) else {
+            self.dialogs.error = Some(format!("Invalid address {}", key.address));
+            return;
+        };
+        self.single_in_flight = true;
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        let options = self.settings.network.query_options();
+        std::thread::spawn(move || {
+            let _ = tx.send(Msg::Single(query_server(game, &host, port, &options)));
+            ctx.request_repaint();
+        });
+    }
+
+    fn drain_messages(&mut self) {
+        while let Ok(msg) = self.rx.try_recv() {
+            let current = self.scan.as_ref().map(|scan| scan.generation);
+            match msg {
+                Msg::MasterList {
+                    generation,
+                    game,
+                    addresses,
+                    errors,
+                } if Some(generation) == current => {
+                    let mut list = Vec::with_capacity(addresses.len());
+                    let old = self.store.remove(&game).unwrap_or_default();
+                    let mut old: HashMap<String, Server> = old
+                        .into_iter()
+                        .map(|server| (server.address(), server))
+                        .collect();
+                    let definition = catalog::game(&game);
+                    for address in &addresses {
+                        if let Some(existing) = old.remove(address) {
+                            list.push(existing);
+                        } else if let Some(definition) = definition
+                            && let Ok((host, port)) =
+                                parse_address(address, definition.default_port)
+                        {
+                            list.push(Server::new(&game, &host, port));
+                        }
+                    }
+                    self.store.insert(game, list);
+                    if let Some(scan) = &mut self.scan {
+                        scan.total = addresses.len();
+                    }
+                    if addresses.is_empty() && !errors.is_empty() {
+                        self.dialogs.error = Some(format!(
+                            "No server list could be downloaded:\n\n{}",
+                            errors.join("\n")
+                        ));
+                    } else if !errors.is_empty() {
+                        self.status = format!("Some masters failed: {}", errors.join("; "));
+                    }
+                }
+                Msg::Server { generation, server } if Some(generation) == current => {
+                    self.upsert(server)
+                }
+                Msg::ScanDone { generation } if Some(generation) == current => {
+                    let stopped = self
+                        .scan
+                        .as_ref()
+                        .is_some_and(|scan| scan.stop.load(Ordering::Relaxed));
+                    self.scan = None;
+                    self.status = if stopped {
+                        "Scan stopped".to_string()
+                    } else {
+                        "Scan complete".to_string()
+                    };
+                }
+                Msg::Single(server) => {
+                    self.single_in_flight = false;
+                    self.status = if server.online {
+                        format!("Refreshed {}", strip_quake_colors(&server.name))
+                    } else {
+                        format!("{} did not answer", server.address())
+                    };
+                    self.upsert(server);
+                }
+                Msg::SearchProgress(dir) => self.dialogs.search_progress(dir),
+                Msg::SearchFound(path) => self.dialogs.search_found(path),
+                Msg::SearchDone => self.dialogs.search_done(),
+                _ => {}
+            }
+        }
+    }
+
+    // ----- view ------------------------------------------------------------
+
+    fn visible_rows(&self) -> Vec<&Server> {
+        let filters = &self.settings.filters;
+        let candidates: Vec<&Server> = match &self.nav {
+            Nav::Game(game) | Nav::GameType(game, _) => self
+                .store
+                .get(game)
+                .map(|list| list.iter().collect())
+                .unwrap_or_default(),
+            Nav::Favorites => self
+                .settings
+                .favorites
+                .iter()
+                .filter_map(|r| self.find(&ServerKey::from_ref(r)))
+                .collect(),
+            Nav::Recent => self
+                .settings
+                .recent
+                .iter()
+                .filter_map(|r| self.find(&ServerKey::from_ref(r)))
+                .collect(),
+            Nav::Friends => self
+                .store
+                .values()
+                .flatten()
+                .filter(|server| self.server_has_friend(server))
+                .collect(),
+        };
+        let game = self.nav.game().and_then(catalog::game);
+
+        let mut rows: Vec<&Server> = candidates
+            .into_iter()
+            .filter(|server| {
+                let unanswered = server.error.is_some();
+                if filters.hide_offline && unanswered {
+                    return false;
+                }
+                // Unscanned or silent servers cannot satisfy content filters.
+                if !server.online {
+                    return !filters.not_empty
+                        && filters.max_ping.is_none()
+                        && !matches!(self.nav, Nav::GameType(..));
+                }
+                if filters.not_empty && server.num_players == 0 {
+                    return false;
+                }
+                if filters.not_full && server.is_full() {
+                    return false;
+                }
+                if filters.no_password && server.password {
+                    return false;
+                }
+                if let (Some(limit), Some(ping)) = (filters.max_ping, server.ping)
+                    && ping > limit
+                {
+                    return false;
+                }
+                if let Nav::GameType(_, value) = &self.nav
+                    && !server.game_type.eq_ignore_ascii_case(value)
+                {
+                    return false;
+                }
+                game.is_none_or(|game| passes_groups(game, server, &filters.checked))
+            })
+            .collect();
+
+        let (col, ascending) = self.sort;
+        rows.sort_by(|a, b| {
+            let ordering = compare(col, a, b);
+            if ascending {
+                ordering
+            } else {
+                ordering.reverse()
+            }
+        });
+        rows
+    }
+
+    // ----- actions ---------------------------------------------------------
+
+    pub(crate) fn join(&mut self, key: &ServerKey) {
+        let Some(server) = self.find(key) else { return };
+        if server.password {
+            self.dialogs.password = Some((key.clone(), String::new()));
+        } else {
+            self.join_with_password(key, "");
+        }
+    }
+
+    pub(crate) fn join_with_password(&mut self, key: &ServerKey, password: &str) {
+        let (Some(server), Some(game)) = (self.find(key).cloned(), catalog::game(&key.game)) else {
+            return;
+        };
+        let settings = self.settings.game(&key.game);
+        match openase::launch::join(game, &settings, &server, password) {
+            Ok(launched) => {
+                self.settings.add_recent(key.to_ref());
+                self.settings_dirty = true;
+                self.status = match launched {
+                    openase::launch::Launched::Program(program) => format!("Launched {program}"),
+                    openase::launch::Launched::SteamUrl(url) => format!("Opened {url}"),
+                };
+            }
+            Err(error) => self.dialogs.error = Some(error.to_string()),
+        }
+    }
+
+    fn apply(&mut self, ctx: &egui::Context, action: Action) {
+        match action {
+            Action::Select(key) => self.selected = Some(key),
+            Action::Join(key) => {
+                self.selected = Some(key.clone());
+                self.join(&key);
+            }
+            Action::ToggleFavorite(key) => {
+                self.settings.toggle_favorite(key.to_ref());
+                self.settings_dirty = true;
+            }
+            Action::Refresh(key) => self.query_single(ctx, &key),
+            Action::Copy(text) => {
+                ctx.copy_text(text.clone());
+                self.status = format!("Copied {text}");
+            }
+        }
+    }
+
+    pub(crate) fn mark_dirty(&mut self) {
+        self.settings_dirty = true;
+    }
+
+    pub(crate) fn add_server(
+        &mut self,
+        ctx: &egui::Context,
+        game_id: &str,
+        address: &str,
+    ) -> Result<(), String> {
+        let game = catalog::game(game_id).ok_or("Unknown game")?;
+        let (host, port) =
+            parse_address(address.trim(), game.default_port).map_err(|error| error.to_string())?;
+        let key = ServerKey {
+            game: game.id.clone(),
+            address: format!("{host}:{port}"),
+        };
+        if !self.settings.is_favorite(&key.to_ref()) {
+            self.settings.toggle_favorite(key.to_ref());
+            self.settings_dirty = true;
+        }
+        self.ensure_placeholder(&key);
+        self.nav = Nav::Favorites;
+        self.selected = Some(key.clone());
+        self.query_single(ctx, &key);
+        Ok(())
+    }
+
+    // ----- UI: menus and toolbar -------------------------------------------
+
+    fn menu_bar(&mut self, ui: &mut egui::Ui) {
+        egui::MenuBar::new().ui(ui, |ui| {
+            ui.menu_button("File", |ui| {
+                if ui.button("Exit").clicked() {
+                    ui.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+            });
+            ui.menu_button("View", |ui| {
+                ui.checkbox(&mut self.show_toolbar, "Toolbar");
+            });
+            ui.menu_button("Filter", |ui| {
+                let filters = &mut self.settings.filters;
+                let mut changed = false;
+                changed |= ui.checkbox(&mut filters.not_empty, "Not empty").changed();
+                changed |= ui.checkbox(&mut filters.not_full, "Not full").changed();
+                changed |= ui
+                    .checkbox(&mut filters.no_password, "No password")
+                    .changed();
+                changed |= ui
+                    .checkbox(&mut filters.hide_offline, "Hide unresponsive servers")
+                    .changed();
+                ui.separator();
+                if ui.button("Clear all filters").clicked() {
+                    *filters = Default::default();
+                    changed = true;
+                    ui.close();
+                }
+                if changed {
+                    self.settings_dirty = true;
+                }
+            });
+            ui.menu_button("Server", |ui| {
+                let selected = self.selected.clone();
+                if ui.button("Refresh list\tF5").clicked() {
+                    self.refresh(ui.ctx());
+                    ui.close();
+                }
+                if ui
+                    .add_enabled(self.scan.is_some(), egui::Button::new("Stop"))
+                    .clicked()
+                {
+                    self.stop_scan();
+                    ui.close();
+                }
+                if ui
+                    .add_enabled(
+                        selected.is_some(),
+                        egui::Button::new("Refresh selected server"),
+                    )
+                    .clicked()
+                {
+                    if let Some(key) = &selected {
+                        self.query_single(ui.ctx(), key);
+                    }
+                    ui.close();
+                }
+                ui.separator();
+                if ui
+                    .add_enabled(selected.is_some(), egui::Button::new("Join\tEnter"))
+                    .clicked()
+                {
+                    if let Some(key) = &selected {
+                        self.join(key);
+                    }
+                    ui.close();
+                }
+                if ui
+                    .add_enabled(
+                        selected.is_some(),
+                        egui::Button::new("Add to / remove from favorites"),
+                    )
+                    .clicked()
+                {
+                    if let Some(key) = selected.clone() {
+                        self.apply(ui.ctx(), Action::ToggleFavorite(key));
+                    }
+                    ui.close();
+                }
+                if ui
+                    .add_enabled(selected.is_some(), egui::Button::new("Copy address"))
+                    .clicked()
+                {
+                    if let Some(server) = selected.as_ref().and_then(|key| self.find(key)) {
+                        let text = server.join_address();
+                        self.apply(ui.ctx(), Action::Copy(text));
+                    }
+                    ui.close();
+                }
+                ui.separator();
+                if ui.button("Add server...").clicked() {
+                    self.dialogs.open_add(self.nav.game());
+                    ui.close();
+                }
+            });
+            ui.menu_button("Player", |ui| {
+                if ui.button("Find player...").clicked() {
+                    self.dialogs.find = Some(String::new());
+                    ui.close();
+                }
+            });
+            ui.menu_button("Friends", |ui| {
+                if ui.button("Manage friends...").clicked() {
+                    self.dialogs.friends = Some(String::new());
+                    ui.close();
+                }
+                if ui.button("Show servers with friends").clicked() {
+                    self.nav = Nav::Friends;
+                    ui.close();
+                }
+            });
+            ui.menu_button("Tools", |ui| {
+                if ui.button("Options...").clicked() {
+                    self.dialogs.open_options(&self.settings);
+                    ui.close();
+                }
+            });
+            ui.menu_button("Help", |ui| {
+                if ui.button("About OpenASE").clicked() {
+                    self.dialogs.about = true;
+                    ui.close();
+                }
+            });
+        });
+    }
+
+    fn toolbar(&mut self, ui: &mut egui::Ui) {
+        let selected = self.selected.clone();
+        let has = selected.is_some();
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 1.0;
+            if icons::tool_button(
+                ui,
+                Tool::Refresh,
+                "Refresh server list (F5)",
+                self.scan.is_none(),
+            )
+            .clicked()
+            {
+                self.refresh(ui.ctx());
+            }
+            if icons::tool_button(ui, Tool::Stop, "Stop", self.scan.is_some()).clicked() {
+                self.stop_scan();
+            }
+            if icons::tool_button(
+                ui,
+                Tool::Ping,
+                "Refresh selected server",
+                has && !self.single_in_flight,
+            )
+            .clicked()
+                && let Some(key) = &selected
+            {
+                self.query_single(ui.ctx(), key);
+            }
+            ui.add_space(6.0);
+            if icons::tool_button(ui, Tool::Join, "Join server (Enter)", has).clicked()
+                && let Some(key) = &selected
+            {
+                self.join(key);
+            }
+            if icons::tool_button(ui, Tool::Favorite, "Add to / remove from favorites", has)
+                .clicked()
+                && let Some(key) = selected.clone()
+            {
+                self.apply(ui.ctx(), Action::ToggleFavorite(key));
+            }
+            if icons::tool_button(ui, Tool::Add, "Add server", true).clicked() {
+                self.dialogs.open_add(self.nav.game());
+            }
+            ui.add_space(6.0);
+            if icons::tool_button(ui, Tool::Find, "Find player", true).clicked() {
+                self.dialogs.find = Some(String::new());
+            }
+            if icons::tool_button(ui, Tool::Friends, "Friends", true).clicked() {
+                self.dialogs.friends = Some(String::new());
+            }
+            if icons::tool_button(ui, Tool::Options, "Options", true).clicked() {
+                self.dialogs.open_options(&self.settings);
+            }
+        });
+    }
+
+    // ----- UI: tree ----------------------------------------------------------
+
+    fn tree(&mut self, ui: &mut egui::Ui) {
+        ui.spacing_mut().item_spacing.y = 0.0;
+        let mut new_nav: Option<Nav> = None;
+        let mut toggles: Vec<String> = Vec::new();
+        let mut filter_clicks: Vec<(String, String)> = Vec::new();
+        let mut modifier_clicks: Vec<&'static str> = Vec::new();
+
+        let mut row = |ui: &mut egui::Ui,
+                       depth: usize,
+                       path: Option<&str>,
+                       icon: TreeIcon<'_>,
+                       label: &str,
+                       selected: bool|
+         -> bool {
+            let open = path.map(|path| self.settings.open_nav.contains(path));
+            let (toggled, clicked) = tree_row(ui, depth, open, icon, label, selected);
+            if toggled && let Some(path) = path {
+                toggles.push(path.to_string());
+            }
+            clicked
+        };
+
+        if row(
+            ui,
+            0,
+            None,
+            TreeIcon::Star,
+            "Favorites",
+            self.nav == Nav::Favorites,
+        ) {
+            new_nav = Some(Nav::Favorites);
+        }
+        if row(
+            ui,
+            0,
+            None,
+            TreeIcon::Clock,
+            "Recently played",
+            self.nav == Nav::Recent,
+        ) {
+            new_nav = Some(Nav::Recent);
+        }
+        if row(
+            ui,
+            0,
+            None,
+            TreeIcon::Friends,
+            "Friends",
+            self.nav == Nav::Friends,
+        ) {
+            new_nav = Some(Nav::Friends);
+        }
+
+        for game in catalog::games() {
+            if !self.settings.game(&game.id).visible {
+                continue;
+            }
+            let path = game.id.clone();
+            if row(
+                ui,
+                0,
+                Some(&path),
+                TreeIcon::Game(game),
+                &game.name,
+                self.nav == Nav::Game(game.id.clone()),
+            ) {
+                new_nav = Some(Nav::Game(game.id.clone()));
+            }
+            if !self.settings.open_nav.contains(&path) {
+                continue;
+            }
+            for game_type in &game.game_types {
+                let nav = Nav::GameType(game.id.clone(), game_type.value.clone());
+                if row(
+                    ui,
+                    1,
+                    None,
+                    TreeIcon::Folder,
+                    &game_type.name,
+                    self.nav == nav,
+                ) {
+                    new_nav = Some(nav);
+                }
+            }
+            for group in &game.filters {
+                let group_path = format!("{}/{}", game.id, group.name);
+                let checked_key = group_path.clone();
+                let any = self
+                    .settings
+                    .filters
+                    .checked
+                    .get(&checked_key)
+                    .is_some_and(|set| !set.is_empty());
+                let label = if any {
+                    format!("{} *", group.name)
+                } else {
+                    group.name.clone()
+                };
+                row(ui, 1, Some(&group_path), TreeIcon::Folder, &label, false);
+                if !self.settings.open_nav.contains(&group_path) {
+                    continue;
+                }
+                let options: Vec<String> = if group.dynamic {
+                    dynamic_options(
+                        self.store.get(&game.id).map(Vec::as_slice).unwrap_or(&[]),
+                        &group.key,
+                    )
+                } else {
+                    group
+                        .options
+                        .iter()
+                        .map(|option| option.label.clone())
+                        .collect()
+                };
+                if options.is_empty() {
+                    row(ui, 2, None, TreeIcon::None, "(refresh to fill)", false);
+                }
+                for option in options {
+                    let checked = self
+                        .settings
+                        .filters
+                        .checked
+                        .get(&checked_key)
+                        .is_some_and(|set| set.contains(&option));
+                    let shown = if option.is_empty() {
+                        "(none)"
+                    } else {
+                        option.as_str()
+                    };
+                    if row(ui, 2, None, TreeIcon::Check(checked), shown, false) {
+                        filter_clicks.push((checked_key.clone(), option));
+                    }
+                }
+            }
+        }
+
+        let filters = self.settings.filters.clone();
+        row(
+            ui,
+            0,
+            Some("Modifiers"),
+            TreeIcon::Funnel,
+            "Modifiers",
+            false,
+        );
+        if self.settings.open_nav.contains("Modifiers") {
+            row(
+                ui,
+                1,
+                Some("Modifiers/Players"),
+                TreeIcon::Folder,
+                "Players",
+                false,
+            );
+            if self.settings.open_nav.contains("Modifiers/Players") {
+                for (id, label, value) in [
+                    ("not_empty", "Not empty", filters.not_empty),
+                    ("not_full", "Not full", filters.not_full),
+                    ("no_password", "No password", filters.no_password),
+                    ("hide_offline", "Hide unresponsive", filters.hide_offline),
+                ] {
+                    if row(ui, 2, None, TreeIcon::Check(value), label, false) {
+                        modifier_clicks.push(id);
+                    }
+                }
+            }
+            row(
+                ui,
+                1,
+                Some("Modifiers/Ping"),
+                TreeIcon::Folder,
+                "Ping",
+                false,
+            );
+            if self.settings.open_nav.contains("Modifiers/Ping") {
+                for (id, limit) in [
+                    ("ping50", 50),
+                    ("ping100", 100),
+                    ("ping150", 150),
+                    ("ping250", 250),
+                ] {
+                    if row(
+                        ui,
+                        2,
+                        None,
+                        TreeIcon::Check(filters.max_ping == Some(limit)),
+                        &format!("less than {limit}"),
+                        false,
+                    ) {
+                        modifier_clicks.push(id);
+                    }
+                }
+            }
+        }
+
+        for path in toggles {
+            if !self.settings.open_nav.remove(&path) {
+                self.settings.open_nav.insert(path);
+            }
+            self.settings_dirty = true;
+        }
+        for (group, option) in filter_clicks {
+            let set = self.settings.filters.checked.entry(group).or_default();
+            if !set.remove(&option) {
+                set.insert(option);
+            }
+            self.settings_dirty = true;
+        }
+        for id in modifier_clicks {
+            let filters = &mut self.settings.filters;
+            match id {
+                "not_empty" => filters.not_empty ^= true,
+                "not_full" => filters.not_full ^= true,
+                "no_password" => filters.no_password ^= true,
+                "hide_offline" => filters.hide_offline ^= true,
+                ping => {
+                    let limit = PING_LIMITS[["ping50", "ping100", "ping150", "ping250"]
+                        .iter()
+                        .position(|p| *p == ping)
+                        .unwrap_or(0)];
+                    filters.max_ping = if filters.max_ping == Some(limit) {
+                        None
+                    } else {
+                        Some(limit)
+                    };
+                }
+            }
+            self.settings_dirty = true;
+        }
+        if let Some(nav) = new_nav {
+            if let Some(game) = nav.game() {
+                self.settings.last_game = game.to_string();
+                let game = game.to_string();
+                let first_visit = !self.store.contains_key(&game);
+                if self.selected.as_ref().is_some_and(|key| key.game != game) {
+                    self.selected = None;
+                }
+                self.nav = nav;
+                if first_visit && self.scan.is_none() {
+                    self.scan_game(ui.ctx(), &game);
+                }
+            } else {
+                if matches!(nav, Nav::Favorites | Nav::Recent) {
+                    let refs = if nav == Nav::Favorites {
+                        self.settings.favorites.clone()
+                    } else {
+                        self.settings.recent.clone()
+                    };
+                    for server in &refs {
+                        self.ensure_placeholder(&ServerKey::from_ref(server));
+                    }
+                }
+                self.nav = nav;
+            }
+            self.settings_dirty = true;
+        }
+    }
+
+    // ----- UI: server list ---------------------------------------------------
+
+    fn server_list(&mut self, ui: &mut egui::Ui) {
+        let rows = self.visible_rows();
+        let mut actions: Vec<Action> = Vec::new();
+        let mut sort_click: Option<Col> = None;
+        let (sort_col, ascending) = self.sort;
+        let selected = self.selected.clone();
+        let text_color = ui.visuals().text_color();
+
+        let mut table = TableBuilder::new(ui)
+            .id_salt("server-list")
+            .striped(false)
+            .resizable(true)
+            .sense(Sense::click())
+            .cell_layout(Layout::left_to_right(Align::Center))
+            .auto_shrink(false);
+        for (index, (_, _, width)) in COLUMNS.iter().enumerate() {
+            let column = if index == COLUMNS.len() - 1 {
+                Column::remainder()
+            } else {
+                Column::initial(*width)
+            };
+            table = table.column(column.at_least(24.0).clip(true));
+        }
+
+        table
+            .header(20.0, |mut header| {
+                for (col, label, _) in COLUMNS {
+                    header.col(|ui| {
+                        let rect = ui.max_rect();
+                        header_cell(ui, rect);
+                        let response = ui.add(
+                            egui::Label::new(RichText::new(label))
+                                .selectable(false)
+                                .sense(Sense::click()),
+                        );
+                        if response.clicked()
+                            || ui
+                                .interact(rect, ui.scope_id().with(label), Sense::click())
+                                .clicked()
+                        {
+                            sort_click = Some(col);
+                        }
+                        if col == sort_col {
+                            icons::sort_arrow(
+                                ui.painter(),
+                                egui::pos2(rect.right() - 8.0, rect.center().y),
+                                ascending,
+                            );
+                        }
+                    });
+                }
+            })
+            .body(|body| {
+                body.rows(ROW_HEIGHT, rows.len(), |mut row| {
+                    let server = rows[row.index()];
+                    let key = ServerKey::of(server);
+                    let is_selected = selected.as_ref() == Some(&key);
+                    row.set_selected(is_selected);
+                    let game = catalog::game(&server.game);
+                    let favorite = self.settings.is_favorite(&key.to_ref());
+                    let friend = self.server_has_friend(server);
+                    let color = if is_selected {
+                        Color32::WHITE
+                    } else if !server.online {
+                        Color32::from_gray(0x90)
+                    } else {
+                        text_color
+                    };
+
+                    for (col, _, _) in COLUMNS {
+                        row.col(|ui| {
+                            if is_selected {
+                                ui.painter().rect_filled(
+                                    ui.max_rect().expand2(vec2(4.0, 1.0)),
+                                    CornerRadius::ZERO,
+                                    SELECTION,
+                                );
+                            } else if friend {
+                                ui.painter().rect_filled(
+                                    ui.max_rect().expand2(vec2(4.0, 1.0)),
+                                    CornerRadius::ZERO,
+                                    Color32::from_rgb(0xe0, 0xf5, 0xe0),
+                                );
+                            }
+                            match col {
+                                Col::Icon => {
+                                    let rect = ui.max_rect();
+                                    if let Some(game) = game {
+                                        icons::badge(
+                                            ui.painter(),
+                                            egui::Rect::from_min_size(
+                                                rect.left_center() + vec2(1.0, -6.0),
+                                                vec2(20.0, 12.0),
+                                            ),
+                                            game,
+                                        );
+                                    }
+                                    if server.password {
+                                        icons::lock(
+                                            ui.painter(),
+                                            rect.left_center() + vec2(28.0, 0.0),
+                                        );
+                                    }
+                                    if favorite {
+                                        icons::star(
+                                            ui.painter(),
+                                            rect.left_center() + vec2(38.0, 0.0),
+                                            5.0,
+                                            Color32::from_rgb(0xf0, 0xc0, 0x1e),
+                                            Color32::from_rgb(0x96, 0x6e, 0x00),
+                                        );
+                                    }
+                                }
+                                Col::Name => {
+                                    let colored = game
+                                        .is_some_and(|game| game.protocol == Protocol::Quake3)
+                                        && server.online
+                                        && !is_selected
+                                        && self
+                                            .settings
+                                            .game(&server.game)
+                                            .draw_player_names_with_game_font;
+                                    if colored {
+                                        colored_label(ui, &server.name, color);
+                                    } else {
+                                        cell(ui, &display_name(server), color);
+                                    }
+                                }
+                                Col::Ping | Col::Flux | Col::Loss | Col::Players => {
+                                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                                        cell(ui, &cell_text(col, server, game), color);
+                                    });
+                                }
+                                _ => cell(ui, &cell_text(col, server, game), color),
+                            }
+                        });
+                    }
+
+                    let response = row.response();
+                    if response.double_clicked() {
+                        actions.push(Action::Join(key.clone()));
+                    } else if response.clicked() || response.secondary_clicked() {
+                        actions.push(Action::Select(key.clone()));
+                    }
+                    let address = server.join_address();
+                    response.context_menu(|ui| {
+                        if ui.button("Join").clicked() {
+                            actions.push(Action::Join(key.clone()));
+                            ui.close();
+                        }
+                        if ui.button("Refresh").clicked() {
+                            actions.push(Action::Refresh(key.clone()));
+                            ui.close();
+                        }
+                        let label = if favorite {
+                            "Remove from favorites"
+                        } else {
+                            "Add to favorites"
+                        };
+                        if ui.button(label).clicked() {
+                            actions.push(Action::ToggleFavorite(key.clone()));
+                            ui.close();
+                        }
+                        if ui.button("Copy address").clicked() {
+                            actions.push(Action::Copy(address.clone()));
+                            ui.close();
+                        }
+                    });
+                });
+            });
+
+        if let Some(col) = sort_click {
+            self.sort = if self.sort.0 == col {
+                (col, !self.sort.1)
+            } else {
+                (col, !matches!(col, Col::Players))
+            };
+        }
+        let ctx = ui.ctx().clone();
+        for action in actions {
+            self.apply(&ctx, action);
+        }
+    }
+
+    // ----- UI: bottom panes --------------------------------------------------
+
+    fn friends_pane(&mut self, ui: &mut egui::Ui) {
+        let friends = self.settings.friends.clone();
+        let text_color = ui.visuals().text_color();
+        let mut select: Option<ServerKey> = None;
+        TableBuilder::new(ui)
+            .id_salt("friends-pane")
+            .resizable(true)
+            .sense(Sense::click())
+            .cell_layout(Layout::left_to_right(Align::Center))
+            .auto_shrink(false)
+            .column(Column::initial(90.0).at_least(40.0).clip(true))
+            .column(Column::remainder().clip(true))
+            .header(20.0, |mut header| {
+                let online = friends
+                    .iter()
+                    .filter(|friend| self.friend_location(friend).is_some())
+                    .count();
+                for label in [
+                    format!("Friend - {}", if online > 0 { "on" } else { "off" }),
+                    "Server".to_string(),
+                ] {
+                    header.col(|ui| {
+                        header_cell(ui, ui.max_rect());
+                        cell(ui, &label, text_color);
+                    });
+                }
+            })
+            .body(|body| {
+                body.rows(ROW_HEIGHT, friends.len(), |mut row| {
+                    let friend = &friends[row.index()];
+                    let location = self.friend_location(friend).cloned();
+                    let server_name = location
+                        .as_ref()
+                        .and_then(|key| self.find(key))
+                        .map(|server| strip_quake_colors(&server.name))
+                        .unwrap_or_default();
+                    let color = if location.is_some() {
+                        Color32::from_rgb(0x14, 0x78, 0x1e)
+                    } else {
+                        Color32::from_gray(0x80)
+                    };
+                    row.col(|ui| cell(ui, friend, color));
+                    row.col(|ui| cell(ui, &server_name, text_color));
+                    if row.response().clicked() {
+                        select = location;
+                    }
+                });
+            });
+        if let Some(key) = select {
+            self.nav = Nav::Game(key.game.clone());
+            self.selected = Some(key);
+        }
+    }
+
+    fn players_pane(&self, ui: &mut egui::Ui, server: Option<&Server>) {
+        let text_color = ui.visuals().text_color();
+        let players = server
+            .map(|server| server.players.as_slice())
+            .unwrap_or(&[]);
+        let colored = server.is_some_and(|server| {
+            catalog::game(&server.game).is_some_and(|game| game.protocol == Protocol::Quake3)
+                && self
+                    .settings
+                    .game(&server.game)
+                    .draw_player_names_with_game_font
+        });
+        let friends: Vec<String> = self
+            .settings
+            .friends
+            .iter()
+            .map(|friend| friend.to_lowercase())
+            .collect();
+        let mut order: Vec<usize> = (0..players.len()).collect();
+        order.sort_by_key(|&index| std::cmp::Reverse(players[index].score));
+
+        TableBuilder::new(ui)
+            .id_salt("players-pane")
+            .resizable(true)
+            .striped(true)
+            .cell_layout(Layout::left_to_right(Align::Center))
+            .auto_shrink(false)
+            .column(Column::initial(170.0).at_least(60.0).clip(true))
+            .column(Column::initial(50.0).at_least(30.0))
+            .column(Column::initial(44.0).at_least(30.0))
+            .column(Column::remainder().at_least(40.0))
+            .header(20.0, |mut header| {
+                for label in ["Player Name", "Score", "Ping", "Time"] {
+                    header.col(|ui| {
+                        header_cell(ui, ui.max_rect());
+                        cell(ui, label, text_color);
+                    });
+                }
+            })
+            .body(|body| {
+                body.rows(ROW_HEIGHT, order.len(), |mut row| {
+                    let player = &players[order[row.index()]];
+                    let plain = strip_quake_colors(&player.name);
+                    let is_friend = friends
+                        .iter()
+                        .any(|friend| plain.to_lowercase().contains(friend));
+                    row.col(|ui| {
+                        if is_friend {
+                            ui.painter().rect_filled(
+                                ui.max_rect(),
+                                CornerRadius::ZERO,
+                                Color32::from_rgb(0xe0, 0xf5, 0xe0),
+                            );
+                        }
+                        if colored {
+                            colored_label(ui, &player.name, text_color);
+                        } else {
+                            cell(ui, &plain, text_color);
+                        }
+                    });
+                    for value in [
+                        player.score.to_string(),
+                        player.ping.map(|ping| ping.to_string()).unwrap_or_default(),
+                        player.time_secs.map(format_duration).unwrap_or_default(),
+                    ] {
+                        row.col(|ui| {
+                            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                                cell(ui, &value, text_color)
+                            });
+                        });
+                    }
+                });
+            });
+    }
+
+    fn rules_pane(&self, ui: &mut egui::Ui, server: Option<&Server>) {
+        let text_color = ui.visuals().text_color();
+        let rules: Vec<(&String, &String)> = server
+            .map(|server| server.rules.iter().collect())
+            .unwrap_or_default();
+        TableBuilder::new(ui)
+            .id_salt("rules-pane")
+            .resizable(true)
+            .striped(true)
+            .cell_layout(Layout::left_to_right(Align::Center))
+            .auto_shrink(false)
+            .column(Column::initial(150.0).at_least(60.0).clip(true))
+            .column(Column::remainder().clip(true))
+            .header(20.0, |mut header| {
+                for label in ["Key", "Value"] {
+                    header.col(|ui| {
+                        header_cell(ui, ui.max_rect());
+                        cell(ui, label, text_color);
+                    });
+                }
+            })
+            .body(|body| {
+                body.rows(ROW_HEIGHT, rules.len(), |mut row| {
+                    let (key, value) = rules[row.index()];
+                    row.col(|ui| cell(ui, key, text_color));
+                    row.col(|ui| cell(ui, &strip_quake_colors(value), text_color));
+                });
+            });
+    }
+
+    fn status_bar(&self, ui: &mut egui::Ui) {
+        let rows = self.visible_rows();
+        let total: usize = match self.nav.game() {
+            Some(game) => self.store.get(game).map_or(0, Vec::len),
+            None => rows.len(),
+        };
+        let players: usize = rows.iter().map(|server| server.num_players).sum();
+        let slots: usize = rows.iter().filter_map(|server| server.max_players).sum();
+        ui.horizontal(|ui| {
+            if let Some(scan) = &self.scan {
+                let done = scan.done.load(Ordering::Relaxed);
+                let fraction = if scan.total > 0 {
+                    done as f32 / scan.total as f32
+                } else {
+                    0.0
+                };
+                ui.add(
+                    egui::ProgressBar::new(fraction)
+                        .desired_width(140.0)
+                        .desired_height(12.0),
+                );
+                ui.label(format!("{} {}/{}", scan.label, done, scan.total));
+            } else {
+                ui.label(&self.status);
+            }
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                ui.label(format!(
+                    "{total} servers, {players}/{slots} players total, {} visible",
+                    rows.len()
+                ));
+            });
+        });
+    }
+}
+
+impl eframe::App for OpenAseApp {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.drain_messages();
+        let ctx = ui.ctx().clone();
+        if !self.started {
+            self.started = true;
+            self.refresh(&ctx);
+        }
+
+        if self.settings.events.auto_refresh_selected
+            && !self.single_in_flight
+            && self.last_auto_refresh.elapsed()
+                >= Duration::from_secs(u64::from(self.settings.events.auto_refresh_seconds.max(5)))
+        {
+            self.last_auto_refresh = Instant::now();
+            if let Some(key) = self.selected.clone() {
+                self.query_single(&ctx, &key);
+            }
+        }
+        if self.settings.events.auto_refresh_selected
+            || self.scan.is_some()
+            || self.dialogs.has_notices()
+        {
+            ctx.request_repaint_after(Duration::from_millis(500));
+        }
+
+        let no_dialog = !self.dialogs.any_modal();
+        if no_dialog && ctx.input(|input| input.key_pressed(egui::Key::F5)) && self.scan.is_none() {
+            self.refresh(&ctx);
+        }
+        if no_dialog
+            && !ctx.egui_wants_keyboard_input()
+            && ctx.input(|input| input.key_pressed(egui::Key::Enter))
+            && let Some(key) = self.selected.clone()
+        {
+            self.join(&key);
+        }
+
+        let frame = egui::Frame::NONE
+            .fill(Color32::from_gray(0xf0))
+            .inner_margin(egui::Margin::symmetric(4, 2));
+        egui::Panel::top("menu")
+            .frame(frame)
+            .show(ui, |ui| self.menu_bar(ui));
+        if self.show_toolbar {
+            egui::Panel::top("toolbar")
+                .frame(frame)
+                .show(ui, |ui| self.toolbar(ui));
+        }
+        egui::Panel::bottom("status")
+            .frame(frame)
+            .show(ui, |ui| self.status_bar(ui));
+
+        let list_frame = egui::Frame::NONE
+            .fill(LIST_BG)
+            .stroke(Stroke::new(1.0, Color32::from_gray(0xa0)));
+        egui::Panel::bottom("details")
+            .resizable(true)
+            .default_size(200.0)
+            .frame(egui::Frame::NONE)
+            .show(ui, |ui| {
+                let selected = self
+                    .selected
+                    .clone()
+                    .and_then(|key| self.find(&key).cloned());
+                egui::Panel::left("friends-panel")
+                    .resizable(true)
+                    .default_size(220.0)
+                    .frame(list_frame)
+                    .show(ui, |ui| {
+                        self.friends_pane(ui);
+                    });
+                egui::Panel::left("players-panel")
+                    .resizable(true)
+                    .default_size(380.0)
+                    .frame(list_frame)
+                    .show(ui, |ui| {
+                        self.players_pane(ui, selected.as_ref());
+                    });
+                egui::CentralPanel::default()
+                    .frame(list_frame)
+                    .show(ui, |ui| {
+                        self.rules_pane(ui, selected.as_ref());
+                    });
+            });
+
+        egui::Panel::left("tree")
+            .resizable(true)
+            .default_size(230.0)
+            .frame(list_frame.inner_margin(egui::Margin::same(2)))
+            .show(ui, |ui| {
+                egui::ScrollArea::both()
+                    .auto_shrink(false)
+                    .show(ui, |ui| self.tree(ui));
+            });
+
+        egui::CentralPanel::default()
+            .frame(list_frame)
+            .show(ui, |ui| self.server_list(ui));
+
+        self.show_dialogs(&ctx);
+
+        if self.settings_dirty {
+            self.settings_dirty = false;
+            if let Err(error) = self.settings.save() {
+                self.status = format!("Could not save settings: {error}");
+            }
+        }
+    }
+}
+
+// ----- workers ---------------------------------------------------------------
+
+fn run_queries(
+    targets: Vec<(String, String)>,
+    network: &openase::settings::NetworkSettings,
+    tx: &Sender<Msg>,
+    ctx: &egui::Context,
+    generation: u64,
+    stop: &AtomicBool,
+    done: &AtomicUsize,
+) {
+    let options = network.query_options();
+    let queue = Mutex::new(targets.into_iter().collect::<VecDeque<_>>());
+    std::thread::scope(|scope| {
+        for _ in 0..network.parallel_queries.clamp(1, 128) {
+            scope.spawn(|| {
+                loop {
+                    if stop.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    let Some((game_id, address)) = queue.lock().unwrap().pop_front() else {
+                        break;
+                    };
+                    let Some(game) = catalog::game(&game_id) else {
+                        continue;
+                    };
+                    if let Ok((host, port)) = parse_address(&address, game.default_port) {
+                        let server = query_server(game, &host, port, &options);
+                        let _ = tx.send(Msg::Server { generation, server });
+                    }
+                    done.fetch_add(1, Ordering::Relaxed);
+                    ctx.request_repaint_after(Duration::from_millis(100));
+                }
+            });
+        }
+    });
+    let _ = tx.send(Msg::ScanDone { generation });
+    ctx.request_repaint();
+}
+
+// ----- helpers -----------------------------------------------------------------
+
+fn setup_style(ctx: &egui::Context) {
+    ctx.set_theme(egui::ThemePreference::Light);
+    ctx.all_styles_mut(|style| {
+        use egui::FontFamily::{Monospace, Proportional};
+        style.text_styles = [
+            (TextStyle::Small, FontId::new(10.0, Proportional)),
+            (TextStyle::Body, FontId::new(12.5, Proportional)),
+            (TextStyle::Button, FontId::new(12.5, Proportional)),
+            (TextStyle::Heading, FontId::new(16.0, Proportional)),
+            (TextStyle::Monospace, FontId::new(12.0, Monospace)),
+        ]
+        .into();
+        style.spacing.item_spacing = vec2(6.0, 3.0);
+        style.spacing.button_padding = vec2(8.0, 2.0);
+        style.spacing.interact_size.y = 18.0;
+        let visuals = &mut style.visuals;
+        visuals.panel_fill = Color32::from_gray(0xf0);
+        visuals.window_fill = Color32::from_gray(0xf0);
+        visuals.extreme_bg_color = Color32::WHITE;
+        visuals.faint_bg_color = Color32::from_gray(0xf6);
+        visuals.selection.bg_fill = SELECTION;
+        visuals.selection.stroke = Stroke::new(1.0, Color32::WHITE);
+        visuals.window_corner_radius = CornerRadius::same(2);
+        visuals.menu_corner_radius = CornerRadius::ZERO;
+        visuals.window_shadow = egui::Shadow {
+            offset: [2, 2],
+            blur: 6,
+            spread: 0,
+            color: Color32::from_black_alpha(60),
+        };
+        for widgets in [
+            &mut visuals.widgets.noninteractive,
+            &mut visuals.widgets.inactive,
+            &mut visuals.widgets.hovered,
+            &mut visuals.widgets.active,
+            &mut visuals.widgets.open,
+        ] {
+            widgets.corner_radius = CornerRadius::ZERO;
+        }
+        visuals.widgets.inactive.weak_bg_fill = Color32::from_gray(0xe1);
+        visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, Color32::from_gray(0xad));
+        visuals.widgets.hovered.weak_bg_fill = Color32::from_rgb(0xe5, 0xf1, 0xfb);
+        visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_rgb(0x00, 0x78, 0xd7));
+    });
+}
+
+/// One tree line: indentation, optional `[+]`/`[-]` box, icon and label.
+/// Returns (expander clicked, label clicked).
+fn tree_row(
+    ui: &mut egui::Ui,
+    depth: usize,
+    open: Option<bool>,
+    icon: TreeIcon<'_>,
+    label: &str,
+    selected: bool,
+) -> (bool, bool) {
+    let height = 18.0;
+    let indent = 14.0 * depth as f32;
+    let font = TextStyle::Body.resolve(ui.style());
+    let galley = ui
+        .painter()
+        .layout_no_wrap(label.to_string(), font, Color32::BLACK);
+    let width = indent + 14.0 + 20.0 + galley.size().x + 8.0;
+    let (rect, _) = ui.allocate_exact_size(
+        vec2(width.max(ui.available_width()), height),
+        Sense::hover(),
+    );
+
+    let expander_center = egui::pos2(rect.left() + indent + 7.0, rect.center().y);
+    let expander_rect = egui::Rect::from_center_size(expander_center, vec2(12.0, 12.0));
+    let icon_rect = egui::Rect::from_min_size(
+        egui::pos2(rect.left() + indent + 14.0, rect.top()),
+        vec2(20.0, height),
+    );
+    let label_rect = egui::Rect::from_min_size(
+        egui::pos2(icon_rect.right() + 2.0, rect.top() + 1.0),
+        vec2(galley.size().x + 6.0, height - 2.0),
+    );
+
+    let mut toggled = false;
+    if let Some(open) = open {
+        icons::expander(ui.painter(), expander_center, open);
+        toggled = ui
+            .interact(
+                expander_rect,
+                ui.scope_id()
+                    .with(("expander", label, depth, rect.top() as i32)),
+                Sense::click(),
+            )
+            .clicked();
+    }
+    icons::tree_icon(ui.painter(), icon_rect, icon);
+
+    let response = ui.interact(
+        label_rect.union(icon_rect),
+        ui.scope_id()
+            .with(("label", label, depth, rect.top() as i32)),
+        Sense::click(),
+    );
+    let text_color = if selected {
+        Color32::WHITE
+    } else {
+        Color32::from_gray(0x10)
+    };
+    if selected {
+        ui.painter()
+            .rect_filled(label_rect, CornerRadius::ZERO, SELECTION);
+    } else if response.hovered() {
+        ui.painter().rect_filled(
+            label_rect,
+            CornerRadius::ZERO,
+            Color32::from_rgb(0xe5, 0xf1, 0xfb),
+        );
+    }
+    ui.painter().galley(
+        label_rect.left_top() + vec2(3.0, (label_rect.height() - galley.size().y) / 2.0),
+        galley,
+        text_color,
+    );
+
+    if response.double_clicked() && open.is_some() {
+        toggled = true;
+    }
+    (toggled, response.clicked())
+}
+
+fn header_cell(ui: &egui::Ui, rect: egui::Rect) {
+    let rect = rect.expand2(vec2(4.0, 2.0));
+    ui.painter()
+        .rect_filled(rect, CornerRadius::ZERO, Color32::from_gray(0xf0));
+    ui.painter().line_segment(
+        [rect.right_top(), rect.right_bottom()],
+        Stroke::new(1.0, Color32::from_gray(0xc8)),
+    );
+    ui.painter().line_segment(
+        [rect.left_bottom(), rect.right_bottom()],
+        Stroke::new(1.0, Color32::from_gray(0xc8)),
+    );
+}
+
+fn cell(ui: &mut egui::Ui, text: &str, color: Color32) {
+    ui.add(
+        egui::Label::new(RichText::new(text).color(color))
+            .selectable(false)
+            .truncate(),
+    );
+}
+
+/// Draw Quake-colored text; near-white colors are darkened for the white list.
+fn colored_label(ui: &mut egui::Ui, raw: &str, default_color: Color32) {
+    let default_hex = format!(
+        "#{:02x}{:02x}{:02x}",
+        default_color.r(),
+        default_color.g(),
+        default_color.b()
+    );
+    let font = TextStyle::Body.resolve(ui.style());
+    let mut job = LayoutJob::default();
+    for segment in quake_color_segments(raw, &default_hex) {
+        let [r, g, b] = parse_hex(&segment.color).unwrap_or([0x20, 0x20, 0x20]);
+        let color = if r > 0xd0 && g > 0xd0 && b > 0xd0 {
+            Color32::from_gray(0x50)
+        } else {
+            Color32::from_rgb(r, g, b)
+        };
+        job.append(&segment.text, 0.0, TextFormat::simple(font.clone(), color));
+    }
+    ui.add(egui::Label::new(job).selectable(false).truncate());
+}
+
+fn display_name(server: &Server) -> String {
+    if server.online {
+        strip_quake_colors(&server.name)
+    } else if server.error.is_some() {
+        "(no response)".to_string()
+    } else {
+        "unscanned".to_string()
+    }
+}
+
+fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
+    let number = |value: Option<u32>| value.map(|v| v.to_string()).unwrap_or_default();
+    match col {
+        Col::Icon => String::new(),
+        Col::Location => {
+            if server.online && server.location != openase::location::UNKNOWN_LOCATION {
+                server.location.clone()
+            } else {
+                String::new()
+            }
+        }
+        Col::Name => display_name(server),
+        Col::Ping => {
+            if server.online {
+                number(server.ping)
+            } else {
+                "9999".to_string()
+            }
+        }
+        Col::Flux => server
+            .flux
+            .map(|flux| format!("±{flux}"))
+            .unwrap_or_default(),
+        Col::Loss => server
+            .packet_loss
+            .map(|loss| format!("{loss}%"))
+            .unwrap_or_default(),
+        Col::Players => {
+            if server.online {
+                format!(
+                    "{}/{}",
+                    server.num_players,
+                    server
+                        .max_players
+                        .map_or("?".to_string(), |max| max.to_string())
+                )
+            } else {
+                String::new()
+            }
+        }
+        Col::GameType => {
+            // Masters sometimes list servers of a related game (Urban Terror on the
+            // Quake 3 master): name the game type with that game's table.
+            let naming = catalog::games()
+                .iter()
+                .find(|other| {
+                    !other.base_mod.is_empty()
+                        && other.base_mod.eq_ignore_ascii_case(&server.mod_name)
+                })
+                .or(game);
+            let game_type = naming
+                .map(|game| game.game_type_name(&server.game_type))
+                .unwrap_or_default();
+            match (
+                game_type.is_empty(),
+                game.map(|game| game.launch_mod(&server.mod_name))
+                    .unwrap_or_default(),
+            ) {
+                (true, modname) => modname,
+                (false, modname) if modname.is_empty() => game_type,
+                (false, modname) => format!("{game_type} ({modname})"),
+            }
+        }
+        Col::Map => server.map.clone(),
+        Col::Address => server.join_address(),
+    }
+}
+
+fn compare(col: Col, a: &Server, b: &Server) -> std::cmp::Ordering {
+    let ping = |server: &Server| {
+        if server.online {
+            server.ping.unwrap_or(9999)
+        } else {
+            9999
+        }
+    };
+    match col {
+        Col::Icon => a.game.cmp(&b.game),
+        Col::Ping => ping(a).cmp(&ping(b)),
+        Col::Flux => a.flux.unwrap_or(9999).cmp(&b.flux.unwrap_or(9999)),
+        Col::Loss => a
+            .packet_loss
+            .unwrap_or(101)
+            .cmp(&b.packet_loss.unwrap_or(101)),
+        Col::Players => a
+            .num_players
+            .cmp(&b.num_players)
+            .then_with(|| ping(b).cmp(&ping(a))),
+        Col::Address => {
+            let parse = |server: &Server| {
+                server
+                    .host
+                    .parse::<std::net::Ipv4Addr>()
+                    .ok()
+                    .map(u32::from)
+                    .unwrap_or(0)
+            };
+            parse(a).cmp(&parse(b)).then(a.port.cmp(&b.port))
+        }
+        _ => {
+            let game_a = catalog::game(&a.game);
+            let game_b = catalog::game(&b.game);
+            cell_text(col, a, game_a)
+                .to_lowercase()
+                .cmp(&cell_text(col, b, game_b).to_lowercase())
+        }
+    }
+    .then_with(|| b.online.cmp(&a.online))
+}
+
+/// Server passes every checked filter group of its game.
+fn passes_groups(
+    game: &Game,
+    server: &Server,
+    checked: &BTreeMap<String, std::collections::BTreeSet<String>>,
+) -> bool {
+    game.filters.iter().all(|group| {
+        let Some(set) = checked
+            .get(&format!("{}/{}", game.id, group.name))
+            .filter(|set| !set.is_empty())
+        else {
+            return true;
+        };
+        let value = server.rule(&group.key).unwrap_or("");
+        if group.dynamic {
+            set.iter().any(|option| option.eq_ignore_ascii_case(value))
+        } else {
+            group
+                .options
+                .iter()
+                .filter(|option| set.contains(&option.label))
+                .any(|option| {
+                    option
+                        .values
+                        .iter()
+                        .any(|v| v.eq_ignore_ascii_case(value.trim()))
+                })
+        }
+    })
+}
+
+/// Most common values of a rule among scanned servers, for dynamic filter groups.
+fn dynamic_options(servers: &[Server], key: &str) -> Vec<String> {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for server in servers.iter().filter(|server| server.online) {
+        *counts
+            .entry(server.rule(key).unwrap_or("").to_string())
+            .or_default() += 1;
+    }
+    let mut values: Vec<(String, usize)> = counts.into_iter().collect();
+    values.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    values.truncate(25);
+    values.sort_by_key(|a| a.0.to_lowercase());
+    values.into_iter().map(|(value, _)| value).collect()
+}
+
+fn format_duration(secs: u32) -> String {
+    let (h, m, s) = (secs / 3600, secs / 60 % 60, secs % 60);
+    if h > 0 {
+        format!("{h}:{m:02}:{s:02}")
+    } else {
+        format!("{m}:{s:02}")
+    }
+}
+
+#[cfg(windows)]
+fn beep() {
+    // MB_ICONASTERISK: the system "information" sound.
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn MessageBeep(kind: u32) -> i32;
+    }
+    unsafe {
+        MessageBeep(0x40);
+    }
+}
+
+#[cfg(not(windows))]
+fn beep() {}

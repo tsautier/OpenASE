@@ -10,5 +10,9 @@ fn main() -> eframe::Result {
             .with_min_inner_size([960.0, 560.0]),
         ..Default::default()
     };
-    eframe::run_native("OpenASE", options, Box::new(|cc| Ok(Box::new(gui::OpenAseApp::new(cc)))))
+    eframe::run_native(
+        "OpenASE",
+        options,
+        Box::new(|cc| Ok(Box::new(gui::OpenAseApp::new(cc)))),
+    )
 }

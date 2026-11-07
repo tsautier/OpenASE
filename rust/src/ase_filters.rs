@@ -25,7 +25,13 @@ pub const METADATA_PREFIXES: [&str; 17] = [
     "Launch:",
     "JoinMsg:",
 ];
-pub const NON_GAME_ROOTS: [&str; 5] = ["Eye servers", "Modifiers", "Friends", "Special", "Favorites"];
+pub const NON_GAME_ROOTS: [&str; 5] = [
+    "Eye servers",
+    "Modifiers",
+    "Friends",
+    "Special",
+    "Favorites",
+];
 
 /// One top-level game entry parsed from ASE filters.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -41,7 +47,9 @@ pub fn read_latin1(path: &Path) -> io::Result<String> {
 }
 
 fn is_metadata(line: &str) -> bool {
-    METADATA_PREFIXES.iter().any(|prefix| line.starts_with(prefix))
+    METADATA_PREFIXES
+        .iter()
+        .any(|prefix| line.starts_with(prefix))
 }
 
 fn is_skipped(line: &str) -> bool {
@@ -87,10 +95,12 @@ pub fn parse_game_definitions_str(content: &str) -> BTreeMap<String, GameDefinit
                 current = None;
                 continue;
             }
-            let game = games.entry(root.to_string()).or_insert_with(|| GameDefinition {
-                name: root.to_string(),
-                ..GameDefinition::default()
-            });
+            let game = games
+                .entry(root.to_string())
+                .or_insert_with(|| GameDefinition {
+                    name: root.to_string(),
+                    ..GameDefinition::default()
+                });
             if !game.paths.iter().any(|path| path == line) {
                 game.paths.push(line.to_string());
             }

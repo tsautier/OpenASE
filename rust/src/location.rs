@@ -20,7 +20,10 @@ pub fn load_countries_str(content: &str) -> Vec<Country> {
         .lines()
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| {
-            let split = line.char_indices().nth(2).map_or(line.len(), |(index, _)| index);
+            let split = line
+                .char_indices()
+                .nth(2)
+                .map_or(line.len(), |(index, _)| index);
             let (code, name) = line.split_at(split);
             let (code, name) = (code.trim(), name.trim());
             (!code.is_empty() && !name.is_empty()).then(|| Country {
@@ -43,10 +46,19 @@ pub fn find_countries_file(start: &Path) -> Option<PathBuf> {
 
 /// Return a reported server location without guessing from IP addresses.
 pub fn server_location(info: &BTreeMap<String, String>) -> String {
-    ["location", "country", "countryCode", "ServerLocation"]
-        .iter()
-        .filter_map(|key| info.get(*key))
-        .find(|value| !value.is_empty())
-        .cloned()
-        .unwrap_or_else(|| UNKNOWN_LOCATION.to_string())
+    [
+        "location",
+        "country",
+        "countryCode",
+        "ServerLocation",
+        ".location",
+        ".server-location",
+        ".Location",
+        "Location",
+    ]
+    .iter()
+    .filter_map(|key| info.get(*key))
+    .find(|value| !value.is_empty())
+    .cloned()
+    .unwrap_or_else(|| UNKNOWN_LOCATION.to_string())
 }
