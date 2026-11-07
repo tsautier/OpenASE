@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenASE | Open-source game server browser</title>
+  <meta name="description" content="OpenASE is an open-source game server browser inspired by The All-Seeing Eye. Browse live Quake 3 servers, players and colored names. Python and Rust, GPL-3.0.">
+  <meta property="og:title" content="OpenASE">
+  <meta property="og:description" content="The classic game server browser, reborn as open source.">
+  <meta property="og:image" content="screenshot.png">
+  <meta name="theme-color" content="#0b0d10">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z' fill='none' stroke='%2333d6ff' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23ff3b3b'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%230b0d10'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --bg-2: #11151a;
+      --panel: #151a21;
+      --line: #232a33;
+      --text: #e6e9ee;
+      --muted: #8b95a3;
+      --q1: #ff3b3b;   /* ^1 red */
+      --q2: #38e86b;   /* ^2 green */
+      --q3: #ffd23f;   /* ^3 yellow */
+      --q5: #33d6ff;   /* ^5 cyan */
+      --q6: #ff4fd8;   /* ^6 magenta */
+      --radius: 10px;
+      --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--q5); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+    /* nav */
+    header.nav {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(11, 13, 16, .82);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--text); font-size: 18px; }
+    .brand:hover { text-decoration: none; }
+    .brand svg { width: 28px; height: 28px; }
+    header.nav nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+    header.nav nav a { color: var(--muted); font-size: 14px; font-weight: 500; }
+    header.nav nav a:hover { color: var(--text); text-decoration: none; }
+    .gh-btn {
+      border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px;
+      color: var(--text) !important; display: inline-flex; gap: 8px; align-items: center;
+    }
+    .gh-btn:hover { border-color: var(--muted); }
+
+    /* hero */
+    .hero { position: relative; overflow: hidden; padding: 96px 0 72px; }
+    .hero::before {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(600px 300px at 80% 20%, rgba(51, 214, 255, .14), transparent 70%),
+        radial-gradient(500px 260px at 15% 80%, rgba(255, 59, 59, .12), transparent 70%),
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 100% 32px,
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 32px 100%;
+      pointer-events: none;
+    }
+    .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--q5); }
+    .eyebrow::before { content: "● "; color: var(--q2); }
+    h1 { font-size: clamp(48px, 8vw, 84px); line-height: 1; margin: 16px 0 20px; letter-spacing: -.03em; font-weight: 800; }
+    h1 .r { color: var(--q1); }
+    .lead { font-size: 19px; color: #c4cbd5; max-width: 34em; margin: 0 0 28px; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 18px; border-radius: 8px; font-weight: 600; font-size: 15px;
+      border: 1px solid var(--line); color: var(--text); background: var(--panel);
+    }
+    .btn:hover { text-decoration: none; border-color: var(--muted); }
+    .btn.primary { background: var(--q5); color: #04121a; border-color: var(--q5); }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; max-width: 520px; }
+    .facts b { display: block; font-size: 15px; }
+    .facts span { color: var(--muted); font-size: 13px; }
+
+    .shot {
+      border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+      background: var(--panel);
+      box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(51,214,255,.06);
+      transform: perspective(1400px) rotateY(-6deg) rotateX(2deg);
+    }
+    .shot .bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+    .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: #2c343e; }
+    .shot img { display: block; width: 100%; height: auto; }
+
+    /* sections */
+    section { padding: 88px 0; border-top: 1px solid var(--line); }
+    section.alt { background: var(--bg-2); }
+    .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--q3); margin: 0 0 10px; }
+    h2 { font-size: clamp(30px, 4vw, 42px); line-height: 1.15; margin: 0 0 16px; letter-spacing: -.02em; }
+    .sub { color: var(--muted); max-width: 46em; margin: 0 0 40px; font-size: 17px; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 22px; transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: #33404d; transform: translateY(-2px); }
+    .card h3 { margin: 0 0 8px; font-size: 17px; display: flex; align-items: center; gap: 10px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+    /* color code demo */
+    .demo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+    .term {
+      background: #07090b; border: 1px solid var(--line); border-radius: var(--radius);
+      font-family: var(--mono); font-size: 14px; padding: 18px 20px; overflow-x: auto;
+    }
+    .term .label { color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    .term .row { white-space: pre; line-height: 1.9; }
+    .c1 { color: var(--q1); } .c2 { color: var(--q2); } .c3 { color: var(--q3); }
+    .c5 { color: var(--q5); } .c6 { color: var(--q6); } .c7 { color: #fff; } .cm { color: var(--muted); }
+
+    /* install tabs */
+    .tabs { display: flex; gap: 6px; margin-bottom: -1px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .tabs button {
+      font: 600 14px Inter, sans-serif; color: var(--muted); background: transparent;
+      border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0;
+      padding: 10px 16px; cursor: pointer;
+    }
+    .tabs button[aria-selected="true"] { color: var(--text); background: #07090b; border-color: var(--line); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel .term { border-top-left-radius: 0; }
+    .copy {
+      float: right; font: 600 12px Inter, sans-serif; color: var(--muted); background: var(--panel);
+      border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+    }
+    .copy:hover { color: var(--text); }
+    .note {
+      margin-top: 18px; padding: 14px 16px; border-radius: 8px; font-size: 14px; color: #c4cbd5;
+      background: rgba(255, 210, 63, .07); border: 1px solid rgba(255, 210, 63, .25);
+    }
+    .note b { color: var(--q3); }
+
+    /* roadmap */
+    .roadmap { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .roadmap li {
+      display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: baseline;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;
+    }
+    .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .tag.done { color: var(--q2); } .tag.next { color: var(--q5); } .tag.later { color: var(--muted); }
+    .roadmap b { display: block; }
+    .roadmap span { color: var(--muted); font-size: 14px; }
+
+    footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    footer p { margin: 0 0 6px; max-width: 44em; }
+
+    @media (max-width: 900px) {
+      .hero { padding: 64px 0 48px; }
+      .hero .wrap, .demo { grid-template-columns: 1fr; }
+      .shot { transform: none; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      header.nav nav a:not(.gh-btn) { display: none; }
+    }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .facts { grid-template-columns: 1fr 1fr; }
+      .roadmap li { grid-template-columns: 1fr; gap: 4px; }
+      section { padding: 64px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .card { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="OpenASE home">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M4 32C14 16 24 10 32 10s18 6 28 22C50 48 40 54 32 54S14 48 4 32z" fill="none" stroke="#33d6ff" stroke-width="5"/>
+        <circle cx="32" cy="32" r="11" fill="#ff3b3b"/><circle cx="32" cy="32" r="4" fill="#0b0d10"/>
+      </svg>
+      OpenASE
+    </a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#colors">Color codes</a>
+      <a href="#install">Install</a>
+      <a href="#roadmap">Roadmap</a>
+      <a class="gh-btn" href="https://github.com/tsautier/OpenASE">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Open source / GPL-3.0 / v0.1</div>
+        <h1><span class="r">Open</span>ASE</h1>
+        <p class="lead">The classic game server browser, reborn. Find live Quake&nbsp;3 servers, see who is playing and read their names in full color, the way it looked in 2004.</p>
+        <div class="cta">
+          <a class="btn primary" href="#install">Get started</a>
+          <a class="btn" href="https://github.com/tsautier/OpenASE">View source</a>
+        </div>
+        <div class="facts">
+          <div><b>Rust + Python</b><span>native egui or Tkinter</span></div>
+          <div><b>1,000+ servers</b><span>listed by the Q3 master</span></div>
+          <div><b>Windows first</b><span>Linux and macOS buildable</span></div>
+        </div>
+      </div>
+      <figure class="shot" style="margin:0">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="screenshot.png" width="1279" height="790" alt="OpenASE window: game filter tree on the left, a list of live Quake 3 servers with colored names, ping, players, game, map and address, and player and server info panels below.">
+      </figure>
+    </div>
+  </div>
+
+  <section id="features" class="alt">
+    <div class="wrap">
+      <p class="kicker">Features</p>
+      <h2>What made ASE great, rebuilt from scratch</h2>
+      <p class="sub">OpenASE keeps the familiar three-pane layout: filters on the left, servers on top, players and server rules below. The code is new and contains nothing from the original Yahoo program.</p>
+      <div class="grid">
+        <div class="card"><h3><span class="dot" style="background:var(--q5)"></span>Master server discovery</h3><p>Pulls full server lists from Quake 3 masters, including lists split over many UDP packets.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q2)"></span>Fast parallel scan</h3><p>The Rust version queries 16 servers at once, so hundreds of servers come in within seconds.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q1)"></span>Full color names</h3><p>Renders <code>^1</code> indexed colors, extended <code>^A</code> codes and <code>^xRRGGBB</code> hex colors for servers and players.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q3)"></span>Players and server rules</h3><p>Click a server to see every player's score and ping, plus all of its cvars.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--q6)"></span>Quick filters</h3><p>Hide empty or full servers, cap the ping, or filter by reported country. OpenASE never guesses a location from an IP address.</p></div>
+        <div class="card"><h3><span class="dot" style="background:#bfbfbf"></span>Game detection</h3><p>Finds installed games through the Windows registry or a deep search, and lets you set paths and player names per game.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="colors">
+    <div class="wrap">
+      <p class="kicker">Color codes</p>
+      <h2>Names the way servers meant them</h2>
+      <p class="sub">Quake 3 servers style their names with caret codes. A plain browser shows the raw string; OpenASE draws the colors.</p>
+      <div class="demo">
+        <div class="term">
+          <span class="label">Raw sv_hostname</span>
+          <div class="row cm">^3*^1A51^3* ^5Freeze Tag</div>
+          <div class="row cm">^2[2s2h] ^7- ^1Museo</div>
+          <div class="row cm">^xff9919Orange ^7Hex ^5Server</div>
+        </div>
+        <div class="term">
+          <span class="label">In OpenASE</span>
+          <div class="row"><span class="c3">*</span><span class="c1">A51</span><span class="c3">*</span> <span class="c5">Freeze Tag</span></div>
+          <div class="row"><span class="c2">[2s2h]</span> <span class="c7">-</span> <span class="c1">Museo</span></div>
+          <div class="row"><span style="color:#ff9919">Orange</span> <span class="c7">Hex</span> <span class="c5">Server</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="alt">
+    <div class="wrap">
+      <p class="kicker">Install</p>
+      <h2>Run it from source</h2>
+      <p class="sub">Prebuilt downloads are coming. Until then, building takes a minute.</p>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="rust">Rust (recommended)</button>
+        <button role="tab" aria-selected="false" data-tab="python">Python</button>
+        <button role="tab" aria-selected="false" data-tab="cli">Command line</button>
+      </div>
+      <div class="panel active" id="tab-rust" role="tabpanel">
+        <div class="term"><button class="copy">Copy</button><span class="label">Requires Rust 1.88+</span>
+<div class="row">git clone https://github.com/tsautier/OpenASE.git</div><div class="row">cd OpenASE/rust</div><div class="row">cargo run --release</div></div>
+      </div>
+      <div class="panel" id="tab-python" role="tabpanel">
+        <div class="term"><button class="copy">Copy</button><span class="label">Requires Python 3.10+ with Tkinter</span>
+<div class="row">git clone https://github.com/tsautier/OpenASE.git</div><div class="row">cd OpenASE</div><div class="row">python -m openase</div></div>
+      </div>
+      <div class="panel" id="tab-cli" role="tabpanel">
+        <div class="term"><button class="copy">Copy</button><span class="label">List live servers without the GUI</span>
+<div class="row">cd OpenASE/rust</div><div class="row">cargo run --example scan -- master.quake3arena.com 20</div></div>
+      </div>
+
+      <div class="note"><b>Game list:</b> the full game tree is read from an original ASE <code>filters.txt</code> if one sits next to OpenASE. Without it, OpenASE still browses Quake 3 servers. A built-in game list is on the roadmap.</div>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <div class="wrap">
+      <p class="kicker">Roadmap</p>
+      <h2>Where it's going</h2>
+      <p class="sub">The goal: one browser for the old-school online games that still have players.</p>
+      <ul class="roadmap">
+        <li><span class="tag done">Done</span><div><b>Quake 3 browsing</b><span>Master discovery, server status, players, color names, filters, Python and Rust versions.</span></div></li>
+        <li><span class="tag next">Next</span><div><b>The id Tech 3 family</b><span>Urban Terror, OpenArena, Wolfenstein: Enemy Territory, Call of Duty 1 and 2.</span></div></li>
+        <li><span class="tag next">Next</span><div><b>Built-in game list and real ping</b><span>No dependency on original ASE files, and round-trip time measured per server.</span></div></li>
+        <li><span class="tag next">Next</span><div><b>Downloads</b><span>Signed Windows builds on GitHub Releases.</span></div></li>
+        <li><span class="tag later">Later</span><div><b>Favorites, buddies and one-click join</b><span>See when friends are online and launch the game straight onto their server.</span></div></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p><b style="color:var(--text)">OpenASE</b> is free software under the <a href="https://github.com/tsautier/OpenASE/blob/main/LICENSE">GNU GPL v3</a>.</p>
+      <p>Not affiliated with Yahoo or the original All-Seeing Eye authors. Quake is a trademark of id Software. No original ASE files are distributed.</p>
+    </div>
+    <div>
+      <p><a href="https://github.com/tsautier/OpenASE">Source</a> · <a href="https://github.com/tsautier/OpenASE/issues">Issues</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.tabs button').forEach(function (button) {
+    button.addEventListener('click', function () {
+      document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', b === button); });
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + button.dataset.tab); });
+    });
+  });
+  document.querySelectorAll('.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var rows = button.parentElement.querySelectorAll('.row');
+      var text = Array.prototype.map.call(rows, function (r) { return r.textContent; }).join('\n');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.textContent = 'Copied';
+          setTimeout(function () { button.textContent = 'Copy'; }, 1500);
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>
