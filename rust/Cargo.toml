@@ -1,8 +1,12 @@
 [package]
 name = "openase"
-version = "0.6.0"
+version = "0.7.0"
+authors = ["Thomas Sautier"]
 edition = "2024"
 rust-version = "1.88"
+description = "Open-source game server browser inspired by The All-Seeing Eye"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/tsautier/OpenASE"
 
 [dependencies]
 eframe = { version = "0.37.0", features = ["persistence"] }
@@ -22,3 +26,8 @@ tempfile = "3.27.0"
 
 [build-dependencies]
 winresource = "0.1.34"
+
+[profile.release]
+strip = true
+lto = "fat"
+codegen-units = 1

@@ -1,0 +1,51 @@
+name: Add a game
+description: Ask for a new game to be supported
+labels: ["new game"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most games are one entry in `rust/src/games.json`. Fill in what you know; partial info is fine.
+        See [CONTRIBUTING.md](https://github.com/tsautier/OpenASE/blob/main/CONTRIBUTING.md) if you want to add it yourself.
+  - type: input
+    id: game
+    attributes:
+      label: Game name
+      placeholder: Quake Live
+    validations:
+      required: true
+  - type: input
+    id: master
+    attributes:
+      label: Master server address
+      description: Host and port of the master server, if you know it.
+      placeholder: master.example.com:27950
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Query protocol
+      description: Pick the closest match, or "Not sure".
+      options:
+        - Not sure
+        - Quake 3 (getstatus / getservers)
+        - GameSpy
+        - Valve A2S (Steam)
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: port
+    attributes:
+      label: Default port
+      placeholder: "27960"
+  - type: input
+    id: exe
+    attributes:
+      label: Executable names
+      description: Names of the game program on each system you know.
+      placeholder: "game.exe, game.x86_64"
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Protocol documentation, master server pages, active community, download page.

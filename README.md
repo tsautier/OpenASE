@@ -20,8 +20,14 @@ Yahoo program.
 | OpenArena | Quake 3 | dpmaster.deathmask.net |
 | Wolfenstein: Enemy Territory | Quake 3 | etmaster.idsoftware.com, etmaster.etlegacy.com |
 | Call of Duty, CoD 2, CoD 4 | Quake 3 | Activision masters |
+| Star Wars Jedi Knight II: Jedi Outcast | Quake 3 | master.jkhub.org, master.jk2mv.org |
+| Star Wars Jedi Knight: Jedi Academy | Quake 3 | master.jkhub.org, master.jk2mv.org |
+| Return to Castle Wolfenstein | Quake 3 | wolfmaster.idsoftware.com |
 | Unreal Tournament (99) | GameSpy | master.333networks.com |
-| Counter-Strike 1.6 | Valve A2S | Steam Web API (needs your own key) |
+| Counter-Strike 1.6, Team Fortress Classic, Day of Defeat | Valve A2S | Steam Web API (needs your own key) |
+
+Missing a game? See [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-game): most
+games are a single entry in the catalog.
 
 Games are described in [`rust/src/games.json`](rust/src/games.json): masters,
 game types, filter groups, registry detection and the command line used to join.
@@ -57,12 +63,13 @@ Every [GitHub release](https://github.com/tsautier/OpenASE/releases/latest) ship
 | System | Package | How to run |
 | --- | --- | --- |
 | Windows 10/11 (x64) | `OpenASE-<version>-windows-x64.zip` | Unzip, run `OpenASE.exe`. |
-| Linux (x64) | `OpenASE-<version>-linux-x64.tar.gz` | Extract, run `./openase`. An `openase.desktop` file and icon are included. |
+| Linux (x64) | `OpenASE-<version>-linux-x86_64.AppImage` or `OpenASE-<version>-linux-x64.tar.gz` | AppImage: `chmod +x` it and run it, on any distribution. Archive: extract, run `./openase`; an `openase.desktop` file and icon are included. |
 | macOS 11+ (Apple Silicon and Intel) | `OpenASE-<version>-macos-universal.zip` | Unzip, move `OpenASE.app` to Applications. The app is not notarized: the first time, right-click it and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/OpenASE.app`. |
 
 The games themselves still need to run on your system: native Linux and macOS
-builds exist for ioquake3, Urban Terror, OpenArena, ET: Legacy, Unreal
-Tournament (OldUnreal patch) and Counter-Strike 1.6 (Steam). Call of Duty runs
+builds exist for ioquake3, Urban Terror, OpenArena, ET: Legacy, Jedi Outcast
+(JK2MV), Jedi Academy (OpenJK), RtCW (iortcw), Unreal Tournament (OldUnreal
+patch) and the Half-Life games (Steam). Call of Duty runs
 on Windows only, or through Wine / Proton.
 
 ## Build from source (Rust)
@@ -105,7 +112,7 @@ Options > General. Servers added by hand work without a key.
 
 ## License
 
-Copyright (C) 2026 tsautier
+Copyright (C) 2026 Thomas Sautier
 
 OpenASE is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software

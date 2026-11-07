@@ -11,6 +11,10 @@ on:
       tag:
         description: "Existing tag to build, e.g. v0.6.0"
         required: true
+      publish:
+        description: "Publish the packages to the GitHub release (untick to only test the builds)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -22,7 +26,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - uses: dtolnay/rust-toolchain@stable
@@ -40,7 +44,7 @@ jobs:
           Copy-Item rust/target/release/openase.exe "$name/OpenASE.exe"
           Copy-Item LICENSE, README.md $name
           Compress-Archive -Path $name -DestinationPath "$name.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: OpenASE-*.zip
@@ -50,7 +54,7 @@ jobs:
     # binary also runs on older distributions.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - name: Install GUI libraries
@@ -82,15 +86,44 @@ jobs:
           EOF
           sed -i 's/^ *//' "$name/openase.desktop"
           tar czf "$name.tar.gz" "$name"
-      - uses: actions/upload-artifact@v4
+      - name: Package AppImage
+        env:
+          APPIMAGETOOL_URL: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          APPIMAGETOOL_SHA256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          ARCH: x86_64
+        run: |
+          appdir=OpenASE.AppDir
+          mkdir -p "$appdir/usr/bin"
+          cp rust/target/release/openase "$appdir/usr/bin/openase"
+          cp rust/assets/icon.png "$appdir/openase.png"
+          cp rust/assets/icon.png "$appdir/.DirIcon"
+          cat > "$appdir/openase.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=OpenASE
+          Comment=Game server browser in the spirit of The All-Seeing Eye
+          Exec=openase
+          Icon=openase
+          Categories=Game;Network;
+          EOF
+          sed -i 's/^ *//' "$appdir/openase.desktop"
+          ln -s usr/bin/openase "$appdir/AppRun"
+          curl -fsSL -o appimagetool.AppImage "$APPIMAGETOOL_URL"
+          echo "$APPIMAGETOOL_SHA256  appimagetool.AppImage" | sha256sum -c -
+          chmod +x appimagetool.AppImage
+          ./appimagetool.AppImage "$appdir" "OpenASE-$TAG-linux-x86_64.AppImage"
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
-          path: OpenASE-*.tar.gz
+          path: |
+            OpenASE-*.tar.gz
+            OpenASE-*.AppImage
 
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - uses: dtolnay/rust-toolchain@stable
@@ -145,16 +178,17 @@ jobs:
           mv "$app" "$name/"
           cp LICENSE README.md "$name/"
           ditto -c -k --keepParent "$name" "$name.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: OpenASE-*.zip
 
   publish:
     needs: [windows, linux, macos]
+    if: ${{ inputs.publish != false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the manual
+    url: https://tsautier.github.io/OpenASE/#manual
+    about: "How to use OpenASE: filters, joining, friends and options."

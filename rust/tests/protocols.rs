@@ -21,7 +21,8 @@ fn catalog_has_every_game_with_masters_and_join_template() {
     assert_eq!(
         ids,
         [
-            "q3", "urt", "oa", "et", "cod", "cod2", "cod4", "ut99", "cs16"
+            "q3", "urt", "oa", "et", "cod", "cod2", "cod4", "jk2", "jka", "rtcw", "ut99", "cs16",
+            "tfc", "dod"
         ]
     );
     for game in games() {
@@ -40,6 +41,9 @@ fn catalog_protocols_match_games() {
     assert_eq!(game("cod2").unwrap().protocol, Protocol::Quake3);
     assert_eq!(game("ut99").unwrap().protocol, Protocol::Gamespy);
     assert_eq!(game("cs16").unwrap().protocol, Protocol::A2s);
+    assert_eq!(game("jka").unwrap().protocol, Protocol::Quake3);
+    assert_eq!(game("tfc").unwrap().protocol, Protocol::A2s);
+    assert_eq!(game("dod").unwrap().steam_appid, Some(30));
     assert!(matches!(
         game("cs16").unwrap().masters[0],
         Master::SteamWeb { .. }
@@ -57,6 +61,11 @@ fn game_type_names_are_mapped() {
         game("ut99").unwrap().game_type_name("CTFGame"),
         "Capture the Flag"
     );
+    assert_eq!(game("jk2").unwrap().game_type_name("6"), "Saga");
+    assert_eq!(game("jka").unwrap().game_type_name("4"), "Power Duel");
+    assert_eq!(game("jka").unwrap().game_type_name("7"), "Siege");
+    assert_eq!(game("rtcw").unwrap().game_type_name("5"), "Objective");
+    assert_eq!(game("rtcw").unwrap().game_type_name("6"), "Stopwatch");
     assert_eq!(game("q3").unwrap().game_type_name("99"), "99");
 }
 
@@ -486,4 +495,13 @@ fn favorite_groups_default_and_move() {
     settings.add_favorite_to(server.clone(), "Favorites3");
     assert_eq!(settings.favorites.len(), 1);
     assert_eq!(settings.favorites_in("Favorites3"), vec![server]);
+}
+
+#[test]
+fn launch_mod_skips_base_mod_and_display_strings() {
+    let rtcw = game("rtcw").unwrap();
+    assert_eq!(rtcw.launch_mod("main"), "");
+    assert_eq!(rtcw.launch_mod("shrub"), "shrub");
+    assert_eq!(rtcw.launch_mod("Dark-MoD v5.1"), "");
+    assert_eq!(rtcw.launch_mod(""), "");
 }

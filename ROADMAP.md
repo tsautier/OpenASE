@@ -53,7 +53,18 @@ in v0.6; it remains in the git history.
 - [x] First-run setup wizard, Filter menu shortcuts (Ctrl+E/D/Q), Help menu
 - [x] New website with manual
 
+## v0.7 — More classics (done)
+
+- [x] Star Wars Jedi Knight II: Jedi Outcast, Jedi Academy, Return to Castle Wolfenstein
+- [x] Team Fortress Classic and Day of Defeat (Steam list)
+- [x] Linux AppImage, smaller release binaries, CI and builds on Windows, Linux, macOS
+- [x] `CONTRIBUTING.md` with a guide to adding a game, issue and pull request templates
+- [x] Auto-Search finds native Linux and macOS game binaries
+- [x] Python prototype retired
+
 ## Not done yet
+
+- [ ] Soldier of Fortune II (no public master answers today)
 
 - [ ] Unreal Tournament 2004 (different master protocol)
 - [ ] Steam server list checked with a real API key (code is unit-tested only)
@@ -62,11 +73,12 @@ in v0.6; it remains in the git history.
 ## v1.0 — Polished release
 
 - [ ] Signed Windows installer and update check
-- [ ] Linux packages (AppImage or Flatpak)
+- [ ] Flatpak on Flathub
 - [ ] English and French interface
 - [ ] User guide on the website, custom domain
 
 ## Community
 
-- [ ] `CONTRIBUTING.md`, issue templates, "good first issue" labels
+- [x] `CONTRIBUTING.md`, issue templates
+- [ ] "good first issue" labels
 - [ ] Announce on retro FPS communities (ioquake3, OpenArena, Urban Terror, 333networks)

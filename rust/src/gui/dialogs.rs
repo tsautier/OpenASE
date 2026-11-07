@@ -163,6 +163,7 @@ impl OpenAseApp {
             ui.add_space(6.0);
             ui.label("An open-source game server browser in the spirit of The All-Seeing Eye.");
             ui.label("New code, not affiliated with Yahoo or the original authors.");
+            ui.label("Copyright (C) 2026 Thomas Sautier");
             ui.label("Free software under the GNU GPL v3 or later.");
             ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
             ui.hyperlink_to(

@@ -243,6 +243,108 @@
     "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
+    "id": "jk2",
+    "name": "Star Wars Jedi Knight II: Jedi Outcast",
+    "short": "JK2",
+    "color": "#2e78d2",
+    "protocol": "quake3",
+    "default_port": 28070,
+    "masters": [
+      { "kind": "quake3", "address": "master.jkhub.org:28060", "query": "getservers 16 empty full" },
+      { "kind": "quake3", "address": "master.jkhub.org:28060", "query": "getservers 15 empty full" },
+      { "kind": "quake3", "address": "master.jk2mv.org:28060", "query": "getservers 16 empty full" },
+      { "kind": "quake3", "address": "master.jk2mv.org:28060", "query": "getservers 15 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "Free For All" },
+      { "value": "1", "name": "Holocron FFA" },
+      { "value": "2", "name": "Jedi Master" },
+      { "value": "3", "name": "Duel" },
+      { "value": "5", "name": "Team FFA" },
+      { "value": "6", "name": "Saga" },
+      { "value": "7", "name": "Capture the Flag" },
+      { "value": "8", "name": "Capture the Ysalamiri" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "basejk",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["jk2mvmp.exe", "jk2mvmp", "jk2mp.exe"],
+    "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "jka",
+    "name": "Star Wars Jedi Knight: Jedi Academy",
+    "short": "JKA",
+    "color": "#1fa39a",
+    "protocol": "quake3",
+    "default_port": 29070,
+    "masters": [
+      { "kind": "quake3", "address": "master.jkhub.org:29060", "query": "getservers 26 empty full" },
+      { "kind": "quake3", "address": "master.jk2mv.org:29060", "query": "getservers 26 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "Free For All" },
+      { "value": "1", "name": "Holocron FFA" },
+      { "value": "2", "name": "Jedi Master" },
+      { "value": "3", "name": "Duel" },
+      { "value": "4", "name": "Power Duel" },
+      { "value": "6", "name": "Team FFA" },
+      { "value": "7", "name": "Siege" },
+      { "value": "8", "name": "Capture the Flag" },
+      { "value": "9", "name": "Capture the Ysalamiri" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "basejka",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["openjk.x86_64.exe", "openjk.x86.exe", "openjk.x86_64", "openjk.i386", "openjk.arm64", "jamp.exe"],
+    "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "rtcw",
+    "name": "Return to Castle Wolfenstein",
+    "short": "RtCW",
+    "color": "#8a2432",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "wolfmaster.idsoftware.com:27950", "query": "getservers 60 empty full" },
+      { "kind": "quake3", "address": "wolfmaster.idsoftware.com:27950", "query": "getservers 57 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "Free For All" },
+      { "value": "1", "name": "Tournament" },
+      { "value": "3", "name": "Team Deathmatch" },
+      { "value": "4", "name": "Capture the Flag" },
+      { "value": "5", "name": "Objective" },
+      { "value": "6", "name": "Stopwatch" },
+      { "value": "7", "name": "Checkpoint" },
+      { "value": "8", "name": "Capture and Hold" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "main",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["iowolfmp.x86_64.exe", "iowolfmp.x86.exe", "WolfMP.exe", "iowolfmp.x86_64", "iowolfmp.x86", "iowolfmp"],
+    "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
     "id": "ut99",
     "name": "Unreal Tournament",
     "short": "UT",
@@ -298,5 +400,57 @@
     ],
     "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
     "join": "-game cstrike [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "tfc",
+    "name": "Team Fortress Classic",
+    "short": "TFC",
+    "color": "#d2561f",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 20,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\20" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "tfc",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game tfc [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "dod",
+    "name": "Day of Defeat",
+    "short": "DoD",
+    "color": "#3f6b4f",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 30,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\30" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "dod",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   }
 ]

@@ -121,7 +121,12 @@ impl Game {
 
     /// Mod name to pass on the command line, or empty for the base game.
     pub fn launch_mod(&self, mod_name: &str) -> String {
-        if mod_name.is_empty() || mod_name.eq_ignore_ascii_case(&self.base_mod) {
+        // Some servers report a display string ("Dark-MoD v5.1") instead of
+        // the mod folder: passing it as fs_game would break the join.
+        let is_folder = mod_name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'));
+        if mod_name.is_empty() || !is_folder || mod_name.eq_ignore_ascii_case(&self.base_mod) {
             String::new()
         } else {
             mod_name.to_string()
