@@ -3,14 +3,25 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
-## Unreleased
+## 0.9.1 — 2026-11-08
 
-- **Windows installer**: `OpenASE-<version>-windows-x64-setup.exe`, built with Inno Setup.
+### New
+- **Windows installer**: `OpenASE-v0.9.1-windows-x64-setup.exe`, built with Inno Setup.
   Installs per user by default (no administrator prompt), adds a Start menu entry and an
   optional desktop shortcut, upgrades older installs in place, and keeps your settings when
   uninstalled. English and French. The portable zip is still published.
 - **SHA256SUMS.txt** is attached to every release with the checksum of each package.
 - Package manager manifests (winget, Scoop) can now be generated from `packaging/`.
+
+### Changes
+- The website moved to **https://openase.org**. The Help menu and About window link there.
+- **Friend sounds on Linux and macOS**: .wav files and the default notification sound now
+  play there too, with the system's own player (pw-play, paplay or aplay on Linux, afplay
+  on macOS).
+
+### Known issues
+- The installer and the program are not code-signed yet, so Windows SmartScreen may warn
+  before running them ("More info" > "Run anyway").
 
 ## 0.9.0 — 2026-11-08
 
