@@ -24,6 +24,10 @@ pub enum Protocol {
     Gamespy2,
     /// GameSpy version 3 query, also called GameSpy 4 (Battlefield 2).
     Gamespy3,
+    /// Starsiege: Tribes binary query (`b` status, native ping).
+    Tribes,
+    /// Tribes 2 (Torque) binary query: ping 14, info 18.
+    Tribes2,
 }
 
 /// Where a game's server list comes from.
@@ -60,6 +64,10 @@ pub enum Master {
         gamename: String,
         key: String,
     },
+    /// Starsiege: Tribes UDP master (port 28000).
+    Tribes { address: String },
+    /// Plain-text HTTP list, one `ip:port` per line (TribesNext master).
+    HttpList { url: String },
 }
 
 impl Master {
@@ -73,6 +81,8 @@ impl Master {
             Master::Unreal2 { address, .. } => address.clone(),
             Master::Mta { url } => url.clone(),
             Master::GamespySb { address, .. } => address.clone(),
+            Master::Tribes { address } => address.clone(),
+            Master::HttpList { url } => url.clone(),
         }
     }
 }

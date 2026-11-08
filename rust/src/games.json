@@ -1835,5 +1835,54 @@
     "registry": [],
     "exe_names": ["Battlefront.exe"],
     "join": "/win /connect {address}"
+  },
+  {
+    "id": "tribes",
+    "name": "Starsiege: Tribes",
+    "short": "T1",
+    "color": "#3c6e9b",
+    "protocol": "tribes",
+    "default_port": 28001,
+    "masters": [
+      { "kind": "tribes", "address": "t1m1.tribes1.co:28000" },
+      { "kind": "tribes", "address": "t1m1.pu.net:28000" }
+    ],
+    "game_type_key": "game",
+    "game_types": [
+      { "value": "CTF", "name": "Capture the Flag" },
+      { "value": "C&H", "name": "Capture and Hold" },
+      { "value": "DM", "name": "Deathmatch" }
+    ],
+    "mod_key": "mods",
+    "base_mod": "base",
+    "filters": [
+      { "name": "Mods", "key": "mods", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["Tribes.exe"],
+    "join": "+connect IP:{address}"
+  },
+  {
+    "id": "tribes2",
+    "name": "Tribes 2",
+    "short": "T2",
+    "color": "#9b5a2d",
+    "protocol": "tribes2",
+    "default_port": 28000,
+    "masters": [
+      { "kind": "http_list", "url": "http://master.tribesnext.com/list" }
+    ],
+    "game_type_key": "mission",
+    "game_types": [],
+    "mod_key": "game",
+    "base_mod": "base",
+    "filters": [
+      { "name": "Mods", "key": "game", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["Tribes2.exe", "tribes2"],
+    "join": "-online -connect {address}"
   }
 ]
