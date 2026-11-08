@@ -8,7 +8,7 @@ use std::time::Duration;
 use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
-use crate::{a2s, ase, gamespy, gamespy_sb, gamespy2, location, quake2, steam, unreal2};
+use crate::{a2s, ase, gamespy, gamespy_sb, gamespy2, location, quake2, steam, tribes, unreal2};
 
 /// Network settings for queries (ASE's Options > Network).
 #[derive(Debug, Clone)]
@@ -71,6 +71,8 @@ pub fn fetch_master(
             gamename,
             key,
         } => gamespy_sb::master_list(address, gamename, key, timeout * 3),
+        Master::Tribes { address } => tribes::t1_master_list(address, timeout * 3),
+        Master::HttpList { url } => tribes::http_master_list(url, timeout * 10),
     }
 }
 
@@ -233,6 +235,8 @@ fn status_once(
             };
             Ok((server, rtt))
         }
+        Protocol::Tribes => tribes::t1_status(&game.id, host, port, timeout),
+        Protocol::Tribes2 => tribes::t2_status(&game.id, host, port, timeout),
     }
 }
 
@@ -261,6 +265,8 @@ fn ping_once(game: &Game, host: &str, port: u16, timeout: Duration) -> io::Resul
         Protocol::Ase => ase::ping(host, port, timeout),
         Protocol::Gamespy2 => gamespy2::ping_v2(host, port, timeout),
         Protocol::Gamespy3 => gamespy2::ping_v3(host, port, timeout),
+        Protocol::Tribes => tribes::t1_ping(host, port, timeout),
+        Protocol::Tribes2 => tribes::t2_ping(host, port, timeout),
     }
 }
 

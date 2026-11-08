@@ -17,6 +17,11 @@ const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
 const UNREAL2_PORTS: [u16; 3] = [7778, 7788, 7798];
 /// ASE ports (Multi Theft Auto: game port + 123).
 const ASE_PORTS: [u16; 2] = [22126, 22127];
+/// Starsiege: Tribes and Tribes 2 game ports.
+const TRIBES_PORTS: [u16; 3] = [28001, 28002, 28003];
+const TRIBES2_PORTS: [u16; 3] = [28000, 28001, 28002];
+/// Key sent in LAN Tribes queries.
+const TRIBES_LAN_KEY: u16 = 0x4c41;
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -87,6 +92,14 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
     for port in ASE_PORTS {
         let _ = socket.send_to(b"s", SocketAddrV4::new(broadcast, port));
     }
+    let tribes = crate::tribes::t1_status_request(TRIBES_LAN_KEY);
+    for port in TRIBES_PORTS {
+        let _ = socket.send_to(&tribes, SocketAddrV4::new(broadcast, port));
+    }
+    let tribes2 = crate::tribes::t2_request(crate::tribes::T2_PING, u32::from(TRIBES_LAN_KEY));
+    for port in TRIBES2_PORTS {
+        let _ = socket.send_to(&tribes2, SocketAddrV4::new(broadcast, port));
+    }
 
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
@@ -122,6 +135,14 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
                     address = format!("{}:{}", from.ip(), reply.port);
                     game.id.as_str()
                 })
+        } else if crate::tribes::is_t1_status(packet, Some(TRIBES_LAN_KEY)) {
+            Some("tribes")
+        } else if crate::tribes::is_t2_answer(
+            packet,
+            crate::tribes::T2_PING_ANSWER,
+            Some(u32::from(TRIBES_LAN_KEY)),
+        ) {
+            Some("tribes2")
         } else if let Ok(info) = parse_info_response(packet) {
             Some(guess_quake3_game(&info, from.port()))
         } else if packet.starts_with(b"\\") || latin1(packet).contains("\\final\\") {

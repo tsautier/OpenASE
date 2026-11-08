@@ -79,7 +79,9 @@ fn catalog_has_every_game_with_masters_and_join_template() {
             "swat4",
             "tribesv",
             "fear",
-            "swbf"
+            "swbf",
+            "tribes",
+            "tribes2"
         ]
     );
     for game in games() {
