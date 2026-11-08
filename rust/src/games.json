@@ -452,5 +452,98 @@
     ],
     "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
     "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "ut2004",
+    "name": "Unreal Tournament 2004",
+    "short": "UT2K4",
+    "color": "#8c2d19",
+    "protocol": "unreal2",
+    "default_port": 7778,
+    "masters": [
+      { "kind": "unreal2", "address": "ut2004master.333networks.com:28902", "client": "UT2K4CLIENT", "version": 3369 },
+      { "kind": "unreal2", "address": "utmaster.openspy.net:28902", "client": "UT2K4CLIENT", "version": 3369 }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "xDeathMatch", "name": "Deathmatch" },
+      { "value": "xTeamGame", "name": "Team Deathmatch" },
+      { "value": "xCTFGame", "name": "Capture the Flag" },
+      { "value": "xVehicleCTFGame", "name": "Vehicle CTF" },
+      { "value": "xBombingRun", "name": "Bombing Run" },
+      { "value": "xDoubleDom", "name": "Double Domination" },
+      { "value": "ONSOnslaughtGame", "name": "Onslaught" },
+      { "value": "ASGameInfo", "name": "Assault" },
+      { "value": "Invasion", "name": "Invasion" },
+      { "value": "xLastManStandingGame", "name": "Last Man Standing" },
+      { "value": "xMutantGame", "name": "Mutant" },
+      { "value": "KFGameType", "name": "Killing Floor" }
+    ],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Types", "key": "gametype", "dynamic": true },
+      { "name": "Version", "key": "ServerVersion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\UT2004", "value": "Folder", "exe": "System\\UT2004.exe" }
+    ],
+    "exe_names": ["UT2004.exe", "ut2004-bin-linux-amd64", "ut2004-bin"],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "ut2003",
+    "name": "Unreal Tournament 2003",
+    "short": "UT2K3",
+    "color": "#3c5a8c",
+    "protocol": "unreal2",
+    "default_port": 7778,
+    "masters": [
+      { "kind": "unreal2", "address": "utmaster.openspy.net:28902", "client": "CLIENT", "version": 2225 }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "xDeathMatch", "name": "Deathmatch" },
+      { "value": "xTeamGame", "name": "Team Deathmatch" },
+      { "value": "xCTFGame", "name": "Capture the Flag" },
+      { "value": "xBombingRun", "name": "Bombing Run" },
+      { "value": "xDoubleDom", "name": "Double Domination" }
+    ],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Types", "key": "gametype", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\UT2003", "value": "Folder", "exe": "System\\UT2003.exe" }
+    ],
+    "exe_names": ["UT2003.exe", "ut2003-bin"],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "mta",
+    "name": "Multi Theft Auto: San Andreas",
+    "short": "MTA",
+    "color": "#d26e14",
+    "protocol": "ase",
+    "default_port": 22003,
+    "query_port_offset": 123,
+    "masters": [
+      { "kind": "mta", "url": "https://master.multitheftauto.com/ase/mta/" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Modes", "key": "gametype", "dynamic": true },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["Multi Theft Auto.exe"],
+    "join": "mtasa://{address}"
   }
 ]

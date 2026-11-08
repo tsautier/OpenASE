@@ -9,6 +9,7 @@ use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
 use crate::{a2s, gamespy, location, steam};
+use crate::{ase, unreal2};
 
 /// Network settings for queries (ASE's Options > Network).
 #[derive(Debug, Clone)]
@@ -48,6 +49,12 @@ pub fn fetch_master(
             key,
         } => gamespy::master_list(address, gamename, key, timeout * 3),
         Master::SteamWeb { filter } => steam::server_list(steam_key, filter, limit, timeout * 5),
+        Master::Unreal2 {
+            address,
+            client,
+            version,
+        } => unreal2::master_list(address, client, *version, timeout * 3),
+        Master::Mta { url } => ase::mta_master_list(url, timeout * 10),
     }
 }
 
@@ -96,6 +103,8 @@ pub fn fetch_all_masters(
 
 /// Query one server: full status, then extra pings for ping/flux/loss.
 pub fn query_server(game: &Game, host: &str, port: u16, options: &QueryOptions) -> Server {
+    // `port` is the address port; some games answer queries on an offset port.
+    let query_port = port.saturating_add(game.query_port_offset);
     let mut samples: Vec<Duration> = Vec::new();
     let mut attempts = 0u32;
     let mut status = None;
@@ -103,7 +112,7 @@ pub fn query_server(game: &Game, host: &str, port: u16, options: &QueryOptions) 
 
     for _ in 0..=options.retries {
         attempts += 1;
-        match status_once(game, host, port, options.timeout) {
+        match status_once(game, host, query_port, options.timeout) {
             Ok((server, rtt)) => {
                 samples.push(rtt);
                 status = Some(server);
@@ -118,11 +127,15 @@ pub fn query_server(game: &Game, host: &str, port: u16, options: &QueryOptions) 
 
     for _ in 1..options.pings.max(1) {
         attempts += 1;
-        if let Ok(rtt) = ping_once(game, host, port, options.timeout) {
+        if let Ok(rtt) = ping_once(game, host, query_port, options.timeout) {
             samples.push(rtt);
         }
     }
 
+    if game.query_port_offset != 0 {
+        server.port = port;
+        server.join_port = port;
+    }
     apply_ping_stats(&mut server, &samples, attempts);
     server
 }
@@ -176,6 +189,8 @@ fn status_once(
             Ok((server, rtt))
         }
         Protocol::A2s => a2s::status(&game.id, host, port, timeout),
+        Protocol::Unreal2 => unreal2::status(&game.id, host, port, timeout),
+        Protocol::Ase => ase::status(&game.id, host, port, timeout),
     }
 }
 
@@ -193,6 +208,8 @@ fn ping_once(game: &Game, host: &str, port: u16, timeout: Duration) -> io::Resul
         }
         Protocol::Gamespy => gamespy::query(host, port, "\\info\\", timeout).map(|(_, rtt)| rtt),
         Protocol::A2s => a2s::ping(host, port, timeout),
+        Protocol::Unreal2 => unreal2::ping(host, port, timeout),
+        Protocol::Ase => ase::ping(host, port, timeout),
     }
 }
 

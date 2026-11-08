@@ -22,7 +22,7 @@ fn catalog_has_every_game_with_masters_and_join_template() {
         ids,
         [
             "q3", "urt", "oa", "et", "cod", "cod2", "cod4", "jk2", "jka", "rtcw", "ut99", "cs16",
-            "tfc", "dod"
+            "tfc", "dod", "ut2004", "ut2003", "mta"
         ]
     );
     for game in games() {
