@@ -1,0 +1,27 @@
+{
+    "version": "0.9.0",
+    "description": "Game server browser in the spirit of The All-Seeing Eye",
+    "homepage": "https://openase.org",
+    "license": "GPL-3.0-only",
+    "url": "https://github.com/tsautier/OpenASE/releases/download/v0.9.0/OpenASE-v0.9.0-windows-x64.zip",
+    "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "extract_dir": "OpenASE-v0.9.0-windows-x64",
+    "bin": "OpenASE.exe",
+    "shortcuts": [
+        [
+            "OpenASE.exe",
+            "OpenASE"
+        ]
+    ],
+    "checkver": {
+        "github": "https://github.com/tsautier/OpenASE"
+    },
+    "autoupdate": {
+        "url": "https://github.com/tsautier/OpenASE/releases/download/v$version/OpenASE-v$version-windows-x64.zip",
+        "extract_dir": "OpenASE-v$version-windows-x64",
+        "hash": {
+            "url": "https://github.com/tsautier/OpenASE/releases/download/v$version/SHA256SUMS.txt",
+            "regex": "$sha256\\s+$basename"
+        }
+    }
+}
