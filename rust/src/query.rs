@@ -117,6 +117,9 @@ pub fn fetch_all_masters(
     (addresses, errors)
 }
 
+/// Wait before retrying a ping that a rate-limiting server may have dropped.
+const THROTTLE_PAUSE: Duration = Duration::from_millis(1100);
+
 /// Query one server: full status, then extra pings for ping/flux/loss.
 pub fn query_server(game: &Game, host: &str, port: u16, options: &QueryOptions) -> Server {
     // `port` is the address port; some games answer queries on an offset port.
@@ -143,7 +146,15 @@ pub fn query_server(game: &Game, host: &str, port: u16, options: &QueryOptions) 
 
     for _ in 1..options.pings.max(1) {
         attempts += 1;
-        if let Ok(rtt) = ping_once(game, host, query_port, options.timeout) {
+        // Some servers rate-limit queries per address (MTA) or ignore the
+        // short ping request (Elite Force, NOLF 2). Retry once after a pause
+        // with the full status query, which they did answer, so neither case
+        // is reported as packet loss.
+        let rtt = ping_once(game, host, query_port, options.timeout).or_else(|_| {
+            std::thread::sleep(THROTTLE_PAUSE);
+            status_once(game, host, query_port, options.timeout).map(|(_, rtt)| rtt)
+        });
+        if let Ok(rtt) = rtt {
             samples.push(rtt);
         }
     }
