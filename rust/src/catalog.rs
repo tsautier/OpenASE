@@ -20,6 +20,10 @@ pub enum Protocol {
     QuakeWorld,
     Unreal2,
     Ase,
+    /// GameSpy version 2 query (Halo, SWAT 4).
+    Gamespy2,
+    /// GameSpy version 3 query, also called GameSpy 4 (Battlefield 2).
+    Gamespy3,
 }
 
 /// Where a game's server list comes from.
@@ -49,6 +53,13 @@ pub enum Master {
     },
     /// Multi Theft Auto HTTP master with a binary list (game ports).
     Mta { url: String },
+    /// GameSpy server browsing master (TCP 28910, encoding X), as run by
+    /// OpenSpy and BF2Hub.
+    GamespySb {
+        address: String,
+        gamename: String,
+        key: String,
+    },
 }
 
 impl Master {
@@ -61,6 +72,7 @@ impl Master {
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
             Master::Unreal2 { address, .. } => address.clone(),
             Master::Mta { url } => url.clone(),
+            Master::GamespySb { address, .. } => address.clone(),
         }
     }
 }
@@ -129,6 +141,10 @@ pub struct Game {
     /// Theft Auto). Server addresses then hold the host port players join.
     #[serde(default)]
     pub query_port_offset: u16,
+    /// GameSpy (v1) request used for extra ping samples; `\info\` when empty.
+    /// Some servers (SWAT 4 with stats mods) only answer `\status\`.
+    #[serde(default)]
+    pub ping_request: String,
 }
 
 impl Game {

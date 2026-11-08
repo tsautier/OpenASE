@@ -71,12 +71,24 @@ fn catalog_has_every_game_with_masters_and_join_template() {
             "kingpin",
             "ut2004",
             "ut2003",
-            "mta"
+            "mta",
+            "bf2",
+            "bfv",
+            "halo",
+            "haloce",
+            "swat4",
+            "tribesv",
+            "fear",
+            "swbf"
         ]
     );
     for game in games() {
         assert!(!game.masters.is_empty(), "{} has no master", game.id);
-        assert!(game.join.contains("{address}"), "{} join template", game.id);
+        assert!(
+            game.join.contains("{address}") || game.join.contains("{ip}"),
+            "{} join template",
+            game.id
+        );
         assert!(
             openase::colors::parse_hex(&game.color).is_some(),
             "{} color",
@@ -96,6 +108,13 @@ fn catalog_protocols_match_games() {
     assert!(matches!(
         game("cs16").unwrap().masters[0],
         Master::SteamWeb { .. }
+    ));
+    assert_eq!(game("bf2").unwrap().protocol, Protocol::Gamespy3);
+    assert_eq!(game("halo").unwrap().protocol, Protocol::Gamespy2);
+    assert_eq!(game("bf1942").unwrap().protocol, Protocol::Gamespy);
+    assert!(matches!(
+        game("bf2").unwrap().masters[0],
+        Master::GamespySb { .. }
     ));
 }
 
@@ -120,6 +139,8 @@ fn game_type_names_are_mapped() {
     assert_eq!(game("rtcw").unwrap().game_type_name("5"), "Objective");
     assert_eq!(game("rtcw").unwrap().game_type_name("6"), "Stopwatch");
     assert_eq!(game("q3").unwrap().game_type_name("99"), "99");
+    assert_eq!(game("bf2").unwrap().game_type_name("gpm_cq"), "Conquest");
+    assert_eq!(game("bfv").unwrap().game_type_name("coop"), "Co-op");
 }
 
 // --- Quake 3 family ---
@@ -372,6 +393,25 @@ fn join_args_use_mod_and_unreal_join_port() {
     assert_eq!(
         join_args(game("ut99").unwrap(), &settings, &ut, ""),
         vec!["5.6.7.8:7777?Name=Me"]
+    );
+
+    let mut bf2 = Server::new("bf2", "9.8.7.6", 29900);
+    bf2.join_port = 16567;
+    bf2.mod_name = "pr".into();
+    assert_eq!(
+        join_args(game("bf2").unwrap(), &GameSettings::default(), &bf2, ""),
+        vec![
+            "+modPath",
+            "mods/pr",
+            "+joinServer",
+            "9.8.7.6",
+            "+port",
+            "16567",
+            "+menu",
+            "1",
+            "+fullscreen",
+            "1"
+        ]
     );
 }
 

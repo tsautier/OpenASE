@@ -8,6 +8,8 @@ pub mod colors;
 pub mod countries;
 pub mod detect;
 pub mod gamespy;
+pub mod gamespy2;
+pub mod gamespy_sb;
 pub mod geoip;
 pub mod lan;
 pub mod launch;

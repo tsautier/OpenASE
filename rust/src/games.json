@@ -1641,5 +1641,199 @@
     "registry": [],
     "exe_names": ["Multi Theft Auto.exe"],
     "join": "mtasa://{address}"
+  },
+  {
+    "id": "bf2",
+    "name": "Battlefield 2",
+    "short": "BF2",
+    "color": "#c87d1e",
+    "protocol": "gamespy3",
+    "default_port": 29900,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "battlefield2.master.openspy.net:28910", "gamename": "battlefield2", "key": "hW6m9a" },
+      { "kind": "gamespy_sb", "address": "battlefield2.ms.playbf2.ru:28910", "gamename": "battlefield2", "key": "hW6m9a" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "gpm_cq", "name": "Conquest" },
+      { "value": "gpm_coop", "name": "Co-op" },
+      { "value": "gpm_ctf", "name": "Capture the Flag" }
+    ],
+    "mod_key": "gamevariant",
+    "base_mod": "bf2",
+    "filters": [
+      { "name": "Mods", "key": "gamevariant", "dynamic": true},
+      { "name": "Ranked", "key": "bf2_ranked", "options": [ { "label": "Yes", "values": ["1"]}, { "label": "No", "values": ["0"]} ]},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Electronic Arts\\EA Games\\Battlefield 2", "value": "InstallDir", "exe": "BF2.exe" }
+    ],
+    "exe_names": ["BF2.exe"],
+    "join": "[+modPath mods/{mod} ][+playerName \"{name}\" ][+password \"{password}\" ]+joinServer {ip} +port {port} +menu 1 +fullscreen 1"
+  },
+  {
+    "id": "bfv",
+    "name": "Battlefield Vietnam",
+    "short": "BFV",
+    "color": "#5f7a2e",
+    "protocol": "gamespy2",
+    "default_port": 23000,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "bfvietnam.master.openspy.net:28910", "gamename": "bfvietnam", "key": "h2P9dJ" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "conquest", "name": "Conquest" },
+      { "value": "coop", "name": "Co-op" },
+      { "value": "ctf", "name": "Capture the Flag" },
+      { "value": "tdm", "name": "Team Deathmatch" }
+    ],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Version", "key": "gamever", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Electronic Arts\\EA GAMES\\Battlefield Vietnam", "value": "GAMEDIR", "exe": "BfVietnam.exe" }
+    ],
+    "exe_names": ["BfVietnam.exe"],
+    "join": "+restart 1 [+password \"{password}\" ]+joinServer {address}"
+  },
+  {
+    "id": "halo",
+    "name": "Halo: Combat Evolved",
+    "short": "Halo",
+    "color": "#4b7d3c",
+    "protocol": "gamespy2",
+    "default_port": 2302,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "s1.master.hosthpc.com:28910", "gamename": "halor", "key": "e4Rd9J" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Version", "key": "gamever", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft Games\\Halo", "value": "EXE Path", "exe": "halo.exe" }
+    ],
+    "exe_names": ["halo.exe"],
+    "join": "-connect {address}[ -password {password}]"
+  },
+  {
+    "id": "haloce",
+    "name": "Halo: Custom Edition",
+    "short": "HCE",
+    "color": "#3c6e8c",
+    "protocol": "gamespy2",
+    "default_port": 2302,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "s1.master.hosthpc.com:28910", "gamename": "halom", "key": "e4Rd9J" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Version", "key": "gamever", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft Games\\Halo CE", "value": "EXE Path", "exe": "haloce.exe" }
+    ],
+    "exe_names": ["haloce.exe"],
+    "join": "-connect {address}[ -password {password}]"
+  },
+  {
+    "id": "swat4",
+    "name": "SWAT 4",
+    "short": "SWAT",
+    "color": "#2d4b6e",
+    "protocol": "gamespy",
+    "default_port": 10481,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "master.swat4stats.com:28910", "gamename": "swat4", "key": "tG3j8c" },
+      { "kind": "gamespy_sb", "address": "swat4.master.openspy.net:28910", "gamename": "swat4", "key": "tG3j8c" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Version", "key": "gamever", "dynamic": true},
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["Swat4X.exe", "Swat4.exe"],
+    "ping_request": "\\status\\",
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "tribesv",
+    "name": "Tribes: Vengeance",
+    "short": "T:V",
+    "color": "#7d3c8c",
+    "protocol": "gamespy2",
+    "default_port": 7778,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "tribesv.master.openspy.net:28910", "gamename": "tribesv", "key": "y3D28k" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["TV_CD_DVD.exe"],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "fear",
+    "name": "F.E.A.R.",
+    "short": "FEAR",
+    "color": "#a01e1e",
+    "protocol": "gamespy2",
+    "default_port": 27888,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "fear.master.openspy.net:28910", "gamename": "fear", "key": "n3V8cj" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["FEARMP.exe", "FEAR.exe"],
+    "join": "+join {address}"
+  },
+  {
+    "id": "swbf",
+    "name": "Star Wars: Battlefront",
+    "short": "SWBF",
+    "color": "#b4a03c",
+    "protocol": "gamespy2",
+    "default_port": 3658,
+    "masters": [
+      { "kind": "gamespy_sb", "address": "swbfrontpc.master.openspy.net:28910", "gamename": "swbfrontpc", "key": "y3Hd2d" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Maps", "key": "mapname", "dynamic": true}
+    ],
+    "registry": [],
+    "exe_names": ["Battlefront.exe"],
+    "join": "/win /connect {address}"
   }
 ]
