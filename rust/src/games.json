@@ -1536,7 +1536,7 @@
     "default_port": 7778,
     "game_port_query_offset": 1,
     "masters": [
-      { "kind": "unreal2", "address": "ut2004master.333networks.com:28902", "client": "UT2K4CLIENT", "version": 3369 },
+      { "kind": "networks333", "gamename": "ut2004", "api": "https://ut2004master.333networks.com/json/" },
       { "kind": "unreal2", "address": "utmaster.openspy.net:28902", "client": "UT2K4CLIENT", "version": 3369 }
     ],
     "game_type_key": "gametype",

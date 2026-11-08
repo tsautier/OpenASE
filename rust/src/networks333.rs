@@ -14,7 +14,8 @@ use std::io;
 use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
-/// Base URL of the serverlist API.
+/// Base URL of the main serverlist API. UT2004 has its own:
+/// `https://ut2004master.333networks.com/json/`.
 pub const API: &str = "https://master.333networks.com/json/";
 
 /// Entries per page; the API allows at most 1000.
@@ -27,12 +28,12 @@ const CACHE_TTL: Duration = Duration::from_secs(450);
 type Cache = HashMap<String, (Instant, Vec<String>)>;
 static CACHE: LazyLock<Mutex<Cache>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Query addresses (`ip:queryport`) of every listed server of `gamename`.
-pub fn server_list(gamename: &str, timeout: Duration) -> io::Result<Vec<String>> {
-    if let Some((fetched, list)) = CACHE
-        .lock()
-        .ok()
-        .and_then(|cache| cache.get(gamename).cloned())
+/// Query addresses (`ip:queryport`) of every listed server of `gamename`,
+/// from the API at `api` ([`API`] when empty).
+pub fn server_list(api: &str, gamename: &str, timeout: Duration) -> io::Result<Vec<String>> {
+    let api = if api.is_empty() { API } else { api };
+    let key = format!("{api}{gamename}");
+    if let Some((fetched, list)) = CACHE.lock().ok().and_then(|cache| cache.get(&key).cloned())
         && fetched.elapsed() < CACHE_TTL
     {
         return Ok(list);
@@ -44,7 +45,7 @@ pub fn server_list(gamename: &str, timeout: Duration) -> io::Result<Vec<String>>
     let mut list = Vec::new();
     let mut page = 1;
     loop {
-        let url = format!("{API}{gamename}?r={PAGE_SIZE}&p={page}");
+        let url = format!("{api}{gamename}?r={PAGE_SIZE}&p={page}");
         let data = agent
             .get(&url)
             .header(
@@ -71,7 +72,7 @@ pub fn server_list(gamename: &str, timeout: Duration) -> io::Result<Vec<String>>
         page += 1;
     }
     if let Ok(mut cache) = CACHE.lock() {
-        cache.insert(gamename.to_string(), (Instant::now(), list.clone()));
+        cache.insert(key, (Instant::now(), list.clone()));
     }
     Ok(list)
 }

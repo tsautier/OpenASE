@@ -82,7 +82,9 @@ pub fn fetch_master(
             version,
         } => unreal2::master_list(address, client, *version, timeout * 3),
         Master::Mta { url } => ase::mta_master_list(url, timeout * 10),
-        Master::Networks333 { gamename } => networks333::server_list(gamename, timeout * 10),
+        Master::Networks333 { gamename, api } => {
+            networks333::server_list(api, gamename, timeout * 10)
+        }
         Master::GamespySb {
             address,
             gamename,

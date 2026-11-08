@@ -3,6 +3,14 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## Unreleased
+
+### Changes
+- **UT2004 list from 333networks' UT2004 JSON API**
+  (https://ut2004master.333networks.com/json/ut2004) instead of its UE2 master on TCP
+  28902, same rules as the other 333networks games (7.5-minute cache, OpenASE User-Agent).
+  The OpenSpy UE2 master is still used as a second source.
+
 ## 0.9.4 — 2026-11-08
 
 ### Changes

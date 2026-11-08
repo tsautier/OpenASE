@@ -203,10 +203,17 @@ fn mta_master_list_version_0() {
 fn new_games_use_their_protocols() {
     let ut2004 = game("ut2004").unwrap();
     assert_eq!(ut2004.protocol, Protocol::Unreal2);
+    // 333networks' UT2004 JSON API first, the OpenSpy UE2 master second.
     assert!(matches!(
         &ut2004.masters[0],
-        Master::Unreal2 { version: 3369, .. }
+        Master::Networks333 { gamename, api } if gamename == "ut2004" && api.contains("ut2004master")
     ));
+    assert!(
+        ut2004
+            .masters
+            .iter()
+            .any(|master| matches!(master, Master::Unreal2 { version: 3369, .. }))
+    );
     assert_eq!(
         game("ut2003").unwrap().game_type_name("xBombingRun"),
         "Bombing Run"
