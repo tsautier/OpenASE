@@ -210,7 +210,7 @@ discovery and launching with a direct IP.
 - [ ] Signed Windows installer and update check
 - [ ] Flatpak on Flathub
 - [x] English and French interface
-- [ ] User guide on the website, custom domain
+- [x] User guide on the website, custom domain (https://openase.org)
 
 ## Community
 
