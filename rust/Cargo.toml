@@ -1,6 +1,6 @@
 [package]
 name = "openase"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Thomas Sautier"]
 edition = "2024"
 rust-version = "1.88"

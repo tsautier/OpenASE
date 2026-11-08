@@ -3,7 +3,7 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
-## Unreleased
+## 0.9.3 — 2026-11-08
 
 ### Changes
 - **One request for all 333networks games**: the 16 games listed by
