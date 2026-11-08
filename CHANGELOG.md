@@ -3,6 +3,15 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## Unreleased
+
+### Changes
+- **One request for all 333networks games**: the 16 games listed by
+  master.333networks.com (UT99, Unreal, Deus Ex, Rune, MOHAA, Soldier of Fortune...) now
+  get their lists with a single `\sync\` request, cached for 5 minutes, instead of one
+  `\list\` request per game. OpenASE identifies itself with `\msid\OpenASE\`. Suggested by
+  333networks.
+
 ## 0.9.2 — 2026-11-08
 
 ### Fixes

@@ -49,7 +49,20 @@ pub fn fetch_master(
             address,
             gamename,
             key,
+            sync: false,
         } => gamespy::master_list(address, gamename, key, timeout * 3),
+        Master::Gamespy {
+            address,
+            gamename,
+            key,
+            sync: true,
+        } => gamespy::synced_list(
+            address,
+            gamename,
+            key,
+            &sync_gamenames(address),
+            timeout * 3,
+        ),
         Master::SteamWeb { filter } => steam::server_list(steam_key, filter, limit, timeout * 5),
         Master::Quake2 { address, query } => quake2::master_list(
             address,
@@ -80,6 +93,26 @@ pub fn fetch_master(
         Master::SavageDrx { url } => savage::master_list(url, timeout * 10),
         Master::Csv { url } => ravenshield::csv_master_list(url, timeout * 10),
     }
+}
+
+/// Gamenames of every catalog game listed by the `\sync\` master at `address`.
+fn sync_gamenames(address: &str) -> Vec<String> {
+    let mut names: Vec<String> = crate::catalog::games()
+        .iter()
+        .flat_map(|game| &game.masters)
+        .filter_map(|master| match master {
+            Master::Gamespy {
+                address: other,
+                gamename,
+                sync: true,
+                ..
+            } if other == address => Some(gamename.clone()),
+            _ => None,
+        })
+        .collect();
+    names.sort();
+    names.dedup();
+    names
 }
 
 /// Fetch and merge the lists of all of a game's masters.

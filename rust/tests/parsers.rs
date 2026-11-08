@@ -208,3 +208,14 @@ fn parse_getservers_response_accepts_unpadded_eot() {
         vec!["10.0.0.2:27961".to_string()]
     );
 }
+
+#[test]
+fn gamespy_sync_answer_lists_every_game() {
+    let lists = openase::gamespy::parse_sync_answer(
+        br"\ut\1.2.3.4:7778 5.6.7.8:7778 \unreal\9.9.9.9:7778\deusex\\final\",
+    );
+    assert_eq!(lists["ut"], vec!["1.2.3.4:7778", "5.6.7.8:7778"]);
+    assert_eq!(lists["unreal"], vec!["9.9.9.9:7778"]);
+    assert!(lists["deusex"].is_empty());
+    assert!(!lists.contains_key("final"));
+}

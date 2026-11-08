@@ -653,3 +653,20 @@ fn unreal_engine_games_query_the_game_port_plus_one() {
         assert_eq!(game.game_port_query_offset, offset, "{}", game.id);
     }
 }
+
+#[test]
+fn only_333networks_masters_use_sync() {
+    use openase::catalog::Master;
+    for game in openase::catalog::games() {
+        for master in &game.masters {
+            if let Master::Gamespy {
+                address,
+                sync: true,
+                ..
+            } = master
+            {
+                assert_eq!(address, "master.333networks.com:28900", "{}", game.id);
+            }
+        }
+    }
+}
