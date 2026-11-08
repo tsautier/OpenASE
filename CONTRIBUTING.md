@@ -32,6 +32,8 @@ Everything lives in `rust/`. The library is in `rust/src`:
 | `query.rs` | Picks the right protocol, fetches master lists, measures Ping, Flux and PL. |
 | `quake3.rs` | Quake 3 family: master `getservers` and server `getstatus`. |
 | `gamespy.rs` | GameSpy master and status queries (Unreal Tournament 99). |
+| `tribes.rs`, `doom3.rs`, `savage.rs`, `ravenshield.rs`, `ghostrecon.rs` | Queries and master lists of Tribes and Tribes 2, DOOM 3 and Quake 4, Savage, Raven Shield, Ghost Recon and The Sum of All Fears. |
+| `i18n.rs` | English and French interface texts (`tr`, `fill`). |
 | `a2s.rs` | Valve A2S queries (Counter-Strike 1.6). |
 | `steam.rs` | Server lists from the Steam Web API. |
 | `model.rs` | Protocol-independent `Server` and player types. |
@@ -113,7 +115,7 @@ Here is the Quake 3: Arena entry, shortened (open the file to see all of it):
 | `name` | yes | Full name shown in the filter tree. |
 | `short` | yes | Short badge text in the server list, like `Q3`. |
 | `color` | yes | Badge color as `#rrggbb`. A test checks that it parses. |
-| `protocol` | yes | How servers are queried: `quake3`, `quake2`, `quakeworld`, `gamespy`, `gamespy2`, `gamespy3`, `a2s`, `unreal2` or `ase`. |
+| `protocol` | yes | How servers are queried: `quake3`, `quake2`, `quakeworld`, `gamespy`, `gamespy2`, `gamespy3`, `a2s`, `unreal2`, `ase`, `tribes`, `tribes2`, `doom3`, `savage`, `ravenshield` or `ghostrecon`. |
 | `default_port` | yes | Port used when an address has none. |
 | `steam_appid` | no | Steam app id (see `cs16`, which uses `10`). |
 | `masters` | yes | At least one master server, see below. Several masters are queried in parallel and merged. |
@@ -124,7 +126,7 @@ Here is the Quake 3: Arena entry, shortened (open the file to see all of it):
 | `filters` | no | Checkbox groups in the filter tree. `"dynamic": true` builds the options from values seen on scanned servers. Otherwise list `options`, each with a `label` and the raw `values` it matches (Pure above, or VAC in `cs16`). |
 | `registry` | no | Windows registry places to find the install folder: the full `key`, the `value` name holding the folder, and `exe` relative to that folder. |
 | `exe_names` | no | Executable names to look for when searching disks (Auto-Search). Include Linux and macOS names. |
-| `query_port_offset` | no | Added to the join port to get the query port. Default `0`. Multi Theft Auto uses `123`: the address in the list is the port players join on, the server is queried 123 higher. |
+| `query_port_offset` | no | Added to the join port to get the query port. Default `0`. Multi Theft Auto uses `123` and Raven Shield `1000`: the address in the list is the port players join on, the server is queried that much higher. |
 | `ping_request` | no | GameSpy (v1) request used for extra ping samples, `\info\` when empty. Some servers only answer `\status\` (SWAT 4 uses it). |
 | `join` | yes | Command-line template. Must contain `{address}`. |
 
@@ -148,6 +150,12 @@ flag style: `{address}[?Name={name}][?Password={password}]`.
 | `a2s` | Counter-Strike 1.6, Source games | `steam_web` | `filter` (Steam server list filter, for example `\appid\10`) |
 | `unreal2` | Unreal Tournament 2003 / 2004 | `unreal2` | `address` (`utmaster.openspy.net:28902`), `client` (`UT2K4CLIENT`), `version` (`3369`) |
 | `ase` | Multi Theft Auto | `mta` | `url` (HTTP master list, `https://master.multitheftauto.com/ase/mta/`) |
+| `tribes` | Starsiege: Tribes | `tribes` | `address` (UDP master, `t1m1.tribes1.co:28000`) |
+| `tribes2` | Tribes 2 | `http_list` | `url` (plain text, one `ip:port` per line, `http://master.tribesnext.com/list`) |
+| `doom3` | DOOM 3, Quake 4 | `doom3` | `address` (`q4master.idsoftware.com:27650`), `version` (`1.0` for DOOM 3, `2.0` for Quake 4) |
+| `savage` | Savage: The Battle for Newerth | `savage_drx` | `url` (JSON list, `https://savagedrx.com/api/server/online`) |
+| `ravenshield` | Rainbow Six 3: Raven Shield | `csv` | `url` (CSV list with `ip` and `port` columns, `http://api.openrvs.org/servers`) |
+| `ghostrecon` | Ghost Recon, The Sum of All Fears (and demos) | none | `"masters": []`: no master is left, servers come from Add server and LAN |
 
 The `protocol` says how a server is queried, the master `kind` how the list is
 fetched: the two are independent (SWAT 4 is queried with `gamespy` but listed
@@ -156,6 +164,15 @@ by a `gamespy_sb` master). Copy an existing entry of the same protocol.
 A game that speaks none of these protocols needs new Rust code first: a module
 like `quake3.rs`, a variant in `Protocol` and `Master` in `catalog.rs`, and a
 branch in `query.rs`. Please open an issue before starting that.
+
+### Interface texts (English and French)
+
+Every user-visible GUI string goes through `tr("English text")`. Strings with
+values use one whole-sentence entry with `{}` placeholders, filled by
+`fill(&tr("... {} ..."), &[&value])`. Each English text needs a French entry in
+`rust/src/i18n.rs`. A test (`tests/i18n.rs`) fails when a `tr("...")` literal has
+no French entry. Text in a constant uses `noop("...")` and is translated where
+it is shown. Language names are not translated.
 
 ### Test it live
 

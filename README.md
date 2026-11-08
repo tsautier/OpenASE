@@ -25,9 +25,12 @@ Yahoo program.
 | Return to Castle Wolfenstein | Quake 3 | wolfmaster.idsoftware.com |
 | Star Trek: Voyager Elite Force | Quake 3 | master.stvef.org, efmaster.tjps.eu |
 | Soldier of Fortune II: Double Helix | Quake 3 | master.1fxmod.org |
+| DOOM 3 | Doom 3 | idnet.ua-corp.com |
+| Quake 4 | Doom 3 | q4master.idsoftware.com |
 | QuakeWorld | QuakeWorld | master.quakeservers.net, qwmaster.fodquake.net, master.quakeworld.nu |
 | Quake 2 | Quake 2 | master.quakeservers.net, master.itbacon.com |
 | Kingpin | Quake 2 | master.kingpin.info, master4.kingpin.info |
+| Soldier of Fortune | GameSpy | 333networks, errorist.eu, OpenSpy |
 | Unreal Tournament 2004, Unreal Tournament 2003 | Unreal Engine 2 | 333networks, OpenSpy |
 | Unreal Tournament (99), Unreal, Rune | GameSpy | 333networks, OpenSpy |
 | Deus Ex, Wheel of Time, Mobile Forces, Drakan, Turok 2 | GameSpy | 333networks |
@@ -38,13 +41,25 @@ Yahoo program.
 | Halo: Combat Evolved, Halo: Custom Edition | GameSpy v2 | s1.master.hosthpc.com |
 | SWAT 4 | GameSpy | master.swat4stats.com, OpenSpy |
 | Multi Theft Auto: San Andreas | ASE (MTA) | master.multitheftauto.com |
+| Starsiege: Tribes | Tribes | t1m1.tribes1.co, t1m1.pu.net |
+| Tribes 2 | Tribes 2 | TribesNext (master.tribesnext.com) |
+| Savage: The Battle for Newerth | Savage | Savage DRX server list |
+| Rainbow Six 3: Raven Shield | Raven Shield | OpenRVS server list |
+| Ghost Recon (+ demo), The Sum of All Fears (+ demo) | Ghost Recon | none: Add server and LAN only |
 | Counter-Strike 1.6, Condition Zero, Team Fortress Classic, Day of Defeat, Half-Life, Opposing Force, Deathmatch Classic, Ricochet | Valve A2S | Steam Web API (needs your own key) |
 | Counter-Strike: Source, Day of Defeat: Source, Half-Life 2: Deathmatch | Valve A2S | Steam Web API (needs your own key) |
 
-59 games in total. "OpenSpy" means the OpenSpy master servers
+70 games in total, spoken in 15 query protocols and listed by 46 master
+servers. "OpenSpy" means the OpenSpy master servers
 (<https://github.com/openspy>), "333networks" the 333networks masters.
-Games from the original All-Seeing Eye that are not in the catalog yet are
-listed in [ROADMAP.md](ROADMAP.md).
+Ghost Recon and The Sum of All Fears have no master server left: their
+servers work through Add server and LAN broadcast. Rogue Spear, Urban Ops and
+Black Thorn are not in yet (no live server, undocumented protocol). Games from
+the original All-Seeing Eye that are not in the catalog yet are listed in
+[ROADMAP.md](ROADMAP.md).
+
+The Join command of many of the newer games has not been tested with the game
+installed, see [issue #1](https://github.com/tsautier/OpenASE/issues/1).
 
 Missing a game? See [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-game): most
 games are a single entry in the catalog.
@@ -68,11 +83,21 @@ game types, filter groups, registry detection and the command line used to join.
 - **Join** with a double-click or Enter, with the right mod, player name, config
   and password. Steam games fall back to `steam://connect`.
 - **Friends** in groups Friends1 to 4, optionally per game, with a Friends pane,
-  notices and sound. **Friend name search** across every scanned server.
+  notices and sound. Each friend can have its own sound (default, none or a
+  `.wav` file; `.wav` playback is Windows-only). **Friend name search** across
+  every scanned server.
 - **File menu**: export / import your whole profile, save / import server lists,
   update check against GitHub Releases, setup wizard.
-- **Options**: General (Steam key, GeoIP), Network (timeouts, pings, retries,
-  parallel queries), Events, Games (installed / not installed, **Auto-Search**).
+- **English and French interface**: Options > General > Language. "System"
+  follows the language of your operating system.
+- **Customizable toolbar**: choose the buttons in Options > Toolbar, or
+  right-click the toolbar.
+- **Colors**: Options > Colors sets the list background, alternating rows,
+  selection and text colors, and turns Quake color codes on or off.
+- **Options**: General (language, Steam key, GeoIP), Network (timeouts, pings,
+  retries, parallel queries), Events, Games (installed / not installed,
+  **Auto-Search**), Toolbar, Colors.
+- Server names sent as UTF-8 or Windows-1251 (Cyrillic) display correctly.
 - Shortcuts: F5 refresh, Enter join, Ctrl+E show selected, Ctrl+D clear
   modifiers, Ctrl+Q collapse all, F1 manual.
 
@@ -140,6 +165,17 @@ Options > General. Servers added by hand work without a key.
   https://github.com/multitheftauto/mtasa-blue
 - Quake 2 and QuakeWorld protocols: connectionless queries as in the id
   Software sources, with the community masters at QuakeServers.net.
+- Starsiege: Tribes and Tribes 2 queries, and the Tribes 2 master list:
+  TribesNext, http://www.tribesnext.com/ and the qstat protocol descriptions
+  (https://github.com/multiplay/qstat).
+- DOOM 3 and Quake 4 `getInfo` / `getServers` (id Tech 4): the dhewm3 modwiki
+  and the qstat descriptions.
+- Savage: The Battle for Newerth: query as described by qstat, server list from
+  Savage DRX, https://savagedrx.com/
+- Raven Shield: beacon protocol as described by qstat, server list from the
+  OpenRVS project, https://openrvs.org/
+- Ghost Recon and The Sum of All Fears: the Red Storm status query, as
+  described by qstat.
 - Yahoo acquired The All-Seeing Eye in September 2004:
   https://www.gamedeveloper.com/game-platforms/yahoo-games-adds-all-seeing-eye-gamespot-syndication
 

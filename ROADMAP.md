@@ -74,6 +74,18 @@ in v0.6; it remains in the git history.
 - [x] GameSpy v2/v3 queries and the encrypted server browsing master: BF2, BF Vietnam, Halo, SWAT 4, Tribes: Vengeance, F.E.A.R., Star Wars: Battlefront
 - [x] Packet loss no longer counts rate-limited or unsupported ping requests
 
+## v0.9 — Their own protocols and a French interface (done)
+
+- [x] 70 games, up from 59, 15 query protocols, 46 master servers
+- [x] Starsiege: Tribes (binary query, two UDP masters) and Tribes 2 (TribesNext HTTP list)
+- [x] DOOM 3 and Quake 4 (id Tech 4 `getInfo`, `getServers` masters)
+- [x] Soldier of Fortune (GameSpy v1 from 333networks, errorist.eu and OpenSpy)
+- [x] Savage: The Battle for Newerth (Savage DRX list) and Rainbow Six 3: Raven Shield (OpenRVS list, query port = game port + 1000)
+- [x] Ghost Recon and The Sum of All Fears, demos included (queries only: Add server and LAN)
+- [x] English and French interface (Options > General > Language)
+- [x] Customizable toolbar, per-friend sounds, Colors tab in Options
+- [x] Server names in UTF-8 or Windows-1251 display correctly, dialog windows are no longer stretched
+
 ## Every game from the original ASE
 
 The original All-Seeing Eye knew 175 games, demos included. All of them are on
@@ -134,11 +146,11 @@ Games are grouped by query protocol: one protocol unlocks a whole group.
 - [x] Quake 2
 - [ ] QFusion (no servers left on dpmaster)
 - [x] Kingpin
-- [ ] Soldier of Fortune (GameSpy master, needs its own query)
+- [x] Soldier of Fortune (GameSpy v1: 333networks, errorist.eu, OpenSpy)
 
 ### Doom 3 engine
 
-- [ ] DOOM 3, Quake 4
+- [x] DOOM 3, Quake 4
 
 ### Unreal Engine 2
 
@@ -170,11 +182,12 @@ These games answered ASE's own query, so OpenASE can speak it too.
 
 ### Their own protocols
 
-- [ ] Tribes, Tribes 2
-- [ ] Savage (and demo)
+- [x] Tribes, Tribes 2
+- [x] Savage (the demo is not added)
 - [ ] Razor Unit (and demo)
-- [ ] Rogue Spear, Urban Ops, Black Thorn, Raven Shield
-- [ ] Ghost Recon (and demo), Sum of All Fears (and demo)
+- [ ] Rogue Spear, Urban Ops, Black Thorn (no live server and an undocumented protocol)
+- [x] Raven Shield
+- [x] Ghost Recon (and demo), Sum of All Fears (and demo): queries only, no master left
 - [ ] Freelancer
 
 ### DirectPlay lobby games (LAN and direct IP)
@@ -190,17 +203,17 @@ discovery and launching with a direct IP.
 ## Not done yet
 
 - [ ] Steam server list checked with a real API key (code is unit-tested only)
-- [ ] Customizable toolbar, per-friend sounds, Colors options tab
+- [ ] Join commands of many newer games tested with the games installed ([issue #1](https://github.com/tsautier/OpenASE/issues/1))
 
 ## v1.0 — Polished release
 
 - [ ] Signed Windows installer and update check
 - [ ] Flatpak on Flathub
-- [ ] English and French interface
+- [x] English and French interface
 - [ ] User guide on the website, custom domain
 
 ## Community
 
 - [x] `CONTRIBUTING.md`, issue templates
-- [ ] "good first issue" labels
+- [x] "good first issue" labels
 - [ ] Announce on retro FPS communities (ioquake3, OpenArena, Urban Terror, 333networks)
