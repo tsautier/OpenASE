@@ -1,6 +1,6 @@
 # OpenASE
 
-Website: https://tsautier.github.io/OpenASE/
+Website: https://openase.org/
 
 OpenASE is an open-source game server browser in the spirit of The All-Seeing
 Eye: a filter tree on the left, the server list with Ping, Flux and PL on the

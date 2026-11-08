@@ -232,8 +232,8 @@ impl OpenAseApp {
             ui.label(tr("Free software under the GNU GPL v3 or later."));
             ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
             ui.hyperlink_to(
-                "tsautier.github.io/OpenASE",
-                "https://tsautier.github.io/OpenASE/",
+                "openase.org",
+                "https://openase.org/",
             );
         });
         self.dialogs.about = open;

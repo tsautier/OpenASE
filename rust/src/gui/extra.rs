@@ -14,8 +14,8 @@ use openase::update;
 
 use super::{Msg, Nav, OpenAseApp, ServerKey};
 
-pub const SITE: &str = "https://tsautier.github.io/OpenASE/";
-pub const MANUAL: &str = "https://tsautier.github.io/OpenASE/#manual";
+pub const SITE: &str = "https://openase.org/";
+pub const MANUAL: &str = "https://openase.org/#manual";
 pub const MESSAGE_BOARD: &str = "https://github.com/tsautier/OpenASE/issues";
 const LICENSE_TEXT: &str = include_str!("../../../LICENSE");
 
