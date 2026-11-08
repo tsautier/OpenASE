@@ -121,6 +121,116 @@ pub struct FilterSettings {
     pub countries: BTreeSet<String>,
 }
 
+/// Toolbar button ids, in the default order.
+pub const TOOLBAR_DEFAULT: [&str; 9] = [
+    "refresh", "stop", "ping", "join", "favorite", "add", "find", "friends", "options",
+];
+
+/// One toolbar button: its id and whether it is shown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ToolbarItem {
+    pub id: String,
+    pub visible: bool,
+}
+
+/// Which toolbar buttons are shown, and in which order.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ToolbarSettings {
+    pub items: Vec<ToolbarItem>,
+}
+
+impl Default for ToolbarSettings {
+    fn default() -> Self {
+        Self {
+            items: TOOLBAR_DEFAULT
+                .iter()
+                .map(|id| ToolbarItem {
+                    id: (*id).to_string(),
+                    visible: true,
+                })
+                .collect(),
+        }
+    }
+}
+
+impl ToolbarSettings {
+    /// Drop unknown and duplicate ids and append the buttons missing from an
+    /// older or hand-edited settings file.
+    pub fn normalize(&mut self) {
+        let mut seen = BTreeSet::new();
+        self.items.retain(|item| {
+            TOOLBAR_DEFAULT.contains(&item.id.as_str()) && seen.insert(item.id.clone())
+        });
+        for id in TOOLBAR_DEFAULT {
+            if !seen.contains(id) {
+                self.items.push(ToolbarItem {
+                    id: id.to_string(),
+                    visible: true,
+                });
+            }
+        }
+    }
+
+    /// Ids of the visible buttons, in order.
+    pub fn visible_ids(&self) -> Vec<&str> {
+        self.items
+            .iter()
+            .filter(|item| item.visible)
+            .map(|item| item.id.as_str())
+            .collect()
+    }
+
+    /// Move an item one place up (`-1`) or down (`1`).
+    pub fn move_item(&mut self, index: usize, delta: isize) {
+        let Some(target) = index.checked_add_signed(delta) else {
+            return;
+        };
+        if index < self.items.len() && target < self.items.len() {
+            self.items.swap(index, target);
+        }
+    }
+}
+
+/// What to play when a friend is found.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FriendSound {
+    /// Follow the global "play a sound" option, with the system sound.
+    #[default]
+    Default,
+    /// Never play a sound for this friend.
+    Silent,
+    /// Play this .wav file (even when the global option is off).
+    File(String),
+}
+
+/// A color as `[r, g, b]`.
+pub type Rgb = [u8; 3];
+
+/// Options > Colors.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ColorSettings {
+    pub list_bg: Rgb,
+    pub alt_row: Rgb,
+    pub selection: Rgb,
+    pub text: Rgb,
+    /// Draw Quake color codes in server and player names.
+    pub quake_colors: bool,
+}
+
+impl Default for ColorSettings {
+    fn default() -> Self {
+        Self {
+            list_bg: [0xff, 0xff, 0xff],
+            alt_row: [0xf6, 0xf6, 0xf6],
+            selection: [0x31, 0x6a, 0xc5],
+            text: [0x50, 0x50, 0x50],
+            quake_colors: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -153,6 +263,11 @@ pub struct Settings {
     pub skip_update_check: bool,
     /// The first-run setup wizard has been completed or skipped.
     pub wizard_done: bool,
+    /// Visible toolbar buttons and their order.
+    pub toolbar: ToolbarSettings,
+    /// Sound per friend, keyed by lowercase name.
+    pub friend_sounds: BTreeMap<String, FriendSound>,
+    pub colors: ColorSettings,
 }
 
 pub const RECENT_LIMIT: usize = 20;
@@ -211,8 +326,14 @@ impl Settings {
     pub fn load() -> Self {
         std::fs::read_to_string(Self::path())
             .ok()
-            .and_then(|text| serde_json::from_str(&text).ok())
+            .and_then(|text| serde_json::from_str::<Self>(&text).ok())
+            .map(Self::normalized)
             .unwrap_or_default()
+    }
+
+    fn normalized(mut self) -> Self {
+        self.toolbar.normalize();
+        self
     }
 
     pub fn save(&self) -> std::io::Result<()> {
@@ -283,6 +404,13 @@ impl Settings {
             .unwrap_or_default()
     }
 
+    pub fn friend_sound(&self, friend: &str) -> FriendSound {
+        self.friend_sounds
+            .get(&friend.to_lowercase())
+            .cloned()
+            .unwrap_or_default()
+    }
+
     /// Prepend to a bounded "recently ..." list.
     pub fn push_front(list: &mut Vec<ServerRef>, server: ServerRef) {
         list.retain(|entry| *entry != server);
@@ -299,7 +427,8 @@ impl Settings {
     /// Read a profile written by [`Settings::export_to`].
     pub fn import_from(path: &std::path::Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
-        serde_json::from_str(&text)
+        serde_json::from_str::<Self>(&text)
+            .map(Self::normalized)
             .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))
     }
 }

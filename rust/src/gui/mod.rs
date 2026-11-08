@@ -25,14 +25,14 @@ use openase::geoip::{self, GeoIp};
 use openase::model::Server;
 use openase::quake3::parse_address;
 use openase::query::{fetch_all_masters, query_server};
-use openase::settings::{FAVORITE_GROUPS, FRIEND_GROUPS, ServerRef, Settings};
+use openase::settings::{
+    ColorSettings, FAVORITE_GROUPS, FRIEND_GROUPS, FriendSound, Rgb, ServerRef, Settings,
+};
 
 use dialogs::Dialogs;
 use icons::{Tool, TreeIcon};
 
 const ROW_HEIGHT: f32 = 18.0;
-const LIST_BG: Color32 = Color32::WHITE;
-const SELECTION: Color32 = Color32::from_rgb(0x31, 0x6a, 0xc5);
 const PING_LIMITS: [u32; 4] = [50, 100, 150, 250];
 
 /// Identifies a server across games.
@@ -196,6 +196,8 @@ pub struct OpenAseApp {
     single_in_flight: bool,
     last_auto_refresh: Instant,
     show_toolbar: bool,
+    /// Colors currently applied (Options > Colors previews them live).
+    palette: ColorSettings,
     started: bool,
     geoip: Option<Arc<GeoIp>>,
     pub(crate) geoip_status: String,
@@ -210,6 +212,7 @@ impl OpenAseApp {
         setup_style(&cc.egui_ctx);
         let (tx, rx) = channel();
         let mut settings = Settings::load();
+        apply_palette(&cc.egui_ctx, &settings.colors);
 
         // Quick registry detection for games without a program location.
         for game in catalog::games() {
@@ -229,6 +232,7 @@ impl OpenAseApp {
             .map(|game| game.id.clone())
             .unwrap_or_else(|| catalog::games()[0].id.clone());
 
+        let palette = settings.colors.clone();
         Self {
             settings,
             settings_dirty: true,
@@ -245,6 +249,7 @@ impl OpenAseApp {
             single_in_flight: false,
             last_auto_refresh: Instant::now(),
             show_toolbar: true,
+            palette,
             started: false,
             geoip: None,
             geoip_status: "Loading...".to_string(),
@@ -315,9 +320,10 @@ impl OpenAseApp {
                             strip_quake_colors(&server.name)
                         ));
                     }
-                    if self.settings.events.sound_friend_joins {
-                        beep();
-                    }
+                    play_friend_sound(
+                        &self.settings.friend_sound(friend),
+                        self.settings.events.sound_friend_joins,
+                    );
                 }
             } else if previous.as_ref() == Some(&key) {
                 self.friend_seen.remove(&needle);
@@ -927,56 +933,124 @@ impl OpenAseApp {
     fn toolbar(&mut self, ui: &mut egui::Ui) {
         let selected = self.selected.clone();
         let has = selected.is_some();
+        let ids: Vec<String> = self
+            .settings
+            .toolbar
+            .visible_ids()
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        // Registered first so the buttons, added later, win the clicks.
+        let background = ui.interact(
+            ui.max_rect(),
+            ui.scope_id().with("toolbar-menu"),
+            Sense::click(),
+        );
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 1.0;
-            if icons::tool_button(
-                ui,
-                Tool::Refresh,
-                "Refresh server list (F5)",
-                self.scan.is_none(),
-            )
-            .clicked()
-            {
-                self.refresh(ui.ctx());
+            let mut last_group = None;
+            for id in &ids {
+                let group = toolbar_group(id);
+                if last_group.is_some_and(|last| last != group) {
+                    ui.add_space(6.0);
+                }
+                last_group = Some(group);
+                match id.as_str() {
+                    "refresh" => {
+                        if icons::tool_button(
+                            ui,
+                            Tool::Refresh,
+                            "Refresh server list (F5)",
+                            self.scan.is_none(),
+                        )
+                        .clicked()
+                        {
+                            self.refresh(ui.ctx());
+                        }
+                    }
+                    "stop" => {
+                        if icons::tool_button(ui, Tool::Stop, "Stop", self.scan.is_some()).clicked()
+                        {
+                            self.stop_scan();
+                        }
+                    }
+                    "ping" => {
+                        if icons::tool_button(
+                            ui,
+                            Tool::Ping,
+                            "Refresh selected server",
+                            has && !self.single_in_flight,
+                        )
+                        .clicked()
+                            && let Some(key) = &selected
+                        {
+                            self.query_single(ui.ctx(), key);
+                        }
+                    }
+                    "join" => {
+                        if icons::tool_button(ui, Tool::Join, "Join server (Enter)", has).clicked()
+                            && let Some(key) = &selected
+                        {
+                            self.join(key);
+                        }
+                    }
+                    "favorite" => {
+                        if icons::tool_button(
+                            ui,
+                            Tool::Favorite,
+                            "Add to / remove from favorites",
+                            has,
+                        )
+                        .clicked()
+                            && let Some(key) = selected.clone()
+                        {
+                            self.apply(ui.ctx(), Action::ToggleFavorite(key));
+                        }
+                    }
+                    "add" => {
+                        if icons::tool_button(ui, Tool::Add, "Add server", true).clicked() {
+                            self.dialogs.open_add(self.nav.game());
+                        }
+                    }
+                    "find" => {
+                        if icons::tool_button(ui, Tool::Find, "Find player", true).clicked() {
+                            self.dialogs.find = Some(String::new());
+                        }
+                    }
+                    "friends" => {
+                        if icons::tool_button(ui, Tool::Friends, "Friends", true).clicked() {
+                            self.dialogs.friends = Some(String::new());
+                        }
+                    }
+                    "options"
+                        if icons::tool_button(ui, Tool::Options, "Options", true).clicked() =>
+                    {
+                        self.dialogs.open_options(&self.settings);
+                    }
+                    _ => {}
+                }
             }
-            if icons::tool_button(ui, Tool::Stop, "Stop", self.scan.is_some()).clicked() {
-                self.stop_scan();
+        });
+        background.context_menu(|ui| {
+            let mut changed = false;
+            for item in &mut self.settings.toolbar.items {
+                changed |= ui
+                    .checkbox(&mut item.visible, dialogs::toolbar_label(&item.id))
+                    .changed();
             }
-            if icons::tool_button(
-                ui,
-                Tool::Ping,
-                "Refresh selected server",
-                has && !self.single_in_flight,
-            )
-            .clicked()
-                && let Some(key) = &selected
-            {
-                self.query_single(ui.ctx(), key);
+            ui.separator();
+            if ui.button(TOOLBAR_CUSTOMIZE).clicked() {
+                self.dialogs
+                    .open_options_at(&self.settings, dialogs::TOOLBAR_TAB);
+                ui.close();
             }
-            ui.add_space(6.0);
-            if icons::tool_button(ui, Tool::Join, "Join server (Enter)", has).clicked()
-                && let Some(key) = &selected
-            {
-                self.join(key);
+            if ui.button(TOOLBAR_RESET).clicked() {
+                self.settings.toolbar = Default::default();
+                changed = true;
+                ui.close();
             }
-            if icons::tool_button(ui, Tool::Favorite, "Add to / remove from favorites", has)
-                .clicked()
-                && let Some(key) = selected.clone()
-            {
-                self.apply(ui.ctx(), Action::ToggleFavorite(key));
-            }
-            if icons::tool_button(ui, Tool::Add, "Add server", true).clicked() {
-                self.dialogs.open_add(self.nav.game());
-            }
-            ui.add_space(6.0);
-            if icons::tool_button(ui, Tool::Find, "Find player", true).clicked() {
-                self.dialogs.find = Some(String::new());
-            }
-            if icons::tool_button(ui, Tool::Friends, "Friends", true).clicked() {
-                self.dialogs.friends = Some(String::new());
-            }
-            if icons::tool_button(ui, Tool::Options, "Options", true).clicked() {
-                self.dialogs.open_options(&self.settings);
+            if changed {
+                self.settings_dirty = true;
             }
         });
     }
@@ -1366,6 +1440,7 @@ impl OpenAseApp {
         let (sort_col, ascending) = self.sort;
         let selected = self.selected.clone();
         let text_color = ui.visuals().text_color();
+        let selection = ui.visuals().selection.bg_fill;
 
         if rows.is_empty() && self.scan.is_none() {
             ui.add_space(30.0);
@@ -1461,7 +1536,7 @@ impl OpenAseApp {
                                 ui.painter().rect_filled(
                                     ui.max_rect().expand2(vec2(4.0, 1.0)),
                                     CornerRadius::ZERO,
-                                    SELECTION,
+                                    selection,
                                 );
                             } else if let Some(fill) = highlight {
                                 ui.painter().rect_filled(
@@ -1500,8 +1575,9 @@ impl OpenAseApp {
                                     }
                                 }
                                 Col::Name => {
-                                    let colored = game
-                                        .is_some_and(|game| game.protocol == Protocol::Quake3)
+                                    let colored = self.palette.quake_colors
+                                        && game
+                                            .is_some_and(|game| game.protocol == Protocol::Quake3)
                                         && server.online
                                         && !is_selected
                                         && self
@@ -1642,13 +1718,14 @@ impl OpenAseApp {
         let players = server
             .map(|server| server.players.as_slice())
             .unwrap_or(&[]);
-        let colored = server.is_some_and(|server| {
-            catalog::game(&server.game).is_some_and(|game| game.protocol == Protocol::Quake3)
-                && self
-                    .settings
-                    .game(&server.game)
-                    .draw_player_names_with_game_font
-        });
+        let colored = self.palette.quake_colors
+            && server.is_some_and(|server| {
+                catalog::game(&server.game).is_some_and(|game| game.protocol == Protocol::Quake3)
+                    && self
+                        .settings
+                        .game(&server.game)
+                        .draw_player_names_with_game_font
+            });
         let friends: Vec<String> = self
             .settings
             .friends
@@ -1848,7 +1925,7 @@ impl eframe::App for OpenAseApp {
             .show(ui, |ui| self.status_bar(ui));
 
         let list_frame = egui::Frame::NONE
-            .fill(LIST_BG)
+            .fill(rgb(self.palette.list_bg))
             .stroke(Stroke::new(1.0, Color32::from_gray(0xa0)));
         egui::Panel::bottom("details")
             .resizable(true)
@@ -1966,9 +2043,6 @@ fn setup_style(ctx: &egui::Context) {
         let visuals = &mut style.visuals;
         visuals.panel_fill = Color32::from_gray(0xf0);
         visuals.window_fill = Color32::from_gray(0xf0);
-        visuals.extreme_bg_color = Color32::WHITE;
-        visuals.faint_bg_color = Color32::from_gray(0xf6);
-        visuals.selection.bg_fill = SELECTION;
         visuals.selection.stroke = Stroke::new(1.0, Color32::WHITE);
         visuals.window_corner_radius = CornerRadius::same(2);
         visuals.menu_corner_radius = CornerRadius::ZERO;
@@ -1992,6 +2066,44 @@ fn setup_style(ctx: &egui::Context) {
         visuals.widgets.hovered.weak_bg_fill = Color32::from_rgb(0xe5, 0xf1, 0xfb);
         visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_rgb(0x00, 0x78, 0xd7));
     });
+}
+
+/// Toolbar texts (French translation pass: keep together).
+const TOOLBAR_CUSTOMIZE: &str = "Customize toolbar...";
+const TOOLBAR_RESET: &str = "Reset toolbar";
+
+/// Buttons of the same group are drawn next to each other.
+fn toolbar_group(id: &str) -> u8 {
+    match id {
+        "refresh" | "stop" | "ping" => 0,
+        "join" | "favorite" | "add" => 1,
+        _ => 2,
+    }
+}
+
+impl OpenAseApp {
+    /// Show these colors (a no-op when they are already applied).
+    pub(crate) fn show_palette(&mut self, ctx: &egui::Context, colors: &ColorSettings) {
+        if self.palette != *colors {
+            apply_palette(ctx, colors);
+            self.palette = colors.clone();
+        }
+    }
+}
+
+/// Apply the user's list colors to the egui visuals.
+fn apply_palette(ctx: &egui::Context, colors: &ColorSettings) {
+    ctx.all_styles_mut(|style| {
+        let visuals = &mut style.visuals;
+        visuals.extreme_bg_color = rgb(colors.list_bg);
+        visuals.faint_bg_color = rgb(colors.alt_row);
+        visuals.selection.bg_fill = rgb(colors.selection);
+        visuals.widgets.noninteractive.fg_stroke.color = rgb(colors.text);
+    });
+}
+
+pub(crate) fn rgb([r, g, b]: Rgb) -> Color32 {
+    Color32::from_rgb(r, g, b)
 }
 
 /// One tree line: indentation, optional `[+]`/`[-]` box, icon and label.
@@ -2049,12 +2161,17 @@ fn tree_row(
     );
     let text_color = if selected {
         Color32::WHITE
-    } else {
+    } else if ui.visuals().text_color() == rgb(ColorSettings::default().text) {
         Color32::from_gray(0x10)
+    } else {
+        ui.visuals().text_color()
     };
     if selected {
-        ui.painter()
-            .rect_filled(label_rect, CornerRadius::ZERO, SELECTION);
+        ui.painter().rect_filled(
+            label_rect,
+            CornerRadius::ZERO,
+            ui.visuals().selection.bg_fill,
+        );
     } else if response.hovered() {
         ui.painter().rect_filled(
             label_rect,
@@ -2299,20 +2416,52 @@ fn format_duration(secs: u32) -> String {
     }
 }
 
+/// Play the sound of a friend: the system sound when the global option is on,
+/// nothing when the friend is silenced, or the chosen .wav file.
+fn play_friend_sound(sound: &FriendSound, global: bool) {
+    match sound {
+        FriendSound::Default if global => play_sound(None),
+        FriendSound::File(path) if !path.trim().is_empty() => play_sound(Some(path.trim())),
+        _ => {}
+    }
+}
+
+/// Play a .wav file asynchronously, or the system "information" sound.
 #[cfg(windows)]
-fn beep() {
-    // MB_ICONASTERISK: the system "information" sound.
+pub(crate) fn play_sound(file: Option<&str>) {
     #[link(name = "user32")]
     unsafe extern "system" {
         fn MessageBeep(kind: u32) -> i32;
     }
-    unsafe {
-        MessageBeep(0x40);
+    #[link(name = "winmm")]
+    unsafe extern "system" {
+        fn PlaySoundW(sound: *const u16, module: *mut std::ffi::c_void, flags: u32) -> i32;
+    }
+    const SND_ASYNC: u32 = 0x0001;
+    const SND_NODEFAULT: u32 = 0x0002;
+    const SND_FILENAME: u32 = 0x0002_0000;
+    match file {
+        Some(path) => {
+            let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+            // SAFETY: `wide` is NUL-terminated and outlives the call; for a file
+            // name, PlaySoundW reads the string before returning.
+            unsafe {
+                PlaySoundW(
+                    wide.as_ptr(),
+                    std::ptr::null_mut(),
+                    SND_FILENAME | SND_ASYNC | SND_NODEFAULT,
+                );
+            }
+        }
+        None => unsafe {
+            // MB_ICONASTERISK: the system "information" sound.
+            MessageBeep(0x40);
+        },
     }
 }
 
 #[cfg(not(windows))]
-fn beep() {}
+pub(crate) fn play_sound(_file: Option<&str>) {}
 
 /// Fill the GeoIP country of a server once.
 fn annotate(geoip: Option<&GeoIp>, server: &mut Server) {

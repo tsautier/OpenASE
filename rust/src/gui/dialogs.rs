@@ -12,11 +12,52 @@ use egui_extras::{Column, TableBuilder};
 use openase::catalog;
 use openase::colors::strip_quake_colors;
 use openase::detect;
-use openase::settings::{NetworkSettings, Settings};
+use openase::settings::{ColorSettings, FriendSound, NetworkSettings, Settings, ToolbarSettings};
 
-use super::{Msg, Nav, OpenAseApp, ServerKey};
+use super::{Msg, Nav, OpenAseApp, ServerKey, play_sound, rgb};
 
-const OPTION_TABS: [&str; 4] = ["General", "Network", "Events", "Games"];
+const OPTION_TABS: [&str; 6] = ["General", "Network", "Events", "Games", "Toolbar", "Colors"];
+pub(super) const TOOLBAR_TAB: usize = 4;
+
+/// Per-friend sound texts (French translation pass: keep together).
+const SOUND_DEFAULT: &str = "Default sound";
+const SOUND_NONE: &str = "No sound";
+const SOUND_FILE: &str = "Sound file...";
+const SOUND_PATH_HINT: &str = "Path of a .wav file";
+const SOUND_BROWSE: &str = "Browse...";
+const SOUND_TEST: &str = "Play";
+
+/// Toolbar tab texts.
+const TOOLBAR_HELP: &str =
+    "Choose the buttons of the toolbar and their order. You can also right-click the toolbar.";
+const TOOLBAR_UP: &str = "Up";
+const TOOLBAR_DOWN: &str = "Down";
+const TOOLBAR_RESET_ALL: &str = "Reset to default";
+
+/// Colors tab texts.
+const COLORS_HELP: &str = "Changes are shown right away; Cancel puts the old colors back.";
+const COLORS_LIST_BG: &str = "List background";
+const COLORS_ALT_ROW: &str = "Alternating row";
+const COLORS_SELECTION: &str = "Selection";
+const COLORS_TEXT: &str = "Text";
+const COLORS_QUAKE: &str = "Draw Quake color codes in server and player names";
+const COLORS_RESET: &str = "Reset to defaults";
+
+/// Name of a toolbar button in Options and in the toolbar menu.
+pub(super) fn toolbar_label(id: &str) -> &'static str {
+    match id {
+        "refresh" => "Refresh server list",
+        "stop" => "Stop",
+        "ping" => "Refresh selected server",
+        "join" => "Join server",
+        "favorite" => "Add to / remove from favorites",
+        "add" => "Add server",
+        "find" => "Find player",
+        "friends" => "Friends",
+        "options" => "Options",
+        _ => "",
+    }
+}
 
 pub struct OptionsDraft {
     tab: usize,
@@ -285,17 +326,20 @@ impl OpenAseApp {
         let mut open = true;
         let mut remove: Option<usize> = None;
         let mut add = false;
+        let mut sound_change: Option<(String, FriendSound)> = None;
         dialog("Friends").open(&mut open).show(ctx, |ui| {
             ui.label("OpenASE looks for these names on every server it scans.");
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
                 .max_height(220.0)
                 .show(ui, |ui| {
-                    ui.set_min_width(320.0);
+                    ui.set_min_width(440.0);
                     if self.settings.friends.is_empty() {
                         ui.weak("No friends yet.");
                     }
                     for (index, friend) in self.settings.friends.iter().enumerate() {
+                        let mut sound = self.settings.friend_sound(friend);
+                        let before = sound.clone();
                         ui.horizontal(|ui| {
                             let online = self.friend_location(friend).is_some();
                             ui.colored_label(
@@ -311,8 +355,33 @@ impl OpenAseApp {
                                 if ui.small_button("Remove").clicked() {
                                     remove = Some(index);
                                 }
+                                sound_combo(ui, ("friend-sound", index), &mut sound);
                             });
                         });
+                        if let FriendSound::File(path) = &mut sound {
+                            ui.horizontal(|ui| {
+                                ui.add_space(52.0);
+                                ui.add(
+                                    egui::TextEdit::singleline(path)
+                                        .hint_text(SOUND_PATH_HINT)
+                                        .desired_width(230.0),
+                                );
+                                if ui.small_button(SOUND_BROWSE).clicked()
+                                    && let Some(file) = rfd::FileDialog::new()
+                                        .set_title("Select a sound")
+                                        .add_filter("WAV sound", &["wav"])
+                                        .pick_file()
+                                {
+                                    *path = file.display().to_string();
+                                }
+                                if ui.small_button(SOUND_TEST).clicked() {
+                                    play_sound(Some(path.trim()));
+                                }
+                            });
+                        }
+                        if sound != before {
+                            sound_change = Some((friend.to_lowercase(), sound));
+                        }
                     }
                 });
             ui.separator();
@@ -327,7 +396,18 @@ impl OpenAseApp {
                         && ui.input(|input| input.key_pressed(egui::Key::Enter)));
             });
         });
+        if let Some((name, sound)) = sound_change {
+            if sound == FriendSound::Default {
+                self.settings.friend_sounds.remove(&name);
+            } else {
+                self.settings.friend_sounds.insert(name, sound);
+            }
+            self.mark_dirty();
+        }
         if let Some(index) = remove {
+            self.settings
+                .friend_sounds
+                .remove(&self.settings.friends[index].to_lowercase());
             self.settings.friends.remove(index);
             self.mark_dirty();
         }
@@ -456,6 +536,8 @@ impl OpenAseApp {
                     "General" => general_tab(ui, &mut draft.settings, &geoip_status),
                     "Network" => network_tab(ui, &mut draft.settings.network),
                     "Events" => events_tab(ui, &mut draft.settings),
+                    "Toolbar" => toolbar_tab(ui, &mut draft.settings.toolbar),
+                    "Colors" => colors_tab(ui, &mut draft.settings.colors),
                     _ => start_search = games_tab(ui, &mut draft),
                 }
             });
@@ -469,8 +551,17 @@ impl OpenAseApp {
         if let Some(game) = start_search {
             self.start_auto_search(ctx, &game);
         }
+        // Colors are previewed live, and put back on Cancel.
+        let colors = if cancel {
+            self.settings.colors.clone()
+        } else {
+            draft.settings.colors.clone()
+        };
+        self.show_palette(ctx, &colors);
         if ok {
             let new = draft.settings;
+            self.settings.toolbar = new.toolbar;
+            self.settings.colors = new.colors;
             self.settings.games = new.games;
             self.settings.steam_api_key = new.steam_api_key;
             self.settings.network = new.network;
@@ -601,6 +692,94 @@ impl OpenAseApp {
             search.stop.store(true, Ordering::Relaxed);
             self.dialogs.search = None;
         }
+    }
+}
+
+/// Sound choice of one friend.
+fn sound_combo(
+    ui: &mut egui::Ui,
+    id: impl std::fmt::Debug + std::hash::Hash,
+    sound: &mut FriendSound,
+) {
+    let text = match sound {
+        FriendSound::Default => SOUND_DEFAULT,
+        FriendSound::Silent => SOUND_NONE,
+        FriendSound::File(_) => SOUND_FILE,
+    };
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(text)
+        .width(110.0)
+        .show_ui(ui, |ui| {
+            ui.selectable_value(sound, FriendSound::Default, SOUND_DEFAULT);
+            ui.selectable_value(sound, FriendSound::Silent, SOUND_NONE);
+            let is_file = matches!(sound, FriendSound::File(_));
+            if ui.selectable_label(is_file, SOUND_FILE).clicked() && !is_file {
+                *sound = FriendSound::File(String::new());
+            }
+        });
+}
+
+fn toolbar_tab(ui: &mut egui::Ui, toolbar: &mut ToolbarSettings) {
+    ui.label(TOOLBAR_HELP);
+    ui.add_space(6.0);
+    let count = toolbar.items.len();
+    let mut swap: Option<(usize, isize)> = None;
+    egui::Grid::new("toolbar-grid")
+        .num_columns(3)
+        .spacing([10.0, 4.0])
+        .show(ui, |ui| {
+            for (index, item) in toolbar.items.iter_mut().enumerate() {
+                ui.checkbox(&mut item.visible, toolbar_label(&item.id));
+                if ui
+                    .add_enabled(index > 0, egui::Button::new(TOOLBAR_UP))
+                    .clicked()
+                {
+                    swap = Some((index, -1));
+                }
+                if ui
+                    .add_enabled(index + 1 < count, egui::Button::new(TOOLBAR_DOWN))
+                    .clicked()
+                {
+                    swap = Some((index, 1));
+                }
+                ui.end_row();
+            }
+        });
+    if let Some((index, delta)) = swap {
+        toolbar.move_item(index, delta);
+    }
+    ui.add_space(8.0);
+    if ui.button(TOOLBAR_RESET_ALL).clicked() {
+        *toolbar = ToolbarSettings::default();
+    }
+}
+
+fn colors_tab(ui: &mut egui::Ui, colors: &mut ColorSettings) {
+    ui.label(COLORS_HELP);
+    ui.add_space(6.0);
+    egui::Grid::new("colors-grid")
+        .num_columns(2)
+        .spacing([16.0, 6.0])
+        .show(ui, |ui| {
+            for (label, value) in [
+                (COLORS_LIST_BG, &mut colors.list_bg),
+                (COLORS_ALT_ROW, &mut colors.alt_row),
+                (COLORS_SELECTION, &mut colors.selection),
+                (COLORS_TEXT, &mut colors.text),
+            ] {
+                ui.label(label);
+                let mut color = rgb(*value);
+                if ui.color_edit_button_srgba(&mut color).changed() {
+                    *value = [color.r(), color.g(), color.b()];
+                }
+                ui.end_row();
+            }
+        });
+    ui.add_space(8.0);
+    ui.checkbox(&mut colors.quake_colors, COLORS_QUAKE);
+    ui.add_space(8.0);
+    if ui.button(COLORS_RESET).clicked() {
+        *colors = ColorSettings::default();
     }
 }
 
