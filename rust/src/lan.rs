@@ -17,6 +17,10 @@ const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
 const UNREAL2_PORTS: [u16; 3] = [7778, 7788, 7798];
 /// ASE ports (Multi Theft Auto: game port + 123).
 const ASE_PORTS: [u16; 2] = [22126, 22127];
+/// Raven Shield beacon ports (game port + 1000).
+const RAVENSHIELD_PORTS: [u16; 3] = [8777, 8778, 8779];
+/// Ghost Recon and Sum of All Fears status ports (game port + 2).
+const GHOSTRECON_PORTS: [u16; 2] = [2348, 2349];
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -87,6 +91,18 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
     for port in ASE_PORTS {
         let _ = socket.send_to(b"s", SocketAddrV4::new(broadcast, port));
     }
+    for port in RAVENSHIELD_PORTS {
+        let _ = socket.send_to(
+            crate::ravenshield::REQUEST,
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
+    for port in GHOSTRECON_PORTS {
+        let _ = socket.send_to(
+            &crate::ghostrecon::REQUEST,
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
 
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
@@ -106,7 +122,20 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         if !seen.insert(address.clone()) {
             continue;
         }
-        let game = if crate::unreal2::is_answer(packet) {
+        // Raven Shield and Red Storm addresses hold the game port.
+        let game = if crate::ravenshield::is_answer(packet) {
+            crate::ravenshield::parse_report(packet).ok().map(|report| {
+                address = format!("{}:{}", from.ip(), report.port);
+                "ravenshield"
+            })
+        } else if crate::ghostrecon::is_answer(packet) {
+            crate::ghostrecon::parse_status(packet)
+                .ok()
+                .and_then(|status| crate::ghostrecon::game_for_byte(status.game_byte))
+                .inspect(|_| {
+                    address = format!("{}:{}", from.ip(), from.port().saturating_sub(2));
+                })
+        } else if crate::unreal2::is_answer(packet) {
             // 128 is UT2004, older protocol numbers UT2003.
             Some(if packet[0] == crate::unreal2::UT2004_VERSION {
                 "ut2004"

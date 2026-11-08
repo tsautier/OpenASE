@@ -24,6 +24,10 @@ pub enum Protocol {
     Gamespy2,
     /// GameSpy version 3 query, also called GameSpy 4 (Battlefield 2).
     Gamespy3,
+    /// Raven Shield server beacon (`REPORT` on the game port + 1000).
+    Ravenshield,
+    /// Red Storm binary status query (Ghost Recon, The Sum of All Fears).
+    Ghostrecon,
 }
 
 /// Where a game's server list comes from.
@@ -60,6 +64,8 @@ pub enum Master {
         gamename: String,
         key: String,
     },
+    /// HTTP server list in CSV with `ip` and `port` columns (OpenRVS registry).
+    Csv { url: String },
 }
 
 impl Master {
@@ -71,7 +77,7 @@ impl Master {
             | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
             Master::Unreal2 { address, .. } => address.clone(),
-            Master::Mta { url } => url.clone(),
+            Master::Mta { url } | Master::Csv { url } => url.clone(),
             Master::GamespySb { address, .. } => address.clone(),
         }
     }

@@ -79,11 +79,23 @@ fn catalog_has_every_game_with_masters_and_join_template() {
             "swat4",
             "tribesv",
             "fear",
-            "swbf"
+            "swbf",
+            "ravenshield",
+            "ghostrecon",
+            "ghostrecond",
+            "soaf",
+            "soafd"
         ]
     );
     for game in games() {
-        assert!(!game.masters.is_empty(), "{} has no master", game.id);
+        // No master lists the Red Storm titles any more: Add server and LAN only.
+        let no_master = ["ghostrecon", "ghostrecond", "soaf", "soafd"];
+        assert_eq!(
+            game.masters.is_empty(),
+            no_master.contains(&game.id.as_str()),
+            "{} masters",
+            game.id
+        );
         assert!(
             game.join.contains("{address}") || game.join.contains("{ip}"),
             "{} join template",
