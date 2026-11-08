@@ -1995,5 +1995,140 @@
     "registry": [],
     "exe_names": ["silverback.exe", "savage.exe", "Savage.exe"],
     "join": "connect {address}"
+  },
+  {
+    "id": "ravenshield",
+    "name": "Rainbow Six 3: Raven Shield",
+    "short": "RVS",
+    "color": "#3c6e9b",
+    "protocol": "ravenshield",
+    "default_port": 7777,
+    "query_port_offset": 1000,
+    "masters": [
+      { "kind": "csv", "url": "http://api.openrvs.org/servers" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "RGM_TerroristHuntCoopMode", "name": "Terrorist Hunt (Co-op)" },
+      { "value": "RGM_HostageRescueCoopMode", "name": "Hostage Rescue (Co-op)" },
+      { "value": "RGM_MissionMode", "name": "Mission" },
+      { "value": "RGM_TerroristHuntAdvMode", "name": "Terrorist Hunt (Adversarial)" },
+      { "value": "RGM_DeathmatchMode", "name": "Survival" },
+      { "value": "RGM_TeamDeathmatchMode", "name": "Team Survival" },
+      { "value": "RGM_BombAdvMode", "name": "Bomb" },
+      { "value": "RGM_EscortAdvMode", "name": "Pilot" },
+      { "value": "RGM_HostageRescueAdvMode", "name": "Hostage" },
+      { "value": "RGM_ScatteredHuntAdvMode", "name": "Scattered Hunt" },
+      { "value": "RGM_CaptureTheEnemyAdvMode", "name": "Capture the Enemy" },
+      { "value": "RGM_KamikazeMode", "name": "Kamikaze" },
+      { "value": "RGM_CountDownMode", "name": "Countdown" },
+      { "value": "RGM_SquadDeathmatch", "name": "Squad Deathmatch" },
+      { "value": "RGM_SquadTeamDeathmatch", "name": "Squad Team Deathmatch" }
+    ],
+    "mod_key": "mod",
+    "base_mod": "RavenShield",
+    "filters": [
+      { "name": "Game Types", "key": "gametype", "dynamic": true },
+      { "name": "Mods", "key": "mod", "dynamic": true },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "PunkBuster", "key": "punkbuster", "options": [
+        { "label": "On", "values": ["1"] },
+        { "label": "Off", "values": ["0"] }
+      ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Red Storm Entertainment\\RAVENSHIELD", "value": "InstalledPath", "exe": "System\\RavenShield.exe" }
+    ],
+    "exe_names": ["RavenShield.exe"],
+    "join": "[mod={mod} ]-ip={address}[ -pwd={password}]"
+  },
+  {
+    "id": "ghostrecon",
+    "name": "Ghost Recon",
+    "short": "GR",
+    "color": "#5a6e3c",
+    "protocol": "ghostrecon",
+    "default_port": 2346,
+    "query_port_offset": 2,
+    "masters": [],
+    "game_type_key": "gamemode",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Modes", "key": "gamemode", "dynamic": true },
+      { "name": "Mission Types", "key": "missiontype", "dynamic": true },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["GhostRecon.exe"],
+    "join": "-client {ip} {port}[ -password \"{password}\"]"
+  },
+  {
+    "id": "ghostrecond",
+    "name": "Ghost Recon Demo",
+    "short": "GRD",
+    "color": "#6e824b",
+    "protocol": "ghostrecon",
+    "default_port": 2346,
+    "query_port_offset": 2,
+    "masters": [],
+    "game_type_key": "gamemode",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Modes", "key": "gamemode", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["GRDemo.exe"],
+    "join": "-client {ip} {port}[ -password \"{password}\"]"
+  },
+  {
+    "id": "soaf",
+    "name": "The Sum of All Fears",
+    "short": "SOAF",
+    "color": "#8c3228",
+    "protocol": "ghostrecon",
+    "default_port": 2346,
+    "query_port_offset": 2,
+    "masters": [],
+    "game_type_key": "gamemode",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Modes", "key": "gamemode", "dynamic": true },
+      { "name": "Mission Types", "key": "missiontype", "dynamic": true },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["SOAF.exe"],
+    "join": "-client {ip} {port}[ -password \"{password}\"]"
+  },
+  {
+    "id": "soafd",
+    "name": "The Sum of All Fears Demo",
+    "short": "SOAFD",
+    "color": "#a04b3c",
+    "protocol": "ghostrecon",
+    "default_port": 2346,
+    "query_port_offset": 2,
+    "masters": [],
+    "game_type_key": "gamemode",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Game Modes", "key": "gamemode", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["SOAFDemo.exe"],
+    "join": "-client {ip} {port}[ -password \"{password}\"]"
   }
 ]

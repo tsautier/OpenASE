@@ -9,8 +9,8 @@ use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
 use crate::{
-    a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, location, quake2, savage, steam, tribes,
-    unreal2,
+    a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, ghostrecon, location, quake2, ravenshield,
+    savage, steam, tribes, unreal2,
 };
 
 /// Network settings for queries (ASE's Options > Network).
@@ -78,6 +78,7 @@ pub fn fetch_master(
         Master::HttpList { url } => tribes::http_master_list(url, timeout * 10),
         Master::Doom3 { address, version } => doom3::master_list(address, version, timeout * 3),
         Master::SavageDrx { url } => savage::master_list(url, timeout * 10),
+        Master::Csv { url } => ravenshield::csv_master_list(url, timeout * 10),
     }
 }
 
@@ -228,6 +229,8 @@ fn status_once(
         Protocol::Unreal2 => unreal2::status(&game.id, host, port, timeout),
         Protocol::Ase => ase::status(&game.id, host, port, timeout),
         Protocol::Savage => savage::status(&game.id, host, port, timeout),
+        Protocol::Ravenshield => ravenshield::status(&game.id, host, port, timeout),
+        Protocol::Ghostrecon => ghostrecon::status(&game.id, host, port, timeout),
         Protocol::Gamespy2 | Protocol::Gamespy3 => {
             let (response, rtt) = if game.protocol == Protocol::Gamespy2 {
                 gamespy2::query_v2(host, port, timeout)?
@@ -276,6 +279,8 @@ fn ping_once(game: &Game, host: &str, port: u16, timeout: Duration) -> io::Resul
         Protocol::Gamespy3 => gamespy2::ping_v3(host, port, timeout),
         Protocol::Tribes => tribes::t1_ping(host, port, timeout),
         Protocol::Tribes2 => tribes::t2_ping(host, port, timeout),
+        Protocol::Ravenshield => ravenshield::ping(host, port, timeout),
+        Protocol::Ghostrecon => ghostrecon::ping(host, port, timeout),
     }
 }
 

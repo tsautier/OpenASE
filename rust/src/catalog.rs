@@ -32,6 +32,10 @@ pub enum Protocol {
     Doom3,
     /// Savage: The Battle for Newerth and Savage DRX (UDP 11235).
     Savage,
+    /// Raven Shield server beacon (`REPORT` on the game port + 1000).
+    Ravenshield,
+    /// Red Storm binary status query (Ghost Recon, The Sum of All Fears).
+    Ghostrecon,
 }
 
 /// Where a game's server list comes from.
@@ -77,6 +81,8 @@ pub enum Master {
     Doom3 { address: String, version: String },
     /// Savage DRX community server list (JSON over HTTPS).
     SavageDrx { url: String },
+    /// HTTP server list in CSV with `ip` and `port` columns (OpenRVS registry).
+    Csv { url: String },
 }
 
 impl Master {
@@ -89,7 +95,7 @@ impl Master {
             | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
             Master::Unreal2 { address, .. } => address.clone(),
-            Master::Mta { url } | Master::SavageDrx { url } => url.clone(),
+            Master::Mta { url } | Master::SavageDrx { url } | Master::Csv { url } => url.clone(),
             Master::GamespySb { address, .. } => address.clone(),
             Master::Tribes { address } => address.clone(),
             Master::HttpList { url } => url.clone(),

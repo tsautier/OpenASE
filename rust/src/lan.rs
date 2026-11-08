@@ -27,6 +27,10 @@ const TRIBES_LAN_KEY: u16 = 0x4c41;
 
 /// Savage and Savage DRX servers.
 const SAVAGE_PORTS: [u16; 2] = [11235, 11236];
+/// Raven Shield beacon ports (game port + 1000).
+const RAVENSHIELD_PORTS: [u16; 3] = [8777, 8778, 8779];
+/// Ghost Recon and Sum of All Fears status ports (game port + 2).
+const GHOSTRECON_PORTS: [u16; 2] = [2348, 2349];
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -129,6 +133,18 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
             SocketAddrV4::new(broadcast, port),
         );
     }
+    for port in RAVENSHIELD_PORTS {
+        let _ = socket.send_to(
+            crate::ravenshield::REQUEST,
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
+    for port in GHOSTRECON_PORTS {
+        let _ = socket.send_to(
+            &crate::ghostrecon::REQUEST,
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
 
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
@@ -152,6 +168,19 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
             Some(game)
         } else if crate::savage::is_answer(packet) {
             Some("savage")
+        // Raven Shield and Red Storm addresses hold the game port.
+        } else if crate::ravenshield::is_answer(packet) {
+            crate::ravenshield::parse_report(packet).ok().map(|report| {
+                address = format!("{}:{}", from.ip(), report.port);
+                "ravenshield"
+            })
+        } else if crate::ghostrecon::is_answer(packet) {
+            crate::ghostrecon::parse_status(packet)
+                .ok()
+                .and_then(|status| crate::ghostrecon::game_for_byte(status.game_byte))
+                .inspect(|_| {
+                    address = format!("{}:{}", from.ip(), from.port().saturating_sub(2));
+                })
         } else if crate::unreal2::is_answer(packet) {
             // 128 is UT2004, older protocol numbers UT2003.
             Some(if packet[0] == crate::unreal2::UT2004_VERSION {
