@@ -122,9 +122,12 @@ fn dialog(title: &str) -> egui::Window<'_> {
         .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
 }
 
-fn buttons_right(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
+/// A row of buttons aligned right. The `horizontal` wrapper keeps the row one
+/// button high: a bare right-to-left layout takes all the height left, which
+/// stretches auto-sized windows.
+pub(super) fn buttons_right(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
     ui.add_space(4.0);
-    ui.with_layout(Layout::right_to_left(Align::Center), add);
+    ui.horizontal(|ui| ui.with_layout(Layout::right_to_left(Align::Center), add));
 }
 
 impl OpenAseApp {

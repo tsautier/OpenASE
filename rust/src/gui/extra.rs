@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-use eframe::egui::{self, Align, Align2, Color32, Key, Layout, RichText, vec2};
+use eframe::egui::{self, Align2, Color32, Key, RichText, vec2};
 
 use openase::catalog;
 use openase::rules::{BUILTIN_KEYS, CustomFilter, Op, Rule};
@@ -553,7 +553,7 @@ impl OpenAseApp {
                 }
             });
             ui.add_space(6.0);
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            super::dialogs::buttons_right(ui, |ui| {
                 cancel = ui.button("Cancel").clicked();
                 if wizard.page < 3 {
                     if ui.button("Next >").clicked() {
@@ -617,7 +617,7 @@ impl OpenAseApp {
             if ui.input(|input| input.key_pressed(Key::Enter)) {
                 ok = true;
             }
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            super::dialogs::buttons_right(ui, |ui| {
                 cancel = ui.button("Cancel").clicked();
                 ok |= ui.button("   OK   ").clicked();
             });
@@ -677,7 +677,7 @@ impl OpenAseApp {
                 ui.end_row();
             });
             ui.weak("Any text file with ip:port entries works: OpenASE lists, GameSpy exports, configs...");
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            super::dialogs::buttons_right(ui, |ui| {
                 cancel = ui.button("Cancel").clicked();
                 ok = ui.button("  Import  ").clicked();
             });
@@ -794,7 +794,7 @@ impl OpenAseApp {
                     ui.color_edit_button_srgb(&mut editor.color);
                 }
             });
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            super::dialogs::buttons_right(ui, |ui| {
                 cancel = ui.button("Cancel").clicked();
                 save = ui.button("   OK   ").clicked();
             });
@@ -855,7 +855,7 @@ impl OpenAseApp {
                 env!("CARGO_PKG_VERSION")
             ));
             ui.hyperlink_to("Download it from GitHub Releases", update::RELEASES_PAGE);
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            super::dialogs::buttons_right(ui, |ui| {
                 close = ui.button("Later").clicked();
             });
         });
