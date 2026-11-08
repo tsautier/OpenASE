@@ -6,6 +6,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::catalog::Game;
+use crate::i18n::{fill, tr};
 use crate::model::Server;
 use crate::settings::GameSettings;
 
@@ -137,9 +138,9 @@ pub fn join(
     }
     Err(io::Error::new(
         io::ErrorKind::NotFound,
-        format!(
-            "Set the program location of {} in Options > Games first.",
-            game.name
+        fill(
+            tr("Set the program location of {} in Options > Games first."),
+            &[&game.name],
         ),
     ))
 }

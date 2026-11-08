@@ -268,6 +268,8 @@ pub struct Settings {
     /// Sound per friend, keyed by lowercase name.
     pub friend_sounds: BTreeMap<String, FriendSound>,
     pub colors: ColorSettings,
+    /// Interface language (System follows the operating system).
+    pub language: crate::i18n::Language,
 }
 
 pub const RECENT_LIMIT: usize = 20;
