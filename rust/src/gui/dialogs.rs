@@ -231,10 +231,7 @@ impl OpenAseApp {
             ui.label("Copyright (C) 2026 Thomas Sautier");
             ui.label(tr("Free software under the GNU GPL v3 or later."));
             ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
-            ui.hyperlink_to(
-                "openase.org",
-                "https://openase.org/",
-            );
+            ui.hyperlink_to("openase.org", "https://openase.org/");
         });
         self.dialogs.about = open;
     }

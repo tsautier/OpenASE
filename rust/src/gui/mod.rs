@@ -2493,8 +2493,51 @@ pub(crate) fn play_sound(file: Option<&str>) {
     }
 }
 
+/// Play a .wav file, or the desktop's notification sound, with the player
+/// programs the system already has (no audio library is linked).
 #[cfg(not(windows))]
-pub(crate) fn play_sound(_file: Option<&str>) {}
+pub(crate) fn play_sound(file: Option<&str>) {
+    let candidates: Vec<(&str, Vec<String>)> = match file {
+        Some(path) if cfg!(target_os = "macos") => vec![("afplay", vec![path.to_string()])],
+        Some(path) => ["pw-play", "paplay", "aplay"]
+            .into_iter()
+            .map(|player| (player, vec![path.to_string()]))
+            .collect(),
+        None if cfg!(target_os = "macos") => vec![(
+            "afplay",
+            vec!["/System/Library/Sounds/Glass.aiff".to_string()],
+        )],
+        None => {
+            const FREEDESKTOP: &str =
+                "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga";
+            vec![
+                (
+                    "canberra-gtk-play",
+                    vec!["-i".to_string(), "message-new-instant".to_string()],
+                ),
+                ("pw-play", vec![FREEDESKTOP.to_string()]),
+                ("paplay", vec![FREEDESKTOP.to_string()]),
+            ]
+        }
+    };
+    // Try each player in turn off the UI thread, and wait for the one that
+    // started so it does not stay a zombie process.
+    std::thread::spawn(move || {
+        for (program, args) in candidates {
+            let started = std::process::Command::new(program)
+                .args(&args)
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+            if let Ok(mut child) = started
+                && child.wait().is_ok_and(|status| status.success())
+            {
+                return;
+            }
+        }
+    });
+}
 
 /// Fill the GeoIP country of a server once.
 fn annotate(geoip: Option<&GeoIp>, server: &mut Server) {
