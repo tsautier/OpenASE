@@ -13,6 +13,7 @@ pub mod gamespy2;
 pub mod gamespy_sb;
 pub mod geoip;
 pub mod ghostrecon;
+pub mod i18n;
 pub mod lan;
 pub mod launch;
 pub mod location;

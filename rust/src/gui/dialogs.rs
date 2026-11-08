@@ -12,49 +12,58 @@ use egui_extras::{Column, TableBuilder};
 use openase::catalog;
 use openase::colors::strip_quake_colors;
 use openase::detect;
+use openase::i18n::{self, Language, fill, noop, tr};
 use openase::settings::{ColorSettings, FriendSound, NetworkSettings, Settings, ToolbarSettings};
 
 use super::{Msg, Nav, OpenAseApp, ServerKey, play_sound, rgb};
 
-const OPTION_TABS: [&str; 6] = ["General", "Network", "Events", "Games", "Toolbar", "Colors"];
+const OPTION_TABS: [&str; 6] = [
+    noop("General"),
+    noop("Network"),
+    noop("Events"),
+    noop("Games"),
+    noop("Toolbar"),
+    noop("Colors"),
+];
 pub(super) const TOOLBAR_TAB: usize = 4;
 
 /// Per-friend sound texts (French translation pass: keep together).
-const SOUND_DEFAULT: &str = "Default sound";
-const SOUND_NONE: &str = "No sound";
-const SOUND_FILE: &str = "Sound file...";
-const SOUND_PATH_HINT: &str = "Path of a .wav file";
-const SOUND_BROWSE: &str = "Browse...";
-const SOUND_TEST: &str = "Play";
+const SOUND_DEFAULT: &str = noop("Default sound");
+const SOUND_NONE: &str = noop("No sound");
+const SOUND_FILE: &str = noop("Sound file...");
+const SOUND_PATH_HINT: &str = noop("Path of a .wav file");
+const SOUND_BROWSE: &str = noop("Browse...");
+const SOUND_TEST: &str = noop("Play");
 
 /// Toolbar tab texts.
-const TOOLBAR_HELP: &str =
-    "Choose the buttons of the toolbar and their order. You can also right-click the toolbar.";
-const TOOLBAR_UP: &str = "Up";
-const TOOLBAR_DOWN: &str = "Down";
-const TOOLBAR_RESET_ALL: &str = "Reset to default";
+const TOOLBAR_HELP: &str = noop(
+    "Choose the buttons of the toolbar and their order. You can also right-click the toolbar.",
+);
+const TOOLBAR_UP: &str = noop("Up");
+const TOOLBAR_DOWN: &str = noop("Down");
+const TOOLBAR_RESET_ALL: &str = noop("Reset to default");
 
 /// Colors tab texts.
-const COLORS_HELP: &str = "Changes are shown right away; Cancel puts the old colors back.";
-const COLORS_LIST_BG: &str = "List background";
-const COLORS_ALT_ROW: &str = "Alternating row";
-const COLORS_SELECTION: &str = "Selection";
-const COLORS_TEXT: &str = "Text";
-const COLORS_QUAKE: &str = "Draw Quake color codes in server and player names";
-const COLORS_RESET: &str = "Reset to defaults";
+const COLORS_HELP: &str = noop("Changes are shown right away; Cancel puts the old colors back.");
+const COLORS_LIST_BG: &str = noop("List background");
+const COLORS_ALT_ROW: &str = noop("Alternating row");
+const COLORS_SELECTION: &str = noop("Selection");
+const COLORS_TEXT: &str = noop("Text");
+const COLORS_QUAKE: &str = noop("Draw Quake color codes in server and player names");
+const COLORS_RESET: &str = noop("Reset to defaults");
 
 /// Name of a toolbar button in Options and in the toolbar menu.
 pub(super) fn toolbar_label(id: &str) -> &'static str {
     match id {
-        "refresh" => "Refresh server list",
-        "stop" => "Stop",
-        "ping" => "Refresh selected server",
-        "join" => "Join server",
-        "favorite" => "Add to / remove from favorites",
-        "add" => "Add server",
-        "find" => "Find player",
-        "friends" => "Friends",
-        "options" => "Options",
+        "refresh" => noop("Refresh server list"),
+        "stop" => noop("Stop"),
+        "ping" => noop("Refresh selected server"),
+        "join" => noop("Join server"),
+        "favorite" => noop("Add to / remove from favorites"),
+        "add" => noop("Add server"),
+        "find" => noop("Find player"),
+        "friends" => noop("Friends"),
+        "options" => noop("Options"),
         _ => "",
     }
 }
@@ -94,6 +103,11 @@ impl Dialogs {
         if self.notices.len() > 5 {
             self.notices.remove(0);
         }
+    }
+
+    /// Language chosen in the open Options window, shown before OK.
+    pub fn preview_language(&self) -> Option<Language> {
+        self.options.as_ref().map(|draft| draft.settings.language)
     }
 
     pub fn has_notices(&self) -> bool {
@@ -148,16 +162,19 @@ impl Dialogs {
         if let Some(search) = &mut self.search {
             search.done = true;
             search.current = if search.found.is_empty() {
-                "No installation found.".into()
+                tr("No installation found.").into()
             } else {
-                "Search complete.".into()
+                tr("Search complete.").into()
             };
         }
     }
 }
 
-fn dialog(title: &str) -> egui::Window<'_> {
-    egui::Window::new(title)
+/// A modal window titled `title` (translated); the English title is its id, so
+/// the window keeps its place when the language changes.
+fn dialog(title: &'static str) -> egui::Window<'static> {
+    egui::Window::new(tr(title))
+        .id(egui::Id::unique(title))
         .collapsible(false)
         .resizable(false)
         .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
@@ -203,12 +220,16 @@ impl OpenAseApp {
         let mut open = self.dialogs.about;
         dialog("About OpenASE").open(&mut open).show(ctx, |ui| {
             ui.heading("OpenASE");
-            ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
+            ui.label(fill(tr("Version {}"), &[&env!("CARGO_PKG_VERSION")]));
             ui.add_space(6.0);
-            ui.label("An open-source game server browser in the spirit of The All-Seeing Eye.");
-            ui.label("New code, not affiliated with Yahoo or the original authors.");
+            ui.label(tr(
+                "An open-source game server browser in the spirit of The All-Seeing Eye.",
+            ));
+            ui.label(tr(
+                "New code, not affiliated with Yahoo or the original authors.",
+            ));
             ui.label("Copyright (C) 2026 Thomas Sautier");
-            ui.label("Free software under the GNU GPL v3 or later.");
+            ui.label(tr("Free software under the GNU GPL v3 or later."));
             ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
             ui.hyperlink_to(
                 "tsautier.github.io/OpenASE",
@@ -247,7 +268,7 @@ impl OpenAseApp {
                 .num_columns(2)
                 .spacing([8.0, 6.0])
                 .show(ui, |ui| {
-                    ui.label("Game");
+                    ui.label(tr("Game"));
                     egui::ComboBox::from_id_salt("add-game")
                         .width(240.0)
                         .selected_text(catalog::game(&game).map_or("", |g| g.name.as_str()))
@@ -257,7 +278,7 @@ impl OpenAseApp {
                             }
                         });
                     ui.end_row();
-                    ui.label("Address");
+                    ui.label(tr("Address"));
                     let response = ui.add(
                         egui::TextEdit::singleline(&mut address)
                             .hint_text("host:port")
@@ -271,8 +292,8 @@ impl OpenAseApp {
                     ui.end_row();
                 });
             buttons_right(ui, |ui| {
-                close |= ui.button("Cancel").clicked();
-                submit |= ui.button("   Add   ").clicked();
+                close |= ui.button(tr("Cancel")).clicked();
+                submit |= ui.button(tr("   Add   ")).clicked();
             });
         });
         if submit {
@@ -294,7 +315,7 @@ impl OpenAseApp {
         let mut join = false;
         let mut cancel = false;
         dialog("Password required").show(ctx, |ui| {
-            ui.label("This server needs a password.");
+            ui.label(tr("This server needs a password."));
             let response = ui.add(
                 egui::TextEdit::singleline(&mut password)
                     .password(true)
@@ -305,8 +326,8 @@ impl OpenAseApp {
                 join = true;
             }
             buttons_right(ui, |ui| {
-                cancel = ui.button("Cancel").clicked();
-                join |= ui.button("   Join   ").clicked();
+                cancel = ui.button(tr("Cancel")).clicked();
+                join |= ui.button(tr("   Join   ")).clicked();
             });
         });
         if join {
@@ -328,14 +349,16 @@ impl OpenAseApp {
         let mut add = false;
         let mut sound_change: Option<(String, FriendSound)> = None;
         dialog("Friends").open(&mut open).show(ctx, |ui| {
-            ui.label("OpenASE looks for these names on every server it scans.");
+            ui.label(tr(
+                "OpenASE looks for these names on every server it scans.",
+            ));
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
                 .max_height(220.0)
                 .show(ui, |ui| {
                     ui.set_min_width(440.0);
                     if self.settings.friends.is_empty() {
-                        ui.weak("No friends yet.");
+                        ui.weak(tr("No friends yet."));
                     }
                     for (index, friend) in self.settings.friends.iter().enumerate() {
                         let mut sound = self.settings.friend_sound(friend);
@@ -348,11 +371,11 @@ impl OpenAseApp {
                                 } else {
                                     Color32::from_gray(0x60)
                                 },
-                                if online { "online" } else { "offline" },
+                                if online { tr("online") } else { tr("offline") },
                             );
                             ui.label(friend);
                             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                if ui.small_button("Remove").clicked() {
+                                if ui.small_button(tr("Remove")).clicked() {
                                     remove = Some(index);
                                 }
                                 sound_combo(ui, ("friend-sound", index), &mut sound);
@@ -363,18 +386,18 @@ impl OpenAseApp {
                                 ui.add_space(52.0);
                                 ui.add(
                                     egui::TextEdit::singleline(path)
-                                        .hint_text(SOUND_PATH_HINT)
+                                        .hint_text(tr(SOUND_PATH_HINT))
                                         .desired_width(230.0),
                                 );
-                                if ui.small_button(SOUND_BROWSE).clicked()
+                                if ui.small_button(tr(SOUND_BROWSE)).clicked()
                                     && let Some(file) = rfd::FileDialog::new()
-                                        .set_title("Select a sound")
-                                        .add_filter("WAV sound", &["wav"])
+                                        .set_title(tr("Select a sound"))
+                                        .add_filter(tr("WAV sound"), &["wav"])
                                         .pick_file()
                                 {
                                     *path = file.display().to_string();
                                 }
-                                if ui.small_button(SOUND_TEST).clicked() {
+                                if ui.small_button(tr(SOUND_TEST)).clicked() {
                                     play_sound(Some(path.trim()));
                                 }
                             });
@@ -388,10 +411,10 @@ impl OpenAseApp {
             ui.horizontal(|ui| {
                 let response = ui.add(
                     egui::TextEdit::singleline(&mut new_name)
-                        .hint_text("Player name")
+                        .hint_text(tr("Player name"))
                         .desired_width(220.0),
                 );
-                add = ui.button("Add").clicked()
+                add = ui.button(tr("Add")).clicked()
                     || (response.lost_focus()
                         && ui.input(|input| input.key_pressed(egui::Key::Enter)));
             });
@@ -443,7 +466,7 @@ impl OpenAseApp {
             .resizable(true)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("Player name contains");
+                    ui.label(tr("Player name contains"));
                     ui.add(egui::TextEdit::singleline(&mut query).desired_width(200.0))
                         .request_focus();
                 });
@@ -466,9 +489,9 @@ impl OpenAseApp {
                         }
                     }
                 }
-                ui.label(format!(
-                    "{} players found in scanned servers",
-                    results.len()
+                ui.label(fill(
+                    tr("{} players found in scanned servers"),
+                    &[&results.len()],
                 ));
                 ui.set_min_size(vec2(520.0, 260.0));
                 TableBuilder::new(ui)
@@ -480,7 +503,7 @@ impl OpenAseApp {
                     .column(Column::initial(270.0).clip(true))
                     .column(Column::remainder())
                     .header(18.0, |mut header| {
-                        for label in ["Player", "Server", "Game"] {
+                        for label in [tr("Player"), tr("Server"), tr("Game")] {
                             header.col(|ui| {
                                 ui.strong(label);
                             });
@@ -521,12 +544,13 @@ impl OpenAseApp {
         let mut ok = false;
         let mut cancel = false;
         let mut start_search: Option<String> = None;
+        let language = draft.settings.language;
 
         dialog("Options").show(ctx, |ui| {
             ui.set_width(560.0);
             ui.horizontal(|ui| {
                 for (index, tab) in OPTION_TABS.iter().enumerate() {
-                    ui.selectable_value(&mut draft.tab, index, *tab);
+                    ui.selectable_value(&mut draft.tab, index, tr(tab));
                 }
             });
             ui.separator();
@@ -543,11 +567,18 @@ impl OpenAseApp {
             });
             ui.separator();
             buttons_right(ui, |ui| {
-                cancel = ui.button("Cancel").clicked();
+                cancel = ui.button(tr("Cancel")).clicked();
                 ok = ui.button("   OK   ").clicked();
             });
         });
 
+        if draft.settings.language != language {
+            i18n::set_language(draft.settings.language);
+            ctx.request_repaint();
+        }
+        if cancel {
+            i18n::set_language(self.settings.language);
+        }
         if let Some(game) = start_search {
             self.start_auto_search(ctx, &game);
         }
@@ -567,6 +598,7 @@ impl OpenAseApp {
             self.settings.network = new.network;
             self.settings.events = new.events;
             self.settings.geoip_disabled = new.geoip_disabled;
+            self.settings.language = new.language;
             self.mark_dirty();
             if self
                 .nav
@@ -634,7 +666,8 @@ impl OpenAseApp {
         if !search.done {
             ctx.request_repaint_after(Duration::from_millis(200));
         }
-        egui::Window::new(format!("Searching for {}", search.exe))
+        egui::Window::new(fill(tr("Searching for {}"), &[&search.exe]))
+            .id(egui::Id::unique("auto-search"))
             .collapsible(false)
             .resizable(false)
             .anchor(Align2::CENTER_CENTER, [0.0, 40.0])
@@ -652,7 +685,7 @@ impl OpenAseApp {
                     .stroke(egui::Stroke::new(1.0, Color32::from_gray(0xa0)))
                     .show(ui, |ui| {
                         ui.set_min_size(vec2(456.0, 110.0));
-                        ui.strong("Location");
+                        ui.strong(tr("Location"));
                         for (index, path) in search.found.iter().enumerate() {
                             if ui
                                 .selectable_label(search.selected == Some(index), path)
@@ -664,7 +697,11 @@ impl OpenAseApp {
                     });
                 buttons_right(ui, |ui| {
                     close = ui
-                        .button(if search.done { "Close" } else { "Cancel" })
+                        .button(if search.done {
+                            tr("Close")
+                        } else {
+                            tr("Cancel")
+                        })
                         .clicked();
                     let chosen = search
                         .selected
@@ -701,26 +738,26 @@ fn sound_combo(
     id: impl std::fmt::Debug + std::hash::Hash,
     sound: &mut FriendSound,
 ) {
-    let text = match sound {
+    let text = tr(match sound {
         FriendSound::Default => SOUND_DEFAULT,
         FriendSound::Silent => SOUND_NONE,
         FriendSound::File(_) => SOUND_FILE,
-    };
+    });
     egui::ComboBox::from_id_salt(id)
         .selected_text(text)
         .width(110.0)
         .show_ui(ui, |ui| {
-            ui.selectable_value(sound, FriendSound::Default, SOUND_DEFAULT);
-            ui.selectable_value(sound, FriendSound::Silent, SOUND_NONE);
+            ui.selectable_value(sound, FriendSound::Default, tr(SOUND_DEFAULT));
+            ui.selectable_value(sound, FriendSound::Silent, tr(SOUND_NONE));
             let is_file = matches!(sound, FriendSound::File(_));
-            if ui.selectable_label(is_file, SOUND_FILE).clicked() && !is_file {
+            if ui.selectable_label(is_file, tr(SOUND_FILE)).clicked() && !is_file {
                 *sound = FriendSound::File(String::new());
             }
         });
 }
 
 fn toolbar_tab(ui: &mut egui::Ui, toolbar: &mut ToolbarSettings) {
-    ui.label(TOOLBAR_HELP);
+    ui.label(tr(TOOLBAR_HELP));
     ui.add_space(6.0);
     let count = toolbar.items.len();
     let mut swap: Option<(usize, isize)> = None;
@@ -729,15 +766,15 @@ fn toolbar_tab(ui: &mut egui::Ui, toolbar: &mut ToolbarSettings) {
         .spacing([10.0, 4.0])
         .show(ui, |ui| {
             for (index, item) in toolbar.items.iter_mut().enumerate() {
-                ui.checkbox(&mut item.visible, toolbar_label(&item.id));
+                ui.checkbox(&mut item.visible, tr(toolbar_label(&item.id)));
                 if ui
-                    .add_enabled(index > 0, egui::Button::new(TOOLBAR_UP))
+                    .add_enabled(index > 0, egui::Button::new(tr(TOOLBAR_UP)))
                     .clicked()
                 {
                     swap = Some((index, -1));
                 }
                 if ui
-                    .add_enabled(index + 1 < count, egui::Button::new(TOOLBAR_DOWN))
+                    .add_enabled(index + 1 < count, egui::Button::new(tr(TOOLBAR_DOWN)))
                     .clicked()
                 {
                     swap = Some((index, 1));
@@ -749,13 +786,13 @@ fn toolbar_tab(ui: &mut egui::Ui, toolbar: &mut ToolbarSettings) {
         toolbar.move_item(index, delta);
     }
     ui.add_space(8.0);
-    if ui.button(TOOLBAR_RESET_ALL).clicked() {
+    if ui.button(tr(TOOLBAR_RESET_ALL)).clicked() {
         *toolbar = ToolbarSettings::default();
     }
 }
 
 fn colors_tab(ui: &mut egui::Ui, colors: &mut ColorSettings) {
-    ui.label(COLORS_HELP);
+    ui.label(tr(COLORS_HELP));
     ui.add_space(6.0);
     egui::Grid::new("colors-grid")
         .num_columns(2)
@@ -767,7 +804,7 @@ fn colors_tab(ui: &mut egui::Ui, colors: &mut ColorSettings) {
                 (COLORS_SELECTION, &mut colors.selection),
                 (COLORS_TEXT, &mut colors.text),
             ] {
-                ui.label(label);
+                ui.label(tr(label));
                 let mut color = rgb(*value);
                 if ui.color_edit_button_srgba(&mut color).changed() {
                     *value = [color.r(), color.g(), color.b()];
@@ -776,18 +813,27 @@ fn colors_tab(ui: &mut egui::Ui, colors: &mut ColorSettings) {
             }
         });
     ui.add_space(8.0);
-    ui.checkbox(&mut colors.quake_colors, COLORS_QUAKE);
+    ui.checkbox(&mut colors.quake_colors, tr(COLORS_QUAKE));
     ui.add_space(8.0);
-    if ui.button(COLORS_RESET).clicked() {
+    if ui.button(tr(COLORS_RESET)).clicked() {
         *colors = ColorSettings::default();
     }
 }
 
 fn general_tab(ui: &mut egui::Ui, settings: &mut Settings, geoip_status: &str) {
+    ui.strong(tr("Language"));
+    egui::ComboBox::from_id_salt("language")
+        .selected_text(tr(settings.language.label()))
+        .show_ui(ui, |ui| {
+            for language in Language::ALL {
+                ui.selectable_value(&mut settings.language, language, tr(language.label()));
+            }
+        });
+    ui.add_space(12.0);
     ui.strong("Steam");
-    ui.label("Counter-Strike 1.6 server lists come from the Steam Web API, which needs your own free key.");
+    ui.label(tr("Counter-Strike 1.6 server lists come from the Steam Web API, which needs your own free key."));
     ui.horizontal(|ui| {
-        ui.label("Steam Web API key");
+        ui.label(tr("Steam Web API key"));
         ui.add(
             egui::TextEdit::singleline(&mut settings.steam_api_key)
                 .password(true)
@@ -795,51 +841,51 @@ fn general_tab(ui: &mut egui::Ui, settings: &mut Settings, geoip_status: &str) {
         );
     });
     ui.hyperlink_to(
-        "Get a key at steamcommunity.com/dev/apikey",
+        tr("Get a key at steamcommunity.com/dev/apikey"),
         "https://steamcommunity.com/dev/apikey",
     );
     ui.add_space(12.0);
-    ui.strong("Location");
+    ui.strong(tr("Location"));
     let mut enabled = !settings.geoip_disabled;
     ui.checkbox(
         &mut enabled,
-        "Show server countries (downloads a free IP-to-country database once a month)",
+        tr("Show server countries (downloads a free IP-to-country database once a month)"),
     );
     settings.geoip_disabled = !enabled;
     ui.horizontal(|ui| {
-        ui.label(format!("Database: {geoip_status}."));
+        ui.label(fill(tr("Database: {}."), &[&geoip_status]));
         ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
     });
-    ui.weak("Takes effect at the next start.");
+    ui.weak(tr("Takes effect at the next start."));
     ui.add_space(12.0);
-    ui.strong("Settings file");
+    ui.strong(tr("Settings file"));
     ui.label(openase::settings::Settings::path().display().to_string());
 }
 
 fn network_tab(ui: &mut egui::Ui, network: &mut NetworkSettings) {
-    ui.label("Advanced connection settings");
+    ui.label(tr("Advanced connection settings"));
     ui.add_space(4.0);
     egui::Grid::new("network-grid")
         .num_columns(2)
         .spacing([16.0, 6.0])
         .show(ui, |ui| {
-            ui.label("Timeout when querying servers (ms)");
+            ui.label(tr("Timeout when querying servers (ms)"));
             ui.add(
                 egui::DragValue::new(&mut network.timeout_ms)
                     .range(100..=10_000)
                     .speed(10),
             );
             ui.end_row();
-            ui.label("Number of times to ping a server");
+            ui.label(tr("Number of times to ping a server"));
             ui.add(egui::DragValue::new(&mut network.pings).range(1..=10));
             ui.end_row();
-            ui.label("Number of times to retry a scan");
+            ui.label(tr("Number of times to retry a scan"));
             ui.add(egui::DragValue::new(&mut network.retries).range(0..=5));
             ui.end_row();
-            ui.label("Servers queried at the same time");
+            ui.label(tr("Servers queried at the same time"));
             ui.add(egui::DragValue::new(&mut network.parallel_queries).range(1..=128));
             ui.end_row();
-            ui.label("Maximum servers per refresh");
+            ui.label(tr("Maximum servers per refresh"));
             ui.add(
                 egui::DragValue::new(&mut network.scan_limit)
                     .range(50..=10_000)
@@ -848,30 +894,30 @@ fn network_tab(ui: &mut egui::Ui, network: &mut NetworkSettings) {
             ui.end_row();
         });
     ui.add_space(8.0);
-    if ui.button("Restore defaults").clicked() {
+    if ui.button(tr("Restore defaults")).clicked() {
         *network = NetworkSettings::default();
     }
     ui.add_space(8.0);
-    ui.weak("Ping is the average round-trip time, Flux half the spread between the fastest and slowest answer, PL the share of unanswered queries.");
+    ui.weak(tr("Ping is the average round-trip time, Flux half the spread between the fastest and slowest answer, PL the share of unanswered queries."));
 }
 
 fn events_tab(ui: &mut egui::Ui, settings: &mut Settings) {
     let events = &mut settings.events;
-    ui.strong("Friend joins a server");
-    ui.checkbox(&mut events.notify_friend_joins, "Show a notice");
+    ui.strong(tr("Friend joins a server"));
+    ui.checkbox(&mut events.notify_friend_joins, tr("Show a notice"));
     ui.checkbox(
         &mut events.sound_friend_joins,
-        "Play the system notification sound",
+        tr("Play the system notification sound"),
     );
     ui.add_space(12.0);
-    ui.strong("Monitored server");
+    ui.strong(tr("Monitored server"));
     ui.horizontal(|ui| {
         ui.checkbox(
             &mut events.auto_refresh_selected,
-            "Refresh the selected server every",
+            tr("Refresh the selected server every"),
         );
         ui.add(egui::DragValue::new(&mut events.auto_refresh_seconds).range(5..=600));
-        ui.label("seconds");
+        ui.label(tr("seconds"));
     });
 }
 
@@ -892,7 +938,7 @@ fn games_tab(ui: &mut egui::Ui, draft: &mut OptionsDraft) -> Option<String> {
                             ui.set_width(210.0);
                             ui.set_min_height(316.0);
                             for (heading, installed) in
-                                [("Installed games", true), ("Not installed", false)]
+                                [(tr("Installed games"), true), (tr("Not installed"), false)]
                             {
                                 ui.strong(heading);
                                 for game in catalog::games() {
@@ -918,35 +964,35 @@ fn games_tab(ui: &mut egui::Ui, draft: &mut OptionsDraft) -> Option<String> {
         ui.add_space(8.0);
         ui.allocate_ui_with_layout(vec2(320.0, 320.0), top_down, |ui| {
             let Some(id) = draft.selected_game.clone() else {
-                ui.label("Select a game on the left.");
+                ui.label(tr("Select a game on the left."));
                 return;
             };
             let entry = draft.settings.games.entry(id.clone()).or_default();
-            ui.checkbox(&mut entry.visible, "Visible in filter list");
+            ui.checkbox(&mut entry.visible, tr("Visible in filter list"));
             ui.add_space(4.0);
-            ui.label("Player name");
+            ui.label(tr("Player name"));
             ui.add(egui::TextEdit::singleline(&mut entry.player_name).desired_width(300.0));
-            ui.label("Config file");
+            ui.label(tr("Config file"));
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut entry.config_file).desired_width(230.0));
-                if ui.button("Browse").clicked()
+                if ui.button(tr("Browse")).clicked()
                     && let Some(path) = rfd::FileDialog::new()
-                        .set_title("Select config file")
+                        .set_title(tr("Select config file"))
                         .pick_file()
                 {
                     entry.config_file = path.display().to_string();
                 }
             });
-            ui.label("Program location");
+            ui.label(tr("Program location"));
             ui.horizontal(|ui| {
                 ui.add(
                     egui::TextEdit::singleline(&mut entry.program_location).desired_width(230.0),
                 );
-                if ui.button("Browse").clicked()
+                if ui.button(tr("Browse")).clicked()
                     && let Some(path) = rfd::FileDialog::new()
-                        .set_title("Select game executable")
-                        .add_filter("Executable", &["exe"])
-                        .add_filter("All files", &["*"])
+                        .set_title(tr("Select game executable"))
+                        .add_filter(tr("Executable"), &["exe"])
+                        .add_filter(tr("All files"), &["*"])
                         .pick_file()
                 {
                     entry.program_location = path.display().to_string();
@@ -955,18 +1001,18 @@ fn games_tab(ui: &mut egui::Ui, draft: &mut OptionsDraft) -> Option<String> {
             });
             ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
                 ui.add_space(14.0);
-                if ui.button("Auto-Search").clicked() {
+                if ui.button(tr("Auto-Search")).clicked() {
                     search = Some(id.clone());
                 }
             });
             ui.add_space(4.0);
             ui.checkbox(
                 &mut entry.allow_invitations,
-                "allow invitations for this game",
+                tr("allow invitations for this game"),
             );
             ui.checkbox(
                 &mut entry.draw_player_names_with_game_font,
-                "draw player names with game colors",
+                tr("draw player names with game colors"),
             );
         });
     });
