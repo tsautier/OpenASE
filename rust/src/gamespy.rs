@@ -67,7 +67,7 @@ pub fn parse_kv(text: &str) -> Vec<(String, String)> {
     parts
         .chunks(2)
         .filter(|pair| pair.len() == 2 && !pair[0].is_empty())
-        .map(|pair| (pair[0].to_string(), pair[1].to_string()))
+        .map(|pair| (crate::text::repair(pair[0]), crate::text::repair(pair[1])))
         .collect()
 }
 
@@ -153,7 +153,7 @@ pub fn query(
         match socket.recv(&mut buffer) {
             Ok(size) => {
                 rtt.get_or_insert_with(|| started.elapsed());
-                let text = String::from_utf8_lossy(&buffer[..size]).to_string();
+                let text = crate::quake3::latin1(&buffer[..size]);
                 let finished = text.contains("\\final\\");
                 pairs.extend(parse_kv(&text));
                 if finished {

@@ -381,7 +381,7 @@ pub fn parse_info_string(raw: &str) -> Result<BTreeMap<String, String>, ParseErr
     }
     for pair in parts.chunks(2) {
         if !pair[0].is_empty() {
-            result.insert(pair[0].to_string(), pair[1].to_string());
+            result.insert(crate::text::repair(pair[0]), crate::text::repair(pair[1]));
         }
     }
     Ok(result)
@@ -407,6 +407,6 @@ pub fn parse_player_line(line: &str) -> Result<Quake3Player, ParseError> {
     Ok(Quake3Player {
         score: score.parse().map_err(|_| invalid())?,
         ping: ping.parse().map_err(|_| invalid())?,
-        name: name.to_string(),
+        name: crate::text::repair(name),
     })
 }

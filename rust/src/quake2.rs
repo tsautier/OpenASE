@@ -98,7 +98,7 @@ pub fn parse_player_row(line: &str, quakeworld: bool) -> Result<Quake2Player, Pa
     } else {
         after.rfind('"').ok_or_else(invalid)?
     };
-    let name = clean_text(&after[..name_end]);
+    let name = crate::text::repair(&clean_text(&after[..name_end]));
     if quakeworld {
         let [_, frags, minutes, ping] = numbers[..] else {
             return Err(invalid());

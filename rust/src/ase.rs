@@ -67,7 +67,7 @@ impl Reader<'_> {
             .get(self.pos..self.pos + size)
             .ok_or_else(|| invalid("truncated ASE string"))?;
         self.pos += size;
-        Ok(String::from_utf8_lossy(bytes)
+        Ok(crate::text::decode(bytes)
             .trim_end_matches('\0')
             .to_string())
     }

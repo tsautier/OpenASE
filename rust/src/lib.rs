@@ -21,5 +21,6 @@ pub mod query;
 pub mod rules;
 pub mod settings;
 pub mod steam;
+pub mod text;
 pub mod unreal2;
 pub mod update;
