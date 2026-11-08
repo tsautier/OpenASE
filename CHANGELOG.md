@@ -3,6 +3,15 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## Unreleased
+
+- **Windows installer**: `OpenASE-<version>-windows-x64-setup.exe`, built with Inno Setup.
+  Installs per user by default (no administrator prompt), adds a Start menu entry and an
+  optional desktop shortcut, upgrades older installs in place, and keeps your settings when
+  uninstalled. English and French. The portable zip is still published.
+- **SHA256SUMS.txt** is attached to every release with the checksum of each package.
+- Package manager manifests (winget, Scoop) can now be generated from `packaging/`.
+
 ## 0.9.0 — 2026-11-08
 
 70 games (up from 59) and 15 query protocols (up from 9).

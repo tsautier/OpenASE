@@ -36,7 +36,12 @@ jobs:
       - name: Build
         working-directory: rust
         run: cargo build --release
-      - name: Package
+      # Code signing is not set up yet (no certificate). To add it, sign
+      # rust/target/release/openase.exe here, before it is zipped and wrapped
+      # in the installer. SignPath is free for open source projects:
+      # https://signpath.org/ (use the signpath/github-action-submit-signing-request
+      # action, or call signtool). Keep the exe unsigned until then.
+      - name: Package zip
         shell: pwsh
         run: |
           $name = "OpenASE-$env:TAG-windows-x64"
@@ -44,10 +49,24 @@ jobs:
           Copy-Item rust/target/release/openase.exe "$name/OpenASE.exe"
           Copy-Item LICENSE, README.md $name
           Compress-Archive -Path $name -DestinationPath "$name.zip"
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          # Inno Setup 6 is preinstalled on windows-latest; install it if it ever is not.
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc "/DAppVersion=$($env:TAG.TrimStart('v'))" "/DOutputName=OpenASE-$env:TAG-windows-x64-setup" "/DOutputDir=$PWD" packaging/windows/openase.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+      # To sign the installer, add a signing step here for OpenASE-*-setup.exe
+      # (same SignPath setup as above), before it is uploaded.
       - uses: actions/upload-artifact@v7
         with:
           name: windows
-          path: OpenASE-*.zip
+          path: |
+            OpenASE-*.zip
+            OpenASE-*-setup.exe
 
   linux:
     # The oldest supported Ubuntu keeps the glibc requirement low, so the
@@ -204,6 +223,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           ls -l dist
+          # Checksums of every package (also read by packaging/make-manifests.mjs).
+          (cd dist && sha256sum OpenASE-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
           # Release notes: this version's section of CHANGELOG.md, up to the next "## ".
           awk -v v="${TAG#v}" '
             index($0, "## " v " ") == 1 { on = 1; next }
