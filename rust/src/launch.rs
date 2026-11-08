@@ -94,6 +94,8 @@ pub fn join_args(
         ("password", password.to_string()),
         ("config", settings.config_file.clone()),
         ("mod", game.launch_mod(&server.mod_name)),
+        ("ip", server.host.clone()),
+        ("port", server.join_port.to_string()),
     ]);
     split_args(&expand_template(&game.join, &vars))
 }

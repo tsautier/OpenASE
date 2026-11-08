@@ -184,14 +184,19 @@ pub fn server_from_status(
 
     let mut players = Vec::new();
     for index in 0.. {
-        let Some(name) = rules.get(&format!("player_{index}")) else {
+        // Battlefield 1942 sends `playername_N` and `score_N` instead.
+        let Some(name) = rules
+            .get(&format!("player_{index}"))
+            .or_else(|| rules.get(&format!("playername_{index}")))
+        else {
             break;
         };
         players.push(Player {
             name: name.clone(),
             score: rules
                 .get(&format!("frags_{index}"))
-                .and_then(|v| v.parse().ok())
+                .or_else(|| rules.get(&format!("score_{index}")))
+                .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(0),
             ping: rules
                 .get(&format!("ping_{index}"))
@@ -202,7 +207,11 @@ pub fn server_from_status(
     rules.retain(|key, _| {
         ![
             "player_",
+            "playername_",
             "frags_",
+            "score_",
+            "kills_",
+            "deaths_",
             "ping_",
             "team_",
             "mesh_",
