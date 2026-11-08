@@ -15,6 +15,9 @@ pub enum Protocol {
     Quake3,
     Gamespy,
     A2s,
+    Quake2,
+    #[serde(rename = "quakeworld")]
+    QuakeWorld,
 }
 
 /// Where a game's server list comes from.
@@ -31,12 +34,19 @@ pub enum Master {
     },
     /// Steam Web API `IGameServersService/GetServerList` (needs a user API key).
     SteamWeb { filter: String },
+    /// Quake 2 family master; `query` is the raw request, usually `query`.
+    Quake2 { address: String, query: String },
+    /// QuakeWorld master (`c` request).
+    Quakeworld { address: String },
 }
 
 impl Master {
     pub fn label(&self) -> String {
         match self {
-            Master::Quake3 { address, .. } | Master::Gamespy { address, .. } => address.clone(),
+            Master::Quake3 { address, .. }
+            | Master::Gamespy { address, .. }
+            | Master::Quake2 { address, .. }
+            | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
         }
     }

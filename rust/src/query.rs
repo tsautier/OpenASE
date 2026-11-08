@@ -8,7 +8,7 @@ use std::time::Duration;
 use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
-use crate::{a2s, gamespy, location, steam};
+use crate::{a2s, gamespy, location, quake2, steam};
 
 /// Network settings for queries (ASE's Options > Network).
 #[derive(Debug, Clone)]
@@ -48,6 +48,18 @@ pub fn fetch_master(
             key,
         } => gamespy::master_list(address, gamename, key, timeout * 3),
         Master::SteamWeb { filter } => steam::server_list(steam_key, filter, limit, timeout * 5),
+        Master::Quake2 { address, query } => quake2::master_list(
+            address,
+            &quake2::quake2_master_request(query),
+            Protocol::Quake2,
+            timeout * 3,
+        ),
+        Master::Quakeworld { address } => quake2::master_list(
+            address,
+            &quake2::quakeworld_master_request(),
+            Protocol::QuakeWorld,
+            timeout * 3,
+        ),
     }
 }
 
@@ -176,6 +188,7 @@ fn status_once(
             Ok((server, rtt))
         }
         Protocol::A2s => a2s::status(&game.id, host, port, timeout),
+        Protocol::Quake2 | Protocol::QuakeWorld => quake2::status(game, host, port, timeout),
     }
 }
 
@@ -193,6 +206,7 @@ fn ping_once(game: &Game, host: &str, port: u16, timeout: Duration) -> io::Resul
         }
         Protocol::Gamespy => gamespy::query(host, port, "\\info\\", timeout).map(|(_, rtt)| rtt),
         Protocol::A2s => a2s::ping(host, port, timeout),
+        Protocol::Quake2 | Protocol::QuakeWorld => quake2::ping(game, host, port, timeout),
     }
 }
 
