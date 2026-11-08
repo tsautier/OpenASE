@@ -69,6 +69,8 @@ pub enum Master {
     },
     /// Multi Theft Auto HTTP master with a binary list (game ports).
     Mta { url: String },
+    /// 333networks JSON API serverlist for `gamename` (see `networks333`).
+    Networks333 { gamename: String },
     /// GameSpy server browsing master (TCP 28910, encoding X), as run by
     /// OpenSpy and BF2Hub.
     GamespySb {
@@ -101,6 +103,7 @@ impl Master {
             Master::Unreal2 { address, .. } => address.clone(),
             Master::Mta { url } | Master::SavageDrx { url } | Master::Csv { url } => url.clone(),
             Master::GamespySb { address, .. } => address.clone(),
+            Master::Networks333 { .. } => "333networks".to_string(),
             Master::Tribes { address } => address.clone(),
             Master::HttpList { url } => url.clone(),
         }

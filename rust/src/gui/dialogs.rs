@@ -230,6 +230,11 @@ impl OpenAseApp {
             ));
             ui.label("Copyright (C) 2026 Thomas Sautier");
             ui.label(tr("Free software under the GNU GPL v3 or later."));
+            // 333networks asks API users to credit it in the application.
+            ui.label(tr(
+                "Server lists from 333networks, OpenSpy, dpmaster and the other community master servers.",
+            ));
+            ui.hyperlink_to("333networks.com", "https://333networks.com/");
             ui.hyperlink_to(openase::geoip::ATTRIBUTION, openase::geoip::ATTRIBUTION_URL);
             ui.hyperlink_to("openase.org", "https://openase.org/");
         });

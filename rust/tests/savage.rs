@@ -139,7 +139,8 @@ fn soldier_of_fortune_uses_gamespy_status_and_master() {
     assert_eq!(sof.protocol, Protocol::Gamespy);
     assert!(sof.masters.iter().all(|master| matches!(
         master,
-        Master::Gamespy { gamename, .. } if gamename == "sofretail"
+        Master::Gamespy { gamename, .. } | Master::Networks333 { gamename }
+            if gamename == "sofretail"
     )));
 
     // Captured status answer of a live SoF 1.07 server.

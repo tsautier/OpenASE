@@ -353,7 +353,7 @@
     "default_port": 7778,
     "game_port_query_offset": 1,
     "masters": [
-      { "kind": "gamespy", "address": "master.333networks.com:28900", "gamename": "ut", "key": "Z5Nfb0", "sync": true }
+      { "kind": "networks333", "gamename": "ut" }
     ],
     "game_type_key": "gametype",
     "game_types": [
@@ -778,11 +778,8 @@
     "game_port_query_offset": 1,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "unreal",
-        "key": "DAncRK",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "unreal"
       },
       {
         "kind": "gamespy",
@@ -824,11 +821,8 @@
     "game_port_query_offset": 1,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "deusex",
-        "key": "Av3M99",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "deusex"
       }
     ],
     "game_type_key": "gametype",
@@ -863,11 +857,8 @@
     "game_port_query_offset": 1,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "rune",
-        "key": "BnA4a3",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "rune"
       },
       {
         "kind": "gamespy",
@@ -907,11 +898,8 @@
     "game_port_query_offset": 1,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "wot",
-        "key": "RSSSpA",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "wot"
       }
     ],
     "game_type_key": "gametype",
@@ -940,11 +928,8 @@
     "game_port_query_offset": 1,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "mobileforces",
-        "key": "g3H6eR",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "mobileforces"
       }
     ],
     "game_type_key": "gametype",
@@ -972,11 +957,8 @@
     "default_port": 25601,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "serioussam",
-        "key": "AKbna4",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "serioussam"
       }
     ],
     "game_type_key": "gametype",
@@ -1003,11 +985,8 @@
     "default_port": 25601,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "serioussamse",
-        "key": "AKbna4",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "serioussamse"
       },
       {
         "kind": "gamespy",
@@ -1102,11 +1081,8 @@
     "default_port": 28910,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "heretic2",
-        "key": "2iuCAS",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "heretic2"
       },
       {
         "kind": "gamespy",
@@ -1171,11 +1147,8 @@
     "default_port": 27900,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "drakan",
-        "key": "zCt4De",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "drakan"
       }
     ],
     "game_type_key": "gametype",
@@ -1203,11 +1176,8 @@
     "default_port": 27900,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "turok2",
-        "key": "RWd3BG",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "turok2"
       }
     ],
     "game_type_key": "gametype",
@@ -1235,11 +1205,8 @@
     "default_port": 28672,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "globalops",
-        "key": "AdN3L9",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "globalops"
       },
       {
         "kind": "gamespy",
@@ -1335,11 +1302,8 @@
     "default_port": 12300,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "mohaa",
-        "key": "M5Fdwc",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "mohaa"
       },
       {
         "kind": "gamespy",
@@ -1379,11 +1343,8 @@
     "default_port": 12300,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "mohaas",
-        "key": "h2P1c9",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "mohaas"
       },
       {
         "kind": "gamespy",
@@ -1416,11 +1377,8 @@
     "default_port": 12300,
     "masters": [
       {
-        "kind": "gamespy",
-        "address": "master.333networks.com:28900",
-        "gamename": "mohaab",
-        "key": "y32FDc",
-        "sync": true
+        "kind": "networks333",
+        "gamename": "mohaab"
       },
       {
         "kind": "gamespy",
@@ -1978,7 +1936,7 @@
     "protocol": "gamespy",
     "default_port": 28910,
     "masters": [
-      { "kind": "gamespy", "address": "master.333networks.com:28900", "gamename": "sofretail", "key": "iVn3a3", "sync": true },
+      { "kind": "networks333", "gamename": "sofretail" },
       { "kind": "gamespy", "address": "master.errorist.eu:28900", "gamename": "sofretail", "key": "iVn3a3" },
       { "kind": "gamespy", "address": "master.openspy.net:28900", "gamename": "sofretail", "key": "iVn3a3" }
     ],

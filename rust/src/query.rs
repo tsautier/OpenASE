@@ -9,8 +9,8 @@ use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
 use crate::{
-    a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, ghostrecon, location, quake2, ravenshield,
-    savage, steam, tribes, unreal2,
+    a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, ghostrecon, location, networks333, quake2,
+    ravenshield, savage, steam, tribes, unreal2,
 };
 
 /// Network settings for queries (ASE's Options > Network).
@@ -82,6 +82,7 @@ pub fn fetch_master(
             version,
         } => unreal2::master_list(address, client, *version, timeout * 3),
         Master::Mta { url } => ase::mta_master_list(url, timeout * 10),
+        Master::Networks333 { gamename } => networks333::server_list(gamename, timeout * 10),
         Master::GamespySb {
             address,
             gamename,

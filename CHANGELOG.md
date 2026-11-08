@@ -3,6 +3,15 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## Unreleased
+
+### Changes
+- **333networks lists come from its JSON API**: at 333networks' request, the 16 games it
+  lists now use https://master.333networks.com/json/ (served by its web server) instead of
+  the master on TCP 28900, which stays free for game clients. One request per game, cached
+  for 7.5 minutes (their refresh interval), with an `OpenASE` User-Agent. Help > About
+  credits the community master servers, as the API terms ask.
+
 ## 0.9.3 — 2026-11-08
 
 ### Changes

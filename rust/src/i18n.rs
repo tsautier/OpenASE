@@ -325,6 +325,9 @@ pub fn french(text: &str) -> Option<&'static str> {
         "Free software under the GNU GPL v3 or later." => {
             "Logiciel libre sous licence GNU GPL v3 ou ultérieure."
         }
+        "Server lists from 333networks, OpenSpy, dpmaster and the other community master servers." => {
+            "Listes de serveurs fournies par 333networks, OpenSpy, dpmaster et les autres serveurs maîtres communautaires."
+        }
         "Add Server" => "Ajouter un serveur",
         "Cancel" => "Annuler",
         "Close" => "Fermer",
