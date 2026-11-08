@@ -62,15 +62,17 @@ in v0.6; it remains in the git history.
 - [x] Auto-Search finds native Linux and macOS game binaries
 - [x] Python prototype retired
 
-## v0.8 — Back to the full ASE list (in progress)
+## v0.8 — Back to the full ASE list (done)
 
-- [ ] Steam games: Half-Life family and Source games
-- [ ] Call of Duty: United Offensive, Elite Force, Medal of Honor
-- [ ] Quake 1 and 2 protocols: QuakeWorld, Quake 2, Kingpin, Soldier of Fortune
-- [ ] GameSpy v1 games still listed by 333networks and OpenSpy
-- [ ] Unreal Tournament 2003 and 2004
-- [ ] The ASE query protocol (Multi Theft Auto and friends)
-- [ ] GameSpy v2 and v3 games revived by OpenSpy and BF2Hub
+- [x] 59 games, up from 14: every ASE game with a master that still answers
+- [x] Steam: Half-Life, Condition Zero, Opposing Force, Deathmatch Classic, Ricochet, CS:Source, DoD:Source, HL2:DM
+- [x] Call of Duty: United Offensive, Elite Force, Soldier of Fortune 2 (community masters)
+- [x] Quake 2 and QuakeWorld protocols: QuakeWorld, Quake 2, Kingpin
+- [x] 20 GameSpy v1 games from 333networks and OpenSpy (Unreal, Deus Ex, MOHAA family, Vietcong, BF1942...)
+- [x] Unreal Engine 2 protocol and master: UT2003, UT2004
+- [x] The ASE query protocol and the Multi Theft Auto master
+- [x] GameSpy v2/v3 queries and the encrypted server browsing master: BF2, BF Vietnam, Halo, SWAT 4, Tribes: Vengeance, F.E.A.R., Star Wars: Battlefront
+- [x] Packet loss no longer counts rate-limited or unsupported ping requests
 
 ## Every game from the original ASE
 
@@ -91,38 +93,48 @@ Games are grouped by query protocol: one protocol unlocks a whole group.
 
 - [x] Quake 3: Arena
 - [x] Call of Duty, Call of Duty 2
-- [ ] Call of Duty: United Offensive
+- [x] Call of Duty: United Offensive
 - [x] Return to Castle Wolfenstein
 - [x] Wolfenstein: Enemy Territory (and the ET test release)
 - [x] Jedi Knight II, Jedi Academy
-- [ ] ST: Elite Force, Star Trek: Elite Force 2
-- [ ] Soldier of Fortune 2 (and SoF2 MP Test)
-- [ ] Medal Of Honor (Allied Assault), Spearhead, Breakthrough (and demos)
+- [x] ST: Elite Force
+- [ ] Star Trek: Elite Force 2 (no master answers)
+- [x] Soldier of Fortune 2 (and SoF2 MP Test)
+- [x] Medal Of Honor (Allied Assault), Spearhead, Breakthrough (and demos)
 - [x] Unreal Tournament
-- [ ] Unreal, Tactical Ops, Unreal 2 XMP (and demo)
-- [ ] Deus Ex, Rune, Nerf ArenaBlast, Wheel of Time, Mobile Forces
-- [ ] Serious Sam, Serious Sam: The Second Encounter (and demo)
-- [ ] No One Lives Forever, No One Lives Forever 2 (and demo)
+- [x] Unreal
+- [x] Tactical Ops (its servers are listed under Unreal Tournament)
+- [ ] Unreal 2 XMP (and demo)
+- [x] Deus Ex, Rune, Wheel of Time, Mobile Forces
+- [ ] Nerf ArenaBlast
+- [x] Serious Sam, Serious Sam: The Second Encounter (and demo)
+- [x] No One Lives Forever, No One Lives Forever 2 (and demo)
 - [ ] Aliens vs. Predator 2 (and demo), Blood 2, Shogo, KISS: Psycho Circus
-- [ ] Daikatana, Heretic 2, Sin, Gore, Drakan, Turok 2, Descent 3
-- [ ] Giants: Citizen Kabuto, Battlezone II, Global Operations, Codename Eagle, Codename: Outbreak
-- [ ] Operation Flashpoint, Operation Flashpoint: Resistance, Vietcong
-- [ ] Renegade (and demo), ST: Bridge Commander, Terminus, Laser Arena
+- [x] Heretic 2, Gore, Drakan, Turok 2
+- [ ] Daikatana, Sin, Descent 3
+- [x] Global Operations
+- [ ] Giants: Citizen Kabuto, Battlezone II, Codename Eagle, Codename: Outbreak
+- [x] Vietcong
+- [ ] Operation Flashpoint, Operation Flashpoint: Resistance
+- [x] ST: Bridge Commander
+- [ ] Renegade (and demo), Terminus, Laser Arena
 - [ ] IL-2 Sturmovik, IL-2 Sturmovik: Forgotten Battles, Red Ace Squadron
 - [ ] Baldur's Gate, Baldur's Gate 2, Baldur's Gate 2: Throne of Bhaal
 - [ ] Deer Hunter 3, 4 and 5, Trophy Hunter 3, Wild Wings
 - [ ] Rally Masters, RalliSport Challenge
 - [x] Counter-Strike, Team Fortress Classic, Day of Defeat (Steam)
-- [ ] Half-Life, Condition Zero, Opposing Force, Deathmatch Classic, Ricochet (Steam)
+- [x] Half-Life, Condition Zero, Opposing Force, Deathmatch Classic, Ricochet (Steam)
 - [ ] Counter-Strike, Day of Defeat and Half-Life retail (non-Steam), Gunman Chronicles
-- [ ] Counter-Strike: Source, Day of Defeat: Source, Half-Life 2: Deathmatch, Source mods
+- [x] Counter-Strike: Source, Day of Defeat: Source, Half-Life 2: Deathmatch
+- [ ] Other Source mods
 
 ### Quake 1 and 2 family (small variants of the Quake protocol)
 
-- [ ] QuakeWorld
-- [ ] Quake 2, QFusion
-- [ ] Kingpin
-- [ ] Soldier of Fortune
+- [x] QuakeWorld
+- [x] Quake 2
+- [ ] QFusion (no servers left on dpmaster)
+- [x] Kingpin
+- [ ] Soldier of Fortune (GameSpy master, needs its own query)
 
 ### Doom 3 engine
 
@@ -130,15 +142,17 @@ Games are grouped by query protocol: one protocol unlocks a whole group.
 
 ### Unreal Engine 2
 
-- [ ] Unreal Tournament 2003 (and demo)
-- [ ] Unreal Tournament 2004 (demo and old versions included)
+- [x] Unreal Tournament 2003 (and demo)
+- [x] Unreal Tournament 2004 (demo and old versions included)
 
 ### The ASE protocol itself
 
 These games answered ASE's own query, so OpenASE can speak it too.
 
-- [ ] Multi Theft Auto, GTA3:MTA
-- [ ] Battlefield 1942 (demo and Secret Weapons demo included), Battlefield Vietnam (and ASE SDK test)
+- [x] Multi Theft Auto (San Andreas)
+- [ ] GTA3:MTA
+- [x] Battlefield 1942 (GameSpy v1 via OpenSpy), Battlefield Vietnam (GameSpy v2)
+- [ ] Battlefield 1942 demos, Battlefield Vietnam ASE SDK test
 - [ ] Far Cry, Painkiller, Chrome, Devastation, Chaser (and demo)
 - [ ] Soldat, Scorched3D, IGI2 (and demo), Purge Jihad (and demo)
 - [ ] Splinter Cell: Pandora Tomorrow, Chaos Theory Coop and Versus
@@ -148,10 +162,11 @@ These games answered ASE's own query, so OpenASE can speak it too.
 
 ### GameSpy v2 and v3 (OpenSpy, BF2Hub revivals)
 
-- [ ] Battlefield 2 (and demo), Battlefield Vietnam
+- [x] Battlefield 2 (and demo), Battlefield Vietnam
 - [ ] Medal of Honor: Pacific Assault (and demo)
-- [ ] SWAT 4, Tribes: Vengeance (and demo), FEAR (and demo)
-- [ ] Halo, Star Wars: Battlefront, America's Army, Neverwinter Nights
+- [x] SWAT 4, Tribes: Vengeance (and demo), FEAR (and demo)
+- [x] Halo (and Custom Edition), Star Wars: Battlefront
+- [ ] America's Army, Neverwinter Nights (no servers on OpenSpy)
 
 ### Their own protocols
 

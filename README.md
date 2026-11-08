@@ -19,12 +19,32 @@ Yahoo program.
 | Urban Terror | Quake 3 | master.urbanterror.info, master2.urbanterror.info |
 | OpenArena | Quake 3 | dpmaster.deathmask.net |
 | Wolfenstein: Enemy Territory | Quake 3 | etmaster.idsoftware.com, etmaster.etlegacy.com |
-| Call of Duty, CoD 2, CoD 4 | Quake 3 | Activision masters |
+| Call of Duty, CoD: United Offensive, CoD 2, CoD 4 | Quake 3 | Activision masters |
 | Star Wars Jedi Knight II: Jedi Outcast | Quake 3 | master.jkhub.org, master.jk2mv.org |
 | Star Wars Jedi Knight: Jedi Academy | Quake 3 | master.jkhub.org, master.jk2mv.org |
 | Return to Castle Wolfenstein | Quake 3 | wolfmaster.idsoftware.com |
-| Unreal Tournament (99) | GameSpy | master.333networks.com |
-| Counter-Strike 1.6, Team Fortress Classic, Day of Defeat | Valve A2S | Steam Web API (needs your own key) |
+| Star Trek: Voyager Elite Force | Quake 3 | master.stvef.org, efmaster.tjps.eu |
+| Soldier of Fortune II: Double Helix | Quake 3 | master.1fxmod.org |
+| QuakeWorld | QuakeWorld | master.quakeservers.net, qwmaster.fodquake.net, master.quakeworld.nu |
+| Quake 2 | Quake 2 | master.quakeservers.net, master.itbacon.com |
+| Kingpin | Quake 2 | master.kingpin.info, master4.kingpin.info |
+| Unreal Tournament 2004, Unreal Tournament 2003 | Unreal Engine 2 | 333networks, OpenSpy |
+| Unreal Tournament (99), Unreal, Rune | GameSpy | 333networks, OpenSpy |
+| Deus Ex, Wheel of Time, Mobile Forces, Drakan, Turok 2 | GameSpy | 333networks |
+| Serious Sam: The First / Second Encounter, Heretic II, Global Operations, Medal of Honor: Allied Assault (+ Spearhead, Breakthrough) | GameSpy | 333networks, OpenSpy |
+| No One Lives Forever 1 and 2, Gore, Vietcong, Star Trek: Bridge Commander, Battlefield 1942 | GameSpy | OpenSpy |
+| Battlefield 2 | GameSpy v3 | OpenSpy, battlefield2.ms.playbf2.ru |
+| Battlefield Vietnam, F.E.A.R., Star Wars: Battlefront, Tribes: Vengeance | GameSpy v2 | OpenSpy |
+| Halo: Combat Evolved, Halo: Custom Edition | GameSpy v2 | s1.master.hosthpc.com |
+| SWAT 4 | GameSpy | master.swat4stats.com, OpenSpy |
+| Multi Theft Auto: San Andreas | ASE (MTA) | master.multitheftauto.com |
+| Counter-Strike 1.6, Condition Zero, Team Fortress Classic, Day of Defeat, Half-Life, Opposing Force, Deathmatch Classic, Ricochet | Valve A2S | Steam Web API (needs your own key) |
+| Counter-Strike: Source, Day of Defeat: Source, Half-Life 2: Deathmatch | Valve A2S | Steam Web API (needs your own key) |
+
+59 games in total. "OpenSpy" means the OpenSpy master servers
+(<https://github.com/openspy>), "333networks" the 333networks masters.
+Games from the original All-Seeing Eye that are not in the catalog yet are
+listed in [ROADMAP.md](ROADMAP.md).
 
 Missing a game? See [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-game): most
 games are a single entry in the catalog.
@@ -69,8 +89,11 @@ Every [GitHub release](https://github.com/tsautier/OpenASE/releases/latest) ship
 The games themselves still need to run on your system: native Linux and macOS
 builds exist for ioquake3, Urban Terror, OpenArena, ET: Legacy, Jedi Outcast
 (JK2MV), Jedi Academy (OpenJK), RtCW (iortcw), Unreal Tournament (OldUnreal
-patch) and the Half-Life games (Steam). Call of Duty runs
-on Windows only, or through Wine / Proton.
+patch) and the Half-Life and Source games (Steam). More ports: Quake 2 (Yamagi
+Quake II, Q2PRO), QuakeWorld (ezQuake, FTE), Serious Sam (SamTFE and SamTSE
+ports) and Unreal Tournament 2004, which has a native Linux client. Call of
+Duty, Multi Theft Auto, Battlefield 2, Halo and SWAT 4 run on Windows only, or
+through Wine / Proton.
 
 ## Build from source (Rust)
 
@@ -95,10 +118,13 @@ cargo test
 Settings are stored in `%APPDATA%\OpenASE\settings.json` on Windows
 (`~/.config/OpenASE` on Linux, `~/Library/Application Support/OpenASE` on macOS).
 
-### Counter-Strike 1.6
+### Steam games
 
-Valve's old UDP master no longer answers, so the list comes from the Steam Web
-API. Get a free key at https://steamcommunity.com/dev/apikey and paste it in
+This covers every Half-Life and Source game in the catalog: Counter-Strike 1.6,
+Team Fortress Classic, Day of Defeat, Half-Life, Condition Zero, Opposing
+Force, Deathmatch Classic, Ricochet, Counter-Strike: Source, Day of Defeat:
+Source and Half-Life 2: Deathmatch. Valve's old UDP master no longer answers,
+so the list comes from the Steam Web API. Get a free key at https://steamcommunity.com/dev/apikey and paste it in
 Options > General. Servers added by hand work without a key.
 
 ## References
@@ -107,6 +133,13 @@ Options > General. Servers added by hand work without a key.
   (2020), https://www.jfedor.org/quake3/
 - Valve server queries (A2S): Valve Developer Wiki, "Server queries".
 - GameSpy master protocol: 333networks, https://333networks.com/
+- GameSpy v2 / v3 and server browsing (Battlefield, Halo, F.E.A.R., SWAT 4):
+  OpenSpy, https://github.com/openspy
+- Unreal Engine 2 master (UT2003, UT2004): 333networks and OpenSpy, as above.
+- Multi Theft Auto master list: mtasa-blue source,
+  https://github.com/multitheftauto/mtasa-blue
+- Quake 2 and QuakeWorld protocols: connectionless queries as in the id
+  Software sources, with the community masters at QuakeServers.net.
 - Yahoo acquired The All-Seeing Eye in September 2004:
   https://www.gamedeveloper.com/game-platforms/yahoo-games-adds-all-seeing-eye-gamespot-syndication
 

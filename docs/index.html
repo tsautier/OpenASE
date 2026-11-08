@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OpenASE | The Eye is back</title>
-  <meta name="description" content="OpenASE is the open-source successor in spirit to The All-Seeing Eye. Find Quake 3, Urban Terror, Enemy Territory, Call of Duty, Jedi Knight, Return to Castle Wolfenstein, Unreal Tournament and Half-Life servers, with ping, flux, packet loss, friends and one-click join.">
+  <meta name="description" content="OpenASE is the open-source successor in spirit to The All-Seeing Eye. Find servers for 59 games: Quake 3, Urban Terror, Enemy Territory, Call of Duty, QuakeWorld, Unreal Tournament, Multi Theft Auto, Battlefield, Half-Life, Counter-Strike and more, with ping, flux, packet loss, friends and one-click join.">
   <meta property="og:title" content="OpenASE: the Eye is back">
-  <meta property="og:description" content="The legendary game server browser, reborn as free software. 14 games, 4,800+ live servers, one double-click to frag.">
+  <meta property="og:description" content="The legendary game server browser, reborn as free software. 59 games, 10,000+ live servers, one double-click to frag.">
   <meta property="og:image" content="https://tsautier.github.io/OpenASE/screenshot.png">
   <meta name="theme-color" content="#05060a">
   <meta name="twitter:card" content="summary_large_image">
@@ -199,6 +199,7 @@
     .game::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, var(--c) 160%); opacity: .18; transition: opacity .2s; }
     .game:hover { transform: translateY(-4px); border-color: var(--c); box-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent); }
     .game:hover::before { opacity: .38; }
+    .fam { font: 800 15px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); margin: 34px 0 14px; }
     .game .badge { position: relative; display: inline-block; padding: 4px 9px; font: 800 13px var(--display); color: #fff; background: var(--c); border-radius: 3px; letter-spacing: .06em; }
     .game h3 { position: relative; font: 800 20px var(--display); margin: 14px 0 4px; letter-spacing: .03em; }
     .game p { position: relative; margin: 0; font: 400 13px var(--mono); color: var(--muted); }
@@ -370,7 +371,7 @@
       <span class="tag"><span class="blink"></span>Masters online · free &amp; open source</span>
       <h1 class="glitch" data-text="OPENASE">OPEN<span class="o">ASE</span></h1>
       <p class="kicker"><span class="c1">THE</span> <span class="c3">EYE</span> <span class="c5">IS BACK.</span></p>
-      <p class="lead">The legendary server browser from the LAN-party days, rebuilt from scratch. Find a server, check the ping, spot your mates, double-click, frag. Quake&nbsp;3, Urban Terror, Enemy Territory, Call of Duty, Jedi Knight, Return to Castle Wolfenstein, Unreal Tournament, Counter-Strike&nbsp;1.6 and more.</p>
+      <p class="lead">The legendary server browser from the LAN-party days, rebuilt from scratch. Find a server, check the ping, spot your mates, double-click, frag. Quake&nbsp;3, Urban Terror, Enemy Territory, Call of Duty, Jedi Knight, Return to Castle Wolfenstein, QuakeWorld, Unreal Tournament, Multi Theft Auto, Battlefield, Counter-Strike and more: 59 games in all.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/tsautier/OpenASE/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
@@ -380,10 +381,10 @@
       </div>
       <div class="sub-cta">GPL-3.0 · no account · no ads · native Rust, starts instantly</div>
       <div class="stats">
-        <div class="stat"><b data-count="4800" data-suffix="+">0</b><span>live servers</span></div>
-        <div class="stat"><b data-count="14">0</b><span>games</span></div>
-        <div class="stat"><b data-count="18">0</b><span>master servers</span></div>
-        <div class="stat"><b>3</b><span>protocols</span></div>
+        <div class="stat"><b data-count="10000" data-suffix="+">0</b><span>live servers</span></div>
+        <div class="stat"><b data-count="59">0</b><span>games</span></div>
+        <div class="stat"><b data-count="39">0</b><span>master servers</span></div>
+        <div class="stat"><b>9</b><span>protocols</span></div>
       </div>
     </div>
   </div>
@@ -414,8 +415,9 @@
   <section id="games" style="background:linear-gradient(180deg,transparent,rgba(0,240,255,.03),transparent)">
     <div class="wrap">
       <p class="eyebrow">Pick your poison</p>
-      <h2>14 games. <em>Live masters.</em></h2>
-      <p class="sub">Every list below comes from a master server that is still answering today. Pick a game, hit F5, watch the list fill up.</p>
+      <h2>59 games. <em>Live masters.</em></h2>
+      <p class="sub">Every list below comes from a master server that is still answering today, or from the Steam Web API. Pick a game, hit F5, watch the list fill up.</p>
+      <h3 class="fam">Quake 3 engine</h3>
       <div class="games">
         <div class="game reveal" style="--c:#c8321e"><span class="badge">Q3</span><h3>Quake III Arena</h3><p>quake3arena · excessiveplus · dpmaster</p></div>
         <div class="game reveal" style="--c:#3c78c8"><span class="badge">UrT</span><h3>Urban Terror</h3><p>master.urbanterror.info</p></div>
@@ -424,13 +426,76 @@
         <div class="game reveal" style="--c:#8c6e3c"><span class="badge">CoD</span><h3>Call of Duty</h3><p>Activision master</p></div>
         <div class="game reveal" style="--c:#7a5a2a"><span class="badge">CoD2</span><h3>Call of Duty 2</h3><p>Activision master</p></div>
         <div class="game reveal" style="--c:#4a5a3a"><span class="badge">CoD4</span><h3>Call of Duty 4</h3><p>Activision master</p></div>
-        <div class="game reveal" style="--c:#5a3c8c"><span class="badge">UT</span><h3>Unreal Tournament</h3><p>GameSpy via 333networks</p></div>
-        <div class="game reveal" style="--c:#d2a01e"><span class="badge">CS</span><h3>Counter-Strike 1.6</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#9a7c46"><span class="badge">CoDUO</span><h3>Call of Duty: United Offensive</h3><p>coduomaster.activision.com</p></div>
         <div class="game reveal" style="--c:#2e78d2"><span class="badge">JK2</span><h3>Jedi Outcast</h3><p>jkhub · jk2mv masters</p></div>
         <div class="game reveal" style="--c:#1fa39a"><span class="badge">JKA</span><h3>Jedi Academy</h3><p>jkhub · jk2mv masters</p></div>
         <div class="game reveal" style="--c:#8a2432"><span class="badge">RtCW</span><h3>Return to Castle Wolfenstein</h3><p>wolfmaster.idsoftware.com</p></div>
+        <div class="game reveal" style="--c:#3a6fc4"><span class="badge">EF</span><h3>Star Trek: Voyager Elite Force</h3><p>master.stvef.org · efmaster.tjps.eu</p></div>
+        <div class="game reveal" style="--c:#a02828"><span class="badge">SoF2</span><h3>Soldier of Fortune II: Double Helix</h3><p>master.1fxmod.org</p></div>
+      </div>
+      <h3 class="fam">Quake 2 and QuakeWorld</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#8b5a2b"><span class="badge">QW</span><h3>QuakeWorld</h3><p>master.quakeservers.net · qwmaster.fodquake.net</p></div>
+        <div class="game reveal" style="--c:#a0522d"><span class="badge">Q2</span><h3>Quake 2</h3><p>master.quakeservers.net · master.itbacon.com</p></div>
+        <div class="game reveal" style="--c:#6e6e3c"><span class="badge">KP</span><h3>Kingpin</h3><p>master.kingpin.info · master4.kingpin.info</p></div>
+      </div>
+      <h3 class="fam">Half-Life and Source (Steam)</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#d2a01e"><span class="badge">CS</span><h3>Counter-Strike 1.6</h3><p>Valve A2S · Steam Web API key</p></div>
         <div class="game reveal" style="--c:#d2561f"><span class="badge">TFC</span><h3>Team Fortress Classic</h3><p>Valve A2S · Steam Web API key</p></div>
         <div class="game reveal" style="--c:#3f6b4f"><span class="badge">DoD</span><h3>Day of Defeat</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#e08a1e"><span class="badge">HL</span><h3>Half-Life</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#b8892a"><span class="badge">CZ</span><h3>Counter-Strike: Condition Zero</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#5b7f3a"><span class="badge">OF</span><h3>Half-Life: Opposing Force</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#a63a3a"><span class="badge">DMC</span><h3>Deathmatch Classic</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#2f8fa8"><span class="badge">RIC</span><h3>Ricochet</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#c9a227"><span class="badge">CS:S</span><h3>Counter-Strike: Source</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#4f7a3a"><span class="badge">DoD:S</span><h3>Day of Defeat: Source</h3><p>Valve A2S · Steam Web API key</p></div>
+        <div class="game reveal" style="--c:#d46a1a"><span class="badge">HL2DM</span><h3>Half-Life 2: Deathmatch</h3><p>Valve A2S · Steam Web API key</p></div>
+      </div>
+      <h3 class="fam">Unreal engine</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#5a3c8c"><span class="badge">UT</span><h3>Unreal Tournament</h3><p>GameSpy via 333networks</p></div>
+        <div class="game reveal" style="--c:#6a8a3c"><span class="badge">UN</span><h3>Unreal</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#2a6e8c"><span class="badge">DX</span><h3>Deus Ex</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#8c4a2a"><span class="badge">RU</span><h3>Rune</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#7a6a3a"><span class="badge">WoT</span><h3>Wheel of Time</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#5a7a4a"><span class="badge">MF</span><h3>Mobile Forces</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#8c2d19"><span class="badge">UT2K4</span><h3>Unreal Tournament 2004</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#3c5a8c"><span class="badge">UT2K3</span><h3>Unreal Tournament 2003</h3><p>OpenSpy</p></div>
+      </div>
+      <h3 class="fam">GameSpy (v1)</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#c8641e"><span class="badge">SS</span><h3>Serious Sam: The First Encounter</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#b4782a"><span class="badge">SS2</span><h3>Serious Sam: The Second Encounter</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#c83278"><span class="badge">NOLF</span><h3>No One Lives Forever</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#b43c6e"><span class="badge">NOLF2</span><h3>No One Lives Forever 2</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#8c3c28"><span class="badge">H2</span><h3>Heretic II</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#8c2828"><span class="badge">Gore</span><h3>Gore</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#3c6e5a"><span class="badge">DR</span><h3>Drakan: Order of the Flame</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#4a6e2a"><span class="badge">T2</span><h3>Turok 2: Seeds of Evil</h3><p>333networks</p></div>
+        <div class="game reveal" style="--c:#4a5a6e"><span class="badge">GlOps</span><h3>Global Operations</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#5a7832"><span class="badge">VC</span><h3>Vietcong</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#3c5a96"><span class="badge">BC</span><h3>Star Trek: Bridge Commander</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#6e7a3c"><span class="badge">MoH</span><h3>Medal of Honor: Allied Assault</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#7a6e3c"><span class="badge">MoHS</span><h3>Medal of Honor: Allied Assault Spearhead</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#6e6e46"><span class="badge">MoHB</span><h3>Medal of Honor: Allied Assault Breakthrough</h3><p>333networks · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#8c7a28"><span class="badge">BF</span><h3>Battlefield 1942</h3><p>OpenSpy</p></div>
+      </div>
+      <h3 class="fam">GameSpy v2 and v3</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#c87d1e"><span class="badge">BF2</span><h3>Battlefield 2</h3><p>OpenSpy · battlefield2.ms.playbf2.ru</p></div>
+        <div class="game reveal" style="--c:#5f7a2e"><span class="badge">BFV</span><h3>Battlefield Vietnam</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#4b7d3c"><span class="badge">Halo</span><h3>Halo: Combat Evolved</h3><p>s1.master.hosthpc.com</p></div>
+        <div class="game reveal" style="--c:#3c6e8c"><span class="badge">HCE</span><h3>Halo: Custom Edition</h3><p>s1.master.hosthpc.com</p></div>
+        <div class="game reveal" style="--c:#2d4b6e"><span class="badge">SWAT</span><h3>SWAT 4</h3><p>master.swat4stats.com · OpenSpy</p></div>
+        <div class="game reveal" style="--c:#7d3c8c"><span class="badge">T:V</span><h3>Tribes: Vengeance</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#a01e1e"><span class="badge">FEAR</span><h3>F.E.A.R.</h3><p>OpenSpy</p></div>
+        <div class="game reveal" style="--c:#b4a03c"><span class="badge">SWBF</span><h3>Star Wars: Battlefront</h3><p>OpenSpy</p></div>
+      </div>
+      <h3 class="fam">Multi Theft Auto</h3>
+      <div class="games">
+        <div class="game reveal" style="--c:#d26e14"><span class="badge">MTA</span><h3>Multi Theft Auto: San Andreas</h3><p>master.multitheftauto.com</p></div>
       </div>
     </div>
   </section>
@@ -540,7 +605,7 @@
           <ul>
             <li><b>Ping</b> average round-trip, <b>Flux</b> its variation, <b>PL</b> lost packets.</li>
             <li>Filter &gt; New filter builds rules like <code>players greater than 4</code>. Tick “color filter” to highlight matches everywhere.</li>
-            <li>Counter-Strike 1.6, Team Fortress Classic and Day of Defeat lists need your free <a href="https://steamcommunity.com/dev/apikey">Steam Web API key</a> in Options &gt; General.</li>
+            <li>The Half-Life and Source game lists (Counter-Strike, Team Fortress Classic, Day of Defeat, Half-Life 2: Deathmatch and more) need your free <a href="https://steamcommunity.com/dev/apikey">Steam Web API key</a> in Options &gt; General.</li>
             <li>Settings live in <code>%APPDATA%\OpenASE</code>.</li>
           </ul>
         </div>
@@ -575,7 +640,7 @@
       <h2>Questions <em>&amp; answers.</em></h2>
       <details class="reveal"><summary>Is this the original All-Seeing Eye?</summary><p>No. OpenASE is new code written from scratch, inspired by the original. It contains nothing from the Yahoo program and is not affiliated with Yahoo or the original authors.</p></details>
       <details class="reveal"><summary>Is it free? Any ads, accounts or tracking?</summary><p>Free software under the GPL-3.0. No ads, no account. OpenASE talks to game master servers and game servers, downloads the DB-IP country database once a month (can be turned off) and checks GitHub for a new release (can be turned off). That's it.</p></details>
-      <details class="reveal"><summary>Why do the Half-Life games need a Steam key?</summary><p>Valve shut down the old UDP master. The server list now comes from the Steam Web API, which needs a free personal key. Servers you add by hand work without one.</p></details>
+      <details class="reveal"><summary>Why do the Half-Life and Source games need a Steam key?</summary><p>Valve shut down the old UDP master for the Half-Life games, and the Source games (Counter-Strike: Source, Day of Defeat: Source, Half-Life 2: Deathmatch) never used it. The server list now comes from the Steam Web API, which needs a free personal key. Servers you add by hand work without one.</p></details>
       <details class="reveal"><summary>Linux? macOS?</summary><p>Yes. Every release ships Windows, Linux (x64, AppImage or archive) and macOS (universal, Apple Silicon and Intel) builds, all tested in CI. On macOS the app is not notarized yet: right-click it and choose Open the first time. Your games still need to run on your system: ioquake3, Urban Terror, OpenArena, ET: Legacy, UT99 (OldUnreal) and CS 1.6 have native versions; Call of Duty needs Windows or Wine / Proton.</p></details>
       <details class="reveal"><summary>My game is missing.</summary><p>Games live in one JSON file. If yours speaks the Quake 3, GameSpy or Valve query protocol and still has a live master, it is often a few lines. Open an issue on GitHub.</p></details>
     </div>
