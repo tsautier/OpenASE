@@ -125,6 +125,24 @@ pub fn fetch_all_masters(
     (addresses, errors)
 }
 
+/// Query port of a server given by hand (Add server, imported lists).
+///
+/// Unreal engine games answer queries on the game port + 1, but players share
+/// the game port. Queries sent to a game port open a dead connection on the
+/// server, so this sends one query to `port + game_port_query_offset` and
+/// returns that port when the server there reports `port` as its game port.
+/// Otherwise `port` is already the query port and is returned unchanged.
+pub fn resolve_query_port(game: &Game, host: &str, port: u16, timeout: Duration) -> u16 {
+    let offset = game.game_port_query_offset;
+    let Some(candidate) = port.checked_add(offset).filter(|_| offset != 0) else {
+        return port;
+    };
+    match status_once(game, host, candidate, timeout) {
+        Ok((server, _)) if server.join_port == port => candidate,
+        _ => port,
+    }
+}
+
 /// Wait before retrying a ping that a rate-limiting server may have dropped.
 const THROTTLE_PAUSE: Duration = Duration::from_millis(1100);
 

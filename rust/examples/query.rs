@@ -5,7 +5,7 @@
 use openase::catalog::game;
 use openase::colors::strip_quake_colors;
 use openase::quake3::parse_address;
-use openase::query::{QueryOptions, query_server};
+use openase::query::{QueryOptions, query_server, resolve_query_port};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
@@ -14,7 +14,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let game = game(&id).ok_or_else(|| format!("unknown game {id}"))?;
     let (host, port) = parse_address(&address, game.default_port)?;
-    let server = query_server(game, &host, port, &QueryOptions::default());
+    // Like Add server: a game port of an Unreal engine server becomes its query port.
+    let options = QueryOptions::default();
+    let query_port = resolve_query_port(game, &host, port, options.timeout);
+    if query_port != port {
+        println!("game port {port} -> query port {query_port}");
+    }
+    let server = query_server(game, &host, query_port, &options);
     if !server.online {
         return Err(format!("offline: {}", server.error.unwrap_or_default()).into());
     }

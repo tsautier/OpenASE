@@ -629,3 +629,27 @@ fn launch_mod_skips_base_mod_and_display_strings() {
     assert_eq!(rtcw.launch_mod("Dark-MoD v5.1"), "");
     assert_eq!(rtcw.launch_mod(""), "");
 }
+
+#[test]
+fn unreal_engine_games_query_the_game_port_plus_one() {
+    let expected = [
+        "ut99",
+        "unreal",
+        "deusex",
+        "rune",
+        "wot",
+        "mobileforces",
+        "ut2004",
+        "ut2003",
+        "swat4",
+        "tribesv",
+    ];
+    for game in openase::catalog::games() {
+        let offset = if expected.contains(&game.id.as_str()) {
+            1
+        } else {
+            0
+        };
+        assert_eq!(game.game_port_query_offset, offset, "{}", game.id);
+    }
+}

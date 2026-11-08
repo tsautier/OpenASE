@@ -167,6 +167,12 @@ pub struct Game {
     /// Theft Auto). Server addresses then hold the host port players join.
     #[serde(default)]
     pub query_port_offset: u16,
+    /// Unreal engine games answer queries on the game port + this offset (1),
+    /// and server addresses hold that query port. Players share the game
+    /// port, so an address typed by hand is checked with
+    /// [`crate::query::resolve_query_port`] and never queried on the game port.
+    #[serde(default)]
+    pub game_port_query_offset: u16,
     /// GameSpy (v1) request used for extra ping samples; `\info\` when empty.
     /// Some servers (SWAT 4 with stats mods) only answer `\status\`.
     #[serde(default)]

@@ -270,6 +270,9 @@ pub struct Settings {
     pub colors: ColorSettings,
     /// Interface language (System follows the operating system).
     pub language: crate::i18n::Language,
+    /// Favorites of Unreal engine games saved with their game port have been
+    /// moved to the query port once (see `query::resolve_query_port`).
+    pub unreal_ports_checked: bool,
 }
 
 pub const RECENT_LIMIT: usize = 20;
@@ -411,6 +414,26 @@ impl Settings {
             .get(&friend.to_lowercase())
             .cloned()
             .unwrap_or_default()
+    }
+
+    /// Point every list that holds `old` (favorites and their group, recent,
+    /// recently added and imported) at `new` instead.
+    pub fn replace_server(&mut self, old: &ServerRef, new: &ServerRef) {
+        if let Some(group) = self.favorite_groups.remove(&old.key()) {
+            self.favorite_groups.insert(new.key(), group);
+        }
+        for list in [
+            &mut self.favorites,
+            &mut self.recent,
+            &mut self.recently_added,
+            &mut self.recently_imported,
+        ] {
+            let already = list.contains(new);
+            list.retain(|entry| !(already && entry == old));
+            for entry in list.iter_mut().filter(|entry| *entry == old) {
+                *entry = new.clone();
+            }
+        }
     }
 
     /// Prepend to a bounded "recently ..." list.

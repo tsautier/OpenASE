@@ -351,6 +351,7 @@
     "color": "#5a3c8c",
     "protocol": "gamespy",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       { "kind": "gamespy", "address": "master.333networks.com:28900", "gamename": "ut", "key": "Z5Nfb0" }
     ],
@@ -774,6 +775,7 @@
     "color": "#6a8a3c",
     "protocol": "gamespy",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       {
         "kind": "gamespy",
@@ -818,6 +820,7 @@
     "color": "#2a6e8c",
     "protocol": "gamespy",
     "default_port": 7791,
+    "game_port_query_offset": 1,
     "masters": [
       {
         "kind": "gamespy",
@@ -855,6 +858,7 @@
     "color": "#8c4a2a",
     "protocol": "gamespy",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       {
         "kind": "gamespy",
@@ -897,6 +901,7 @@
     "color": "#7a6a3a",
     "protocol": "gamespy",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       {
         "kind": "gamespy",
@@ -928,6 +933,7 @@
     "color": "#5a7a4a",
     "protocol": "gamespy",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       {
         "kind": "gamespy",
@@ -1556,6 +1562,7 @@
     "color": "#8c2d19",
     "protocol": "unreal2",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       { "kind": "unreal2", "address": "ut2004master.333networks.com:28902", "client": "UT2K4CLIENT", "version": 3369 },
       { "kind": "unreal2", "address": "utmaster.openspy.net:28902", "client": "UT2K4CLIENT", "version": 3369 }
@@ -1595,6 +1602,7 @@
     "color": "#3c5a8c",
     "protocol": "unreal2",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       { "kind": "unreal2", "address": "utmaster.openspy.net:28902", "client": "CLIENT", "version": 2225 }
     ],
@@ -1756,6 +1764,7 @@
     "color": "#2d4b6e",
     "protocol": "gamespy",
     "default_port": 10481,
+    "game_port_query_offset": 1,
     "masters": [
       { "kind": "gamespy_sb", "address": "master.swat4stats.com:28910", "gamename": "swat4", "key": "tG3j8c" },
       { "kind": "gamespy_sb", "address": "swat4.master.openspy.net:28910", "gamename": "swat4", "key": "tG3j8c" }
@@ -1780,6 +1789,7 @@
     "color": "#7d3c8c",
     "protocol": "gamespy2",
     "default_port": 7778,
+    "game_port_query_offset": 1,
     "masters": [
       { "kind": "gamespy_sb", "address": "tribesv.master.openspy.net:28910", "gamename": "tribesv", "key": "y3D28k" }
     ],

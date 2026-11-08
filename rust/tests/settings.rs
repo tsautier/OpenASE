@@ -1,7 +1,7 @@
 //! Toolbar, friend sound and color settings.
 
 use openase::settings::{
-    ColorSettings, FriendSound, Settings, TOOLBAR_DEFAULT, ToolbarItem, ToolbarSettings,
+    ColorSettings, FriendSound, ServerRef, Settings, TOOLBAR_DEFAULT, ToolbarItem, ToolbarSettings,
 };
 
 #[test]
@@ -120,4 +120,38 @@ fn import_export_normalizes_the_toolbar() {
     let settings = Settings::import_from(&path).unwrap();
     assert_eq!(settings.toolbar.items.len(), TOOLBAR_DEFAULT.len());
     assert_eq!(settings.toolbar.items[0].id, "find");
+}
+
+#[test]
+fn replace_server_moves_every_list_and_the_group() {
+    let old = ServerRef {
+        game: "ut99".into(),
+        address: "1.2.3.4:7777".into(),
+    };
+    let new = ServerRef {
+        game: "ut99".into(),
+        address: "1.2.3.4:7778".into(),
+    };
+    let mut settings = Settings::default();
+    settings.add_favorite_to(old.clone(), "Favorites3");
+    Settings::push_front(&mut settings.recent, old.clone());
+    Settings::push_front(&mut settings.recently_added, old.clone());
+    // Already present under the new address: no duplicate after the move.
+    Settings::push_front(&mut settings.recently_imported, old.clone());
+    Settings::push_front(&mut settings.recently_imported, new.clone());
+
+    settings.replace_server(&old, &new);
+
+    assert_eq!(settings.favorites, vec![new.clone()]);
+    assert_eq!(settings.favorite_group(&new), "Favorites3");
+    assert!(!settings.favorite_groups.contains_key(&old.key()));
+    assert_eq!(settings.recent, vec![new.clone()]);
+    assert_eq!(settings.recently_added, vec![new.clone()]);
+    assert_eq!(settings.recently_imported, vec![new]);
+}
+
+#[test]
+fn old_settings_have_not_checked_unreal_ports() {
+    let settings: Settings = serde_json::from_str("{}").unwrap();
+    assert!(!settings.unreal_ports_checked);
 }

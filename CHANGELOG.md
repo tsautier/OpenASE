@@ -3,6 +3,17 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## 0.9.2 — 2026-11-08
+
+### Fixes
+- **Unreal engine servers added with their game port** (UT99, Unreal, Deus Ex, Rune,
+  Wheel of Time, Mobile Forces, UT2003, UT2004, SWAT 4, Tribes: Vengeance) are now queried
+  on their query port. Players usually share the game port (for example `ip:7777`), and
+  querying it made the server open and drop a dead connection on every refresh. Add server
+  and list imports check port + 1 once and keep it when that server reports the given port
+  as its game port. Favorites saved with a game port are moved once, at the next start.
+  Thanks to 333networks for spotting and helping debug this.
+
 ## 0.9.1 — 2026-11-08
 
 ### New

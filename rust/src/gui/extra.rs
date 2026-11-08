@@ -126,9 +126,55 @@ impl OpenAseApp {
         if !self.settings.wizard_done {
             self.open_wizard();
         }
+        if !self.settings.unreal_ports_checked {
+            self.check_unreal_ports(ctx);
+        }
         if !self.settings.skip_update_check {
             self.check_updates(ctx, false);
         }
+    }
+
+    /// Once: move saved Unreal engine servers that hold a game port to their
+    /// query port (older versions queried whatever address was typed).
+    fn check_unreal_ports(&mut self, ctx: &egui::Context) {
+        let mut saved: Vec<ServerRef> = Vec::new();
+        for list in [
+            &self.settings.favorites,
+            &self.settings.recent,
+            &self.settings.recently_added,
+            &self.settings.recently_imported,
+        ] {
+            for server in list {
+                let unreal = catalog::game(&server.game)
+                    .is_some_and(|game| game.game_port_query_offset != 0);
+                if unreal && !saved.contains(server) {
+                    saved.push(server.clone());
+                }
+            }
+        }
+        if saved.is_empty() {
+            self.settings.unreal_ports_checked = true;
+            self.mark_dirty();
+            return;
+        }
+        let timeout = self.settings.network.query_options().timeout;
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let mut fixes = Vec::new();
+            for server in saved {
+                let resolved =
+                    resolve_query_ports(&server.game, vec![server.address.clone()], timeout);
+                if let Some(address) = resolved.into_iter().next()
+                    && address != server.address
+                {
+                    let game = server.game.clone();
+                    fixes.push((server, ServerRef { game, address }));
+                }
+            }
+            let _ = tx.send(Msg::PortFixes(fixes));
+            ctx.request_repaint();
+        });
     }
 
     pub(super) fn shortcuts(&mut self, ctx: &egui::Context) {
@@ -715,7 +761,9 @@ impl OpenAseApp {
             match std::fs::read(&import.path) {
                 Ok(bytes) => {
                     let text = String::from_utf8_lossy(&bytes);
-                    let addresses = parse_address_list(&text);
+                    let timeout = self.settings.network.query_options().timeout;
+                    let addresses =
+                        resolve_query_ports(&import.game, parse_address_list(&text), timeout);
                     if addresses.is_empty() {
                         self.dialogs.error =
                             Some(tr("No ip:port entries found in this file.").to_string());
@@ -899,4 +947,39 @@ impl OpenAseApp {
             self.extra.update_available = None;
         }
     }
+}
+
+/// Turn addresses typed or imported for an Unreal engine game into query
+/// addresses (see `openase::query::resolve_query_port`); other games and
+/// unparsable entries are returned unchanged.
+pub(super) fn resolve_query_ports(
+    game_id: &str,
+    addresses: Vec<String>,
+    timeout: Duration,
+) -> Vec<String> {
+    let Some(game) = catalog::game(game_id).filter(|game| game.game_port_query_offset != 0) else {
+        return addresses;
+    };
+    let resolve =
+        |address: &String| match openase::quake3::parse_address(address, game.default_port) {
+            Ok((host, port)) => format!(
+                "{host}:{}",
+                openase::query::resolve_query_port(game, &host, port, timeout)
+            ),
+            Err(_) => address.clone(),
+        };
+    // One probe per address, 32 at a time.
+    let mut resolved = Vec::with_capacity(addresses.len());
+    for chunk in addresses.chunks(32) {
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = chunk
+                .iter()
+                .map(|address| scope.spawn(move || resolve(address)))
+                .collect();
+            for (handle, address) in handles.into_iter().zip(chunk) {
+                resolved.push(handle.join().unwrap_or_else(|_| address.clone()));
+            }
+        });
+    }
+    resolved
 }

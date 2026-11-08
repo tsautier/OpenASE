@@ -161,6 +161,8 @@ pub enum Msg {
         result: Result<Option<String>, String>,
         manual: bool,
     },
+    /// Saved servers to move from a game port to their query port.
+    PortFixes(Vec<(ServerRef, ServerRef)>),
 }
 
 struct Scan {
@@ -607,6 +609,13 @@ impl OpenAseApp {
                         self.dialogs.error = Some(fill(tr("LAN search failed: {}"), &[&error]))
                     }
                 },
+                Msg::PortFixes(fixes) => {
+                    for (old, new) in &fixes {
+                        self.settings.replace_server(old, new);
+                    }
+                    self.settings.unreal_ports_checked = true;
+                    self.settings_dirty = true;
+                }
                 Msg::Update { result, manual } => match result {
                     Ok(Some(tag)) => self.extra.update_available = Some(tag),
                     Ok(None) if manual => self.dialogs.notify(fill(
@@ -828,6 +837,10 @@ impl OpenAseApp {
         let game = catalog::game(game_id).ok_or_else(|| tr("Unknown game").to_string())?;
         let (host, port) =
             parse_address(address.trim(), game.default_port).map_err(|error| error.to_string())?;
+        // Players share the game port of Unreal engine servers: switch to the
+        // query port so OpenASE never queries the game port.
+        let timeout = self.settings.network.query_options().timeout;
+        let port = openase::query::resolve_query_port(game, &host, port, timeout);
         let key = ServerKey {
             game: game.id.clone(),
             address: format!("{host}:{port}"),
