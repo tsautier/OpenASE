@@ -454,6 +454,320 @@
     "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
   },
   {
+    "id": "hl",
+    "name": "Half-Life",
+    "short": "HL",
+    "color": "#e08a1e",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 70,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\70" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "valve",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game valve [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "cz",
+    "name": "Counter-Strike: Condition Zero",
+    "short": "CZ",
+    "color": "#b8892a",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 80,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\80" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "czero",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game czero [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "opfor",
+    "name": "Half-Life: Opposing Force",
+    "short": "OF",
+    "color": "#5b7f3a",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 50,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\50" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "gearbox",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game gearbox [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "dmc",
+    "name": "Deathmatch Classic",
+    "short": "DMC",
+    "color": "#a63a3a",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 40,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\40" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "dmc",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game dmc [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "ricochet",
+    "name": "Ricochet",
+    "short": "RIC",
+    "color": "#2f8fa8",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 60,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\60" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "ricochet",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life\\hl.exe" }
+    ],
+    "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
+    "join": "-game ricochet [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "css",
+    "name": "Counter-Strike: Source",
+    "short": "CS:S",
+    "color": "#c9a227",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 240,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\240" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "cstrike",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Counter-Strike Source\\hl2.exe" }
+    ],
+    "exe_names": ["hl2.exe", "hl2_linux", "hl2_osx"],
+    "join": "-game cstrike [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "dods",
+    "name": "Day of Defeat: Source",
+    "short": "DoD:S",
+    "color": "#4f7a3a",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 300,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\300" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "dod",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Day of Defeat Source\\hl2.exe" }
+    ],
+    "exe_names": ["hl2.exe", "hl2_linux", "hl2_osx"],
+    "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "hl2dm",
+    "name": "Half-Life 2: Deathmatch",
+    "short": "HL2DM",
+    "color": "#d46a1a",
+    "protocol": "a2s",
+    "default_port": 27015,
+    "steam_appid": 320,
+    "masters": [
+      { "kind": "steam_web", "filter": "\\appid\\320" }
+    ],
+    "game_type_key": "",
+    "game_types": [],
+    "mod_key": "folder",
+    "base_mod": "hl2mp",
+    "filters": [
+      { "name": "VAC", "key": "secure", "options": [ { "label": "Secure", "values": ["1"] }, { "label": "Insecure", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Half-Life 2 Deathmatch\\hl2.exe" }
+    ],
+    "exe_names": ["hl2.exe", "hl2_linux", "hl2_osx"],
+    "join": "-game hl2mp [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "coduo",
+    "name": "Call of Duty: United Offensive",
+    "short": "CoDUO",
+    "color": "#9a7c46",
+    "protocol": "quake3",
+    "default_port": 28960,
+    "masters": [
+      { "kind": "quake3", "address": "coduomaster.activision.com:20610", "query": "getservers 22 full empty" },
+      { "kind": "quake3", "address": "coduomaster.activision.com:20610", "query": "getservers 21 full empty" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "dm", "name": "Deathmatch" },
+      { "value": "tdm", "name": "Team Deathmatch" },
+      { "value": "sd", "name": "Search and Destroy" },
+      { "value": "re", "name": "Retrieval" },
+      { "value": "bel", "name": "Behind Enemy Lines" },
+      { "value": "hq", "name": "Headquarters" },
+      { "value": "ctf", "name": "Capture the Flag" },
+      { "value": "dom", "name": "Domination" },
+      { "value": "bas", "name": "Base Assault" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "uo",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Friendly Fire", "key": "scr_friendlyfire", "options": [ { "label": "On", "values": ["1", "2", "3"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "PunkBuster", "key": "sv_punkbuster", "options": [ { "label": "On", "values": ["1"] }, { "label": "Off", "values": ["0"] } ] },
+      { "name": "Version", "key": "shortversion", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Activision\\Call of Duty United Offensive", "value": "InstallPath", "exe": "CoDUOMP.exe" },
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Call of Duty\\CoDUOMP.exe" }
+    ],
+    "exe_names": ["CoDUOMP.exe"],
+    "join": "[+set fs_game {mod} ][+exec \"{config}\" ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "ef",
+    "name": "Star Trek: Voyager Elite Force",
+    "short": "EF",
+    "color": "#3a6fc4",
+    "protocol": "quake3",
+    "default_port": 27960,
+    "masters": [
+      { "kind": "quake3", "address": "master.stvef.org:27953", "query": "getservers 24 empty full" },
+      { "kind": "quake3", "address": "efmaster.tjps.eu:27953", "query": "getservers 24 empty full" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "0", "name": "Free For All" },
+      { "value": "1", "name": "Tournament" },
+      { "value": "3", "name": "Team Holomatch" },
+      { "value": "4", "name": "Capture the Flag" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "baseEF",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Raven Software\\Star Trek Voyager Elite Force", "value": "InstallPath", "exe": "stvoyHM.exe" }
+    ],
+    "exe_names": ["stvoyHM.exe", "stvoyHM", "efhm.exe", "iostvoyHM.x86_64", "iostvoyHM.exe"],
+    "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "sof2",
+    "name": "Soldier of Fortune II: Double Helix",
+    "short": "SoF2",
+    "color": "#a02828",
+    "protocol": "quake3",
+    "default_port": 20100,
+    "masters": [
+      { "kind": "quake3", "address": "master.1fxmod.org:20110", "query": "getservers 2004 full empty" },
+      { "kind": "quake3", "address": "master.1fxmod.org:20110", "query": "getservers 2002 full empty" }
+    ],
+    "game_type_key": "g_gametype",
+    "game_types": [
+      { "value": "dm", "name": "Deathmatch" },
+      { "value": "tdm", "name": "Team Deathmatch" },
+      { "value": "ctf", "name": "Capture the Flag" },
+      { "value": "inf", "name": "Infiltration" },
+      { "value": "elim", "name": "Elimination" },
+      { "value": "dem", "name": "Demolition" }
+    ],
+    "mod_key": "gamename",
+    "base_mod": "base",
+    "filters": [
+      { "name": "Mods", "key": "gamename", "dynamic": true },
+      { "name": "Pure", "key": "sv_pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] },
+      { "name": "Version", "key": "version", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Raven Software\\Soldier of Fortune II - Double Helix", "value": "InstallPath", "exe": "SoF2MP.exe" },
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Soldier of Fortune II - Double Helix\\SoF2MP.exe" }
+    ],
+    "exe_names": ["SoF2MP.exe", "SoF2MP.1fxmaster.exe"],
+    "join": "[+set fs_game {mod} ][+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
     "id": "unreal",
     "name": "Unreal",
     "short": "UN",
