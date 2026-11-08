@@ -11,6 +11,8 @@ use crate::quake3::{OUT_OF_BAND_PREFIX, latin1, parse_info_response};
 const QUAKE3_PORTS: [u16; 8] = [27960, 27961, 27962, 27963, 28960, 28961, 28962, 28963];
 const GAMESPY_PORTS: [u16; 3] = [7778, 7788, 7798];
 const A2S_PORTS: [u16; 4] = [27015, 27016, 27017, 27018];
+const QUAKE2_PORTS: [u16; 3] = [27910, 31510, 31511];
+const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -67,6 +69,12 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         let _ = socket.send_to(&a2s, SocketAddrV4::new(broadcast, port));
     }
 
+    let mut status = OUT_OF_BAND_PREFIX.to_vec();
+    status.extend_from_slice(b"status\n");
+    for port in QUAKE2_PORTS.into_iter().chain(QUAKEWORLD_PORTS) {
+        let _ = socket.send_to(&status, SocketAddrV4::new(broadcast, port));
+    }
+
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
     let mut found = Vec::new();
@@ -89,6 +97,14 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
             Some(guess_quake3_game(&info, from.port()))
         } else if packet.starts_with(b"\\") || latin1(packet).contains("\\final\\") {
             Some("ut99")
+        } else if packet.starts_with(b"\xff\xff\xff\xffprint\n") {
+            Some(if (31500..32000).contains(&from.port()) {
+                "kingpin"
+            } else {
+                "q2"
+            })
+        } else if packet.starts_with(b"\xff\xff\xff\xffn\\") {
+            Some("qw")
         } else if packet.starts_with(&[0xff; 4])
             && matches!(packet.get(4), Some(b'I' | b'm' | b'A'))
         {

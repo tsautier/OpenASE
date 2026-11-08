@@ -452,5 +452,89 @@
     ],
     "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
     "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "qw",
+    "name": "QuakeWorld",
+    "short": "QW",
+    "color": "#8b5a2b",
+    "protocol": "quakeworld",
+    "default_port": 27500,
+    "masters": [
+      { "kind": "quakeworld", "address": "master.quakeservers.net:27000" },
+      { "kind": "quakeworld", "address": "qwmaster.fodquake.net:27000" },
+      { "kind": "quakeworld", "address": "master.quakeworld.nu:27000" }
+    ],
+    "game_type_key": "teamplay",
+    "game_types": [
+      { "value": "0", "name": "FFA" },
+      { "value": "1", "name": "Team (no FF)" },
+      { "value": "2", "name": "Team (FF)" }
+    ],
+    "mod_key": "*gamedir",
+    "base_mod": "qw",
+    "filters": [
+      { "name": "Mods", "key": "*gamedir", "dynamic": true },
+      { "name": "Maps", "key": "map", "dynamic": true }
+    ],
+    "registry": [],
+    "exe_names": ["ezquake-gl.exe", "ezquake.exe", "fteqw-gl.exe", "fteqw.exe", "ezquake-linux-x86_64", "ezquake-linux-aarch64", "ezquake", "ezquake-macos", "fteqw"],
+    "join": "[+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "q2",
+    "name": "Quake 2",
+    "short": "Q2",
+    "color": "#a0522d",
+    "protocol": "quake2",
+    "default_port": 27910,
+    "masters": [
+      { "kind": "quake2", "address": "master.quakeservers.net:27900", "query": "query" },
+      { "kind": "quake2", "address": "master.itbacon.com:27900", "query": "query" }
+    ],
+    "game_type_key": "deathmatch",
+    "game_types": [
+      { "value": "1", "name": "Deathmatch" },
+      { "value": "0", "name": "Cooperative" }
+    ],
+    "mod_key": "gamedir",
+    "base_mod": "baseq2",
+    "filters": [
+      { "name": "Mods", "key": "gamedir", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Quake 2\\quake2.exe" }
+    ],
+    "exe_names": ["quake2.exe", "q2pro.exe", "yquake2.exe", "quake2", "q2pro", "yquake2", "quake2-macos"],
+    "join": "[+set game {mod} ][+set name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "kingpin",
+    "name": "Kingpin",
+    "short": "KP",
+    "color": "#6e6e3c",
+    "protocol": "quake2",
+    "default_port": 31510,
+    "masters": [
+      { "kind": "quake2", "address": "master.kingpin.info:27900", "query": "query" },
+      { "kind": "quake2", "address": "master4.kingpin.info:27900", "query": "query" }
+    ],
+    "game_type_key": "deathmatch",
+    "game_types": [
+      { "value": "1", "name": "Deathmatch" },
+      { "value": "0", "name": "Cooperative" }
+    ],
+    "mod_key": "gamedir",
+    "base_mod": "main",
+    "filters": [
+      { "name": "Mods", "key": "gamedir", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Kingpin Life of Crime\\kingpin.exe" }
+    ],
+    "exe_names": ["kingpin.exe", "openkp.exe", "kingpin", "openkp"],
+    "join": "[+set game {mod} ][+set name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
   }
 ]
