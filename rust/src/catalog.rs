@@ -30,6 +30,8 @@ pub enum Protocol {
     Tribes2,
     /// id Tech 4 `getInfo` query (Doom 3, Quake 4).
     Doom3,
+    /// Savage: The Battle for Newerth and Savage DRX (UDP 11235).
+    Savage,
 }
 
 /// Where a game's server list comes from.
@@ -73,6 +75,8 @@ pub enum Master {
     /// id Tech 4 master (`getServers`); `version` is the protocol as
     /// `major.minor` (`1.0` for Doom 3, `2.0` for Quake 4).
     Doom3 { address: String, version: String },
+    /// Savage DRX community server list (JSON over HTTPS).
+    SavageDrx { url: String },
 }
 
 impl Master {
@@ -85,7 +89,7 @@ impl Master {
             | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
             Master::Unreal2 { address, .. } => address.clone(),
-            Master::Mta { url } => url.clone(),
+            Master::Mta { url } | Master::SavageDrx { url } => url.clone(),
             Master::GamespySb { address, .. } => address.clone(),
             Master::Tribes { address } => address.clone(),
             Master::HttpList { url } => url.clone(),

@@ -1945,5 +1945,55 @@
     ],
     "exe_names": ["Quake4.exe", "quake4", "quake4.x86", "Quake 4"],
     "join": "[+set fs_game {mod} ][+set ui_name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "sof",
+    "name": "Soldier of Fortune",
+    "short": "SoF",
+    "color": "#8c2a1e",
+    "protocol": "gamespy",
+    "default_port": 28910,
+    "masters": [
+      { "kind": "gamespy", "address": "master.333networks.com:28900", "gamename": "sofretail", "key": "iVn3a3" },
+      { "kind": "gamespy", "address": "master.errorist.eu:28900", "gamename": "sofretail", "key": "iVn3a3" },
+      { "kind": "gamespy", "address": "master.openspy.net:28900", "gamename": "sofretail", "key": "iVn3a3" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Mods", "key": "gamedir", "dynamic": true },
+      { "name": "Maps", "key": "mapname", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Soldier of Fortune\\SoF.exe" }
+    ],
+    "exe_names": ["SoF.exe"],
+    "join": "[+set game {mod} ][+set name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "savage",
+    "name": "Savage: The Battle for Newerth",
+    "short": "SAV",
+    "color": "#7a5a2a",
+    "protocol": "savage",
+    "default_port": 11235,
+    "masters": [
+      { "kind": "savage_drx", "url": "https://savagedrx.com/api/server/online" }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "RTSS", "name": "RTS + FPS" }
+    ],
+    "mod_key": "",
+    "base_mod": "",
+    "filters": [
+      { "name": "Maps", "key": "world", "dynamic": true },
+      { "name": "Pure", "key": "pure", "options": [ { "label": "Yes", "values": ["1"] }, { "label": "No", "values": ["0"] } ] }
+    ],
+    "registry": [],
+    "exe_names": ["silverback.exe", "savage.exe", "Savage.exe"],
+    "join": "connect {address}"
   }
 ]

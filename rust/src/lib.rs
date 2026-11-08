@@ -20,6 +20,7 @@ pub mod quake2;
 pub mod quake3;
 pub mod query;
 pub mod rules;
+pub mod savage;
 pub mod settings;
 pub mod steam;
 pub mod text;
