@@ -189,6 +189,11 @@ jobs:
     if: ${{ github.event_name == 'push' || inputs.publish }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v8
         with:
           path: dist
@@ -199,8 +204,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           ls -l dist
+          # Release notes: this version's section of CHANGELOG.md, up to the next "## ".
+          awk -v v="${TAG#v}" '
+            index($0, "## " v " ") == 1 { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ -s notes.md ]; then notes=(--notes-file notes.md); else notes=(--generate-notes); fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --clobber
           else
-            gh release create "$TAG" dist/* --title "OpenASE $TAG" --generate-notes
+            gh release create "$TAG" dist/* --title "OpenASE $TAG" "${notes[@]}"
           fi
