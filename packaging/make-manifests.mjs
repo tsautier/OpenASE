@@ -52,7 +52,7 @@ PublisherUrl: https://openase.org
 PublisherSupportUrl: https://github.com/tsautier/OpenASE/issues
 PackageName: OpenASE
 PackageUrl: https://openase.org
-License: GPL-3.0
+License: GPL-3.0-or-later
 LicenseUrl: https://github.com/tsautier/OpenASE/blob/main/LICENSE
 ShortDescription: Game server browser in the spirit of The All-Seeing Eye
 Tags:
