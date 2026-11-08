@@ -9,7 +9,7 @@ use crate::quake3::{OUT_OF_BAND_PREFIX, latin1, parse_info_response};
 
 /// Ports probed for each protocol family.
 const QUAKE3_PORTS: [u16; 8] = [27960, 27961, 27962, 27963, 28960, 28961, 28962, 28963];
-const GAMESPY_PORTS: [u16; 3] = [7778, 7788, 7798];
+const GAMESPY_PORTS: [u16; 5] = [7778, 7788, 7798, 28910, 28911];
 const A2S_PORTS: [u16; 4] = [27015, 27016, 27017, 27018];
 const QUAKE2_PORTS: [u16; 3] = [27910, 31510, 31511];
 const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
@@ -17,6 +17,9 @@ const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
 const UNREAL2_PORTS: [u16; 3] = [7778, 7788, 7798];
 /// ASE ports (Multi Theft Auto: game port + 123).
 const ASE_PORTS: [u16; 2] = [22126, 22127];
+
+/// Savage and Savage DRX servers.
+const SAVAGE_PORTS: [u16; 2] = [11235, 11236];
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -88,6 +91,13 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         let _ = socket.send_to(b"s", SocketAddrV4::new(broadcast, port));
     }
 
+    for port in SAVAGE_PORTS {
+        let _ = socket.send_to(
+            &crate::savage::REQUEST_INFO,
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
+
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
     let mut found = Vec::new();
@@ -106,7 +116,9 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         if !seen.insert(address.clone()) {
             continue;
         }
-        let game = if crate::unreal2::is_answer(packet) {
+        let game = if crate::savage::is_answer(packet) {
+            Some("savage")
+        } else if crate::unreal2::is_answer(packet) {
             // 128 is UT2004, older protocol numbers UT2003.
             Some(if packet[0] == crate::unreal2::UT2004_VERSION {
                 "ut2004"
@@ -125,7 +137,11 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         } else if let Ok(info) = parse_info_response(packet) {
             Some(guess_quake3_game(&info, from.port()))
         } else if packet.starts_with(b"\\") || latin1(packet).contains("\\final\\") {
-            Some("ut99")
+            Some(if latin1(packet).contains("\\gamename\\sofretail") {
+                "sof"
+            } else {
+                "ut99"
+            })
         } else if packet.starts_with(b"\xff\xff\xff\xffprint\n") {
             Some(if (31500..32000).contains(&from.port()) {
                 "kingpin"
