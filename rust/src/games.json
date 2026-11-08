@@ -452,5 +452,703 @@
     ],
     "exe_names": ["hl.exe", "hl_linux", "hl_osx"],
     "join": "-game dod [+name \"{name}\" ][+password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "unreal",
+    "name": "Unreal",
+    "short": "UN",
+    "color": "#6a8a3c",
+    "protocol": "gamespy",
+    "default_port": 7778,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "unreal",
+        "key": "DAncRK"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "unreal",
+        "key": "DAncRK"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [
+      {
+        "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\Unreal",
+        "value": "Folder",
+        "exe": "System\\Unreal.exe"
+      }
+    ],
+    "exe_names": [
+      "Unreal.exe",
+      "unreal-bin",
+      "Unreal"
+    ],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "deusex",
+    "name": "Deus Ex",
+    "short": "DX",
+    "color": "#2a6e8c",
+    "protocol": "gamespy",
+    "default_port": 7791,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "deusex",
+        "key": "Av3M99"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [
+      {
+        "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Unreal Technology\\Installed Apps\\Deus Ex",
+        "value": "Folder",
+        "exe": "System\\DeusEx.exe"
+      }
+    ],
+    "exe_names": [
+      "DeusEx.exe",
+      "deusex.exe"
+    ],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "rune",
+    "name": "Rune",
+    "short": "RU",
+    "color": "#8c4a2a",
+    "protocol": "gamespy",
+    "default_port": 7778,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "rune",
+        "key": "BnA4a3"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "rune",
+        "key": "BnA4a3"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "RuneMultiPlayer", "name": "Deathmatch" },
+      { "value": "Teamgame", "name": "Team Deathmatch" },
+      { "value": "ArenaGameInfo", "name": "Arena" },
+      { "value": "CapTheTorchGame", "name": "Capture the Torch" }
+    ],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Rune.exe",
+      "rune.exe"
+    ],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "wot",
+    "name": "Wheel of Time",
+    "short": "WoT",
+    "color": "#7a6a3a",
+    "protocol": "gamespy",
+    "default_port": 7778,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "wot",
+        "key": "RSSSpA"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "WoT.exe",
+      "wot.exe"
+    ],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "mobileforces",
+    "name": "Mobile Forces",
+    "short": "MF",
+    "color": "#5a7a4a",
+    "protocol": "gamespy",
+    "default_port": 7778,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "mobileforces",
+        "key": "g3H6eR"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "MobileForces.exe",
+      "mobileforces.exe"
+    ],
+    "join": "{address}[?Name={name}][?Password={password}]"
+  },
+  {
+    "id": "sstfe",
+    "name": "Serious Sam: The First Encounter",
+    "short": "SS",
+    "color": "#c8641e",
+    "protocol": "gamespy",
+    "default_port": 25601,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "serioussam",
+        "key": "AKbna4"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "SeriousSam.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "sstse",
+    "name": "Serious Sam: The Second Encounter",
+    "short": "SS2",
+    "color": "#b4782a",
+    "protocol": "gamespy",
+    "default_port": 25601,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "serioussamse",
+        "key": "AKbna4"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "serioussamse",
+        "key": "AKbna4"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "SeriousSam.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "nolf",
+    "name": "No One Lives Forever",
+    "short": "NOLF",
+    "color": "#c83278",
+    "protocol": "gamespy",
+    "default_port": 27888,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "nolf",
+        "key": "Jn3Ab4"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Nolf.exe",
+      "nolf.exe"
+    ],
+    "join": "+join {address}"
+  },
+  {
+    "id": "nolf2",
+    "name": "No One Lives Forever 2",
+    "short": "NOLF2",
+    "color": "#b43c6e",
+    "protocol": "gamespy",
+    "default_port": 27889,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "nolf2",
+        "key": "g3Fo6x"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "NOLF2.exe",
+      "nolf2.exe"
+    ],
+    "join": "+join {address}"
+  },
+  {
+    "id": "heretic2",
+    "name": "Heretic II",
+    "short": "H2",
+    "color": "#8c3c28",
+    "protocol": "gamespy",
+    "default_port": 28910,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "heretic2",
+        "key": "2iuCAS"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "heretic2",
+        "key": "2iuCAS"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Heretic2.exe",
+      "heretic2.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "gore",
+    "name": "Gore",
+    "short": "Gore",
+    "color": "#8c2828",
+    "protocol": "gamespy",
+    "default_port": 27900,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "gore",
+        "key": "Mbz942"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Gore.exe",
+      "gore.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "drakan",
+    "name": "Drakan: Order of the Flame",
+    "short": "DR",
+    "color": "#3c6e5a",
+    "protocol": "gamespy",
+    "default_port": 27900,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "drakan",
+        "key": "zCt4De"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Drakan.exe",
+      "drakan.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "turok2",
+    "name": "Turok 2: Seeds of Evil",
+    "short": "T2",
+    "color": "#4a6e2a",
+    "protocol": "gamespy",
+    "default_port": 27900,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "turok2",
+        "key": "RWd3BG"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "Turok2.exe",
+      "turok2.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "globalops",
+    "name": "Global Operations",
+    "short": "GlOps",
+    "color": "#4a5a6e",
+    "protocol": "gamespy",
+    "default_port": 28672,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "globalops",
+        "key": "AdN3L9"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "globalops",
+        "key": "AdN3L9"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "GlobalOps.exe",
+      "globalops.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "vietcong",
+    "name": "Vietcong",
+    "short": "VC",
+    "color": "#5a7832",
+    "protocol": "gamespy",
+    "default_port": 5425,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "vietcong",
+        "key": "bq98mE"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "vietcong.exe",
+      "Vietcong.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "bcommander",
+    "name": "Star Trek: Bridge Commander",
+    "short": "BC",
+    "color": "#3c5a96",
+    "protocol": "gamespy",
+    "default_port": 22101,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "bcommander",
+        "key": "Nm3aZ9"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "stbc.exe",
+      "STBC.exe"
+    ],
+    "join": "{address}"
+  },
+  {
+    "id": "mohaa",
+    "name": "Medal of Honor: Allied Assault",
+    "short": "MoH",
+    "color": "#6e7a3c",
+    "protocol": "gamespy",
+    "default_port": 12300,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "mohaa",
+        "key": "M5Fdwc"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "mohaa",
+        "key": "M5Fdwc"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [
+      {
+        "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Electronic Arts\\EA GAMES\\Medal of Honor Allied Assault",
+        "value": "InstallPath",
+        "exe": "mohaa.exe"
+      }
+    ],
+    "exe_names": [
+      "mohaa.exe",
+      "MOHAA.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "mohaas",
+    "name": "Medal of Honor: Allied Assault Spearhead",
+    "short": "MoHS",
+    "color": "#7a6e3c",
+    "protocol": "gamespy",
+    "default_port": 12300,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "mohaas",
+        "key": "h2P1c9"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "mohaas",
+        "key": "h2P1c9"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "mohaas.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "mohaab",
+    "name": "Medal of Honor: Allied Assault Breakthrough",
+    "short": "MoHB",
+    "color": "#6e6e46",
+    "protocol": "gamespy",
+    "default_port": 12300,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.333networks.com:28900",
+        "gamename": "mohaab",
+        "key": "y32FDc"
+      },
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "mohaab",
+        "key": "y32FDc"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [],
+    "exe_names": [
+      "mohaab.exe"
+    ],
+    "join": "+connect {address}"
+  },
+  {
+    "id": "bf1942",
+    "name": "Battlefield 1942",
+    "short": "BF",
+    "color": "#8c7a28",
+    "protocol": "gamespy",
+    "default_port": 23000,
+    "masters": [
+      {
+        "kind": "gamespy",
+        "address": "master.openspy.net:28900",
+        "gamename": "bfield1942",
+        "key": "HpWx9z"
+      }
+    ],
+    "game_type_key": "gametype",
+    "game_types": [
+      { "value": "conquest", "name": "Conquest" },
+      { "value": "coop", "name": "Co-op" },
+      { "value": "ctf", "name": "Capture the Flag" },
+      { "value": "objectivemode", "name": "Objective" }
+    ],
+    "filters": [
+      {
+        "name": "Maps",
+        "key": "mapname",
+        "dynamic": true
+      }
+    ],
+    "registry": [
+      {
+        "key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Electronic Arts\\EA Games\\Battlefield 1942",
+        "value": "InstallDir",
+        "exe": "BF1942.exe"
+      }
+    ],
+    "exe_names": [
+      "BF1942.exe"
+    ],
+    "join": "+joinServer {address}"
   }
 ]

@@ -21,8 +21,40 @@ fn catalog_has_every_game_with_masters_and_join_template() {
     assert_eq!(
         ids,
         [
-            "q3", "urt", "oa", "et", "cod", "cod2", "cod4", "jk2", "jka", "rtcw", "ut99", "cs16",
-            "tfc", "dod"
+            "q3",
+            "urt",
+            "oa",
+            "et",
+            "cod",
+            "cod2",
+            "cod4",
+            "jk2",
+            "jka",
+            "rtcw",
+            "ut99",
+            "cs16",
+            "tfc",
+            "dod",
+            "unreal",
+            "deusex",
+            "rune",
+            "wot",
+            "mobileforces",
+            "sstfe",
+            "sstse",
+            "nolf",
+            "nolf2",
+            "heretic2",
+            "gore",
+            "drakan",
+            "turok2",
+            "globalops",
+            "vietcong",
+            "bcommander",
+            "mohaa",
+            "mohaas",
+            "mohaab",
+            "bf1942"
         ]
     );
     for game in games() {
@@ -60,6 +92,10 @@ fn game_type_names_are_mapped() {
     assert_eq!(
         game("ut99").unwrap().game_type_name("CTFGame"),
         "Capture the Flag"
+    );
+    assert_eq!(
+        game("bf1942").unwrap().game_type_name("objectivemode"),
+        "Objective"
     );
     assert_eq!(game("jk2").unwrap().game_type_name("6"), "Saga");
     assert_eq!(game("jka").unwrap().game_type_name("4"), "Power Duel");
