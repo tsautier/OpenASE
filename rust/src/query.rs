@@ -8,7 +8,7 @@ use std::time::Duration;
 use crate::catalog::{Game, Master, Protocol};
 use crate::model::{Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
-use crate::{a2s, ase, gamespy, gamespy_sb, gamespy2, location, quake2, steam, unreal2};
+use crate::{a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, location, quake2, steam, unreal2};
 
 /// Network settings for queries (ASE's Options > Network).
 #[derive(Debug, Clone)]
@@ -71,6 +71,7 @@ pub fn fetch_master(
             gamename,
             key,
         } => gamespy_sb::master_list(address, gamename, key, timeout * 3),
+        Master::Doom3 { address, version } => doom3::master_list(address, version, timeout * 3),
     }
 }
 
@@ -217,6 +218,7 @@ fn status_once(
         }
         Protocol::A2s => a2s::status(&game.id, host, port, timeout),
         Protocol::Quake2 | Protocol::QuakeWorld => quake2::status(game, host, port, timeout),
+        Protocol::Doom3 => doom3::status(game, host, port, timeout),
         Protocol::Unreal2 => unreal2::status(&game.id, host, port, timeout),
         Protocol::Ase => ase::status(&game.id, host, port, timeout),
         Protocol::Gamespy2 | Protocol::Gamespy3 => {
@@ -257,6 +259,7 @@ fn ping_once(game: &Game, host: &str, port: u16, timeout: Duration) -> io::Resul
         }
         Protocol::A2s => a2s::ping(host, port, timeout),
         Protocol::Quake2 | Protocol::QuakeWorld => quake2::ping(game, host, port, timeout),
+        Protocol::Doom3 => doom3::ping(game, host, port, timeout),
         Protocol::Unreal2 => unreal2::ping(host, port, timeout),
         Protocol::Ase => ase::ping(host, port, timeout),
         Protocol::Gamespy2 => gamespy2::ping_v2(host, port, timeout),

@@ -15,6 +15,8 @@ const QUAKE2_PORTS: [u16; 3] = [27910, 31510, 31511];
 const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
 /// Unreal Engine 2 query ports (game port + 1).
 const UNREAL2_PORTS: [u16; 3] = [7778, 7788, 7798];
+/// id Tech 4 default ports (Doom 3, Quake 4).
+const DOOM3_PORTS: [u16; 2] = [27666, 28004];
 /// ASE ports (Multi Theft Auto: game port + 123).
 const ASE_PORTS: [u16; 2] = [22126, 22127];
 
@@ -53,6 +55,17 @@ pub fn guess_quake3_game(info: &BTreeMap<String, String>, port: u16) -> &'static
     }
 }
 
+/// Guess the catalog game of an id Tech 4 `infoResponse`: protocol major 2
+/// is Quake 4, major 1 is Doom 3.
+pub fn guess_doom3_game(packet: &[u8]) -> Option<&'static str> {
+    let response = crate::doom3::parse_info_response(packet).ok()?;
+    Some(if response.version >> 16 == 2 {
+        "quake4"
+    } else {
+        "doom3"
+    })
+}
+
 /// Broadcast queries and collect the servers that answer within `wait`.
 pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
     let socket = UdpSocket::bind("0.0.0.0:0")?;
@@ -84,6 +97,12 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
             SocketAddrV4::new(broadcast, port),
         );
     }
+    for port in DOOM3_PORTS {
+        let _ = socket.send_to(
+            &crate::doom3::info_request(crate::doom3::CHALLENGE),
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
     for port in ASE_PORTS {
         let _ = socket.send_to(b"s", SocketAddrV4::new(broadcast, port));
     }
@@ -106,7 +125,9 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
         if !seen.insert(address.clone()) {
             continue;
         }
-        let game = if crate::unreal2::is_answer(packet) {
+        let game = if let Some(game) = guess_doom3_game(packet) {
+            Some(game)
+        } else if crate::unreal2::is_answer(packet) {
             // 128 is UT2004, older protocol numbers UT2003.
             Some(if packet[0] == crate::unreal2::UT2004_VERSION {
                 "ut2004"
