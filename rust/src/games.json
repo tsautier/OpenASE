@@ -1884,5 +1884,66 @@
     "registry": [],
     "exe_names": ["Tribes2.exe", "tribes2"],
     "join": "-online -connect {address}"
+  },
+  {
+    "id": "doom3",
+    "name": "DOOM 3",
+    "short": "D3",
+    "color": "#c0392b",
+    "protocol": "doom3",
+    "default_port": 27666,
+    "masters": [
+      { "kind": "doom3", "address": "idnet.ua-corp.com:27650", "version": "1.0" }
+    ],
+    "game_type_key": "si_gameType",
+    "game_types": [
+      { "value": "Deathmatch", "name": "Deathmatch" },
+      { "value": "Tourney", "name": "Tourney" },
+      { "value": "Team DM", "name": "Team Deathmatch" },
+      { "value": "Last Man", "name": "Last Man Standing" },
+      { "value": "Coop", "name": "Cooperative" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "base",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Maps", "key": "si_map", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Doom 3\\Doom3.exe" }
+    ],
+    "exe_names": ["Doom3.exe", "dhewm3.exe", "doom3", "dhewm3", "doom3.x86", "Doom 3"],
+    "join": "[+set fs_game {mod} ][+set ui_name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
+  },
+  {
+    "id": "quake4",
+    "name": "Quake 4",
+    "short": "Q4",
+    "color": "#3f7fb5",
+    "protocol": "doom3",
+    "default_port": 28004,
+    "masters": [
+      { "kind": "doom3", "address": "q4master.idsoftware.com:27650", "version": "2.0" }
+    ],
+    "game_type_key": "si_gameType",
+    "game_types": [
+      { "value": "DM", "name": "Deathmatch" },
+      { "value": "Tourney", "name": "Tourney" },
+      { "value": "Team DM", "name": "Team Deathmatch" },
+      { "value": "CTF", "name": "Capture the Flag" },
+      { "value": "Arena CTF", "name": "Arena CTF" },
+      { "value": "DeadZone", "name": "DeadZone" }
+    ],
+    "mod_key": "fs_game",
+    "base_mod": "q4base",
+    "filters": [
+      { "name": "Mods", "key": "fs_game", "dynamic": true },
+      { "name": "Maps", "key": "si_map", "dynamic": true }
+    ],
+    "registry": [
+      { "key": "HKEY_CURRENT_USER\\Software\\Valve\\Steam", "value": "SteamPath", "exe": "steamapps\\common\\Quake 4\\Quake4.exe" }
+    ],
+    "exe_names": ["Quake4.exe", "quake4", "quake4.x86", "Quake 4"],
+    "join": "[+set fs_game {mod} ][+set ui_name \"{name}\" ][+set password \"{password}\" ]+connect {address}"
   }
 ]

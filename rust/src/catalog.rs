@@ -28,6 +28,8 @@ pub enum Protocol {
     Tribes,
     /// Tribes 2 (Torque) binary query: ping 14, info 18.
     Tribes2,
+    /// id Tech 4 `getInfo` query (Doom 3, Quake 4).
+    Doom3,
 }
 
 /// Where a game's server list comes from.
@@ -68,6 +70,9 @@ pub enum Master {
     Tribes { address: String },
     /// Plain-text HTTP list, one `ip:port` per line (TribesNext master).
     HttpList { url: String },
+    /// id Tech 4 master (`getServers`); `version` is the protocol as
+    /// `major.minor` (`1.0` for Doom 3, `2.0` for Quake 4).
+    Doom3 { address: String, version: String },
 }
 
 impl Master {
@@ -76,6 +81,7 @@ impl Master {
             Master::Quake3 { address, .. }
             | Master::Gamespy { address, .. }
             | Master::Quake2 { address, .. }
+            | Master::Doom3 { address, .. }
             | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
             Master::Unreal2 { address, .. } => address.clone(),

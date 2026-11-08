@@ -81,7 +81,9 @@ fn catalog_has_every_game_with_masters_and_join_template() {
             "fear",
             "swbf",
             "tribes",
-            "tribes2"
+            "tribes2",
+            "doom3",
+            "quake4"
         ]
     );
     for game in games() {
