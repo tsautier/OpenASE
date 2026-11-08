@@ -13,6 +13,10 @@ const GAMESPY_PORTS: [u16; 3] = [7778, 7788, 7798];
 const A2S_PORTS: [u16; 4] = [27015, 27016, 27017, 27018];
 const QUAKE2_PORTS: [u16; 3] = [27910, 31510, 31511];
 const QUAKEWORLD_PORTS: [u16; 2] = [27500, 27501];
+/// Unreal Engine 2 query ports (game port + 1).
+const UNREAL2_PORTS: [u16; 3] = [7778, 7788, 7798];
+/// ASE ports (Multi Theft Auto: game port + 123).
+const ASE_PORTS: [u16; 2] = [22126, 22127];
 
 /// A server that answered on the local network, with the catalog game it
 /// most likely runs.
@@ -74,6 +78,15 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
     for port in QUAKE2_PORTS.into_iter().chain(QUAKEWORLD_PORTS) {
         let _ = socket.send_to(&status, SocketAddrV4::new(broadcast, port));
     }
+    for port in UNREAL2_PORTS {
+        let _ = socket.send_to(
+            &crate::unreal2::request(0),
+            SocketAddrV4::new(broadcast, port),
+        );
+    }
+    for port in ASE_PORTS {
+        let _ = socket.send_to(b"s", SocketAddrV4::new(broadcast, port));
+    }
 
     let deadline = Instant::now() + wait;
     let mut seen = HashSet::new();
@@ -89,11 +102,27 @@ pub fn discover(wait: Duration) -> io::Result<Vec<LanServer>> {
             break;
         };
         let packet = &buffer[..size];
-        let address = from.to_string();
+        let mut address = from.to_string();
         if !seen.insert(address.clone()) {
             continue;
         }
-        let game = if let Ok(info) = parse_info_response(packet) {
+        let game = if crate::unreal2::is_answer(packet) {
+            // 128 is UT2004, older protocol numbers UT2003.
+            Some(if packet[0] == crate::unreal2::UT2004_VERSION {
+                "ut2004"
+            } else {
+                "ut2003"
+            })
+        } else if let Ok(reply) = crate::ase::parse_reply(packet) {
+            // Addresses of ASE games hold the game port, not the query port.
+            crate::catalog::game(&reply.game)
+                .filter(|game| game.protocol == crate::catalog::Protocol::Ase)
+                .filter(|_| reply.port != 0)
+                .map(|game| {
+                    address = format!("{}:{}", from.ip(), reply.port);
+                    game.id.as_str()
+                })
+        } else if let Ok(info) = parse_info_response(packet) {
             Some(guess_quake3_game(&info, from.port()))
         } else if packet.starts_with(b"\\") || latin1(packet).contains("\\final\\") {
             Some("ut99")

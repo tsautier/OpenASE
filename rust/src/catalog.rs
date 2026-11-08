@@ -18,6 +18,8 @@ pub enum Protocol {
     Quake2,
     #[serde(rename = "quakeworld")]
     QuakeWorld,
+    Unreal2,
+    Ase,
 }
 
 /// Where a game's server list comes from.
@@ -38,6 +40,15 @@ pub enum Master {
     Quake2 { address: String, query: String },
     /// QuakeWorld master (`c` request).
     Quakeworld { address: String },
+    /// Unreal Engine 2 binary master (TCP); `client` and `version` identify
+    /// the game (`UT2K4CLIENT` 3369 for UT2004, `CLIENT` 2225 for UT2003).
+    Unreal2 {
+        address: String,
+        client: String,
+        version: u32,
+    },
+    /// Multi Theft Auto HTTP master with a binary list (game ports).
+    Mta { url: String },
 }
 
 impl Master {
@@ -48,6 +59,8 @@ impl Master {
             | Master::Quake2 { address, .. }
             | Master::Quakeworld { address } => address.clone(),
             Master::SteamWeb { .. } => "Steam Web API".to_string(),
+            Master::Unreal2 { address, .. } => address.clone(),
+            Master::Mta { url } => url.clone(),
         }
     }
 }
@@ -112,6 +125,10 @@ pub struct Game {
     #[serde(default)]
     pub exe_names: Vec<String>,
     pub join: String,
+    /// Added to the host port to reach the query port (123 for ASE in Multi
+    /// Theft Auto). Server addresses then hold the host port players join.
+    #[serde(default)]
+    pub query_port_offset: u16,
 }
 
 impl Game {

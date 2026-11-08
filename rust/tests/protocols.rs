@@ -68,7 +68,10 @@ fn catalog_has_every_game_with_masters_and_join_template() {
             "bf1942",
             "qw",
             "q2",
-            "kingpin"
+            "kingpin",
+            "ut2004",
+            "ut2003",
+            "mta"
         ]
     );
     for game in games() {
