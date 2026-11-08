@@ -22,7 +22,8 @@ fn catalog_has_every_game_with_masters_and_join_template() {
         ids,
         [
             "q3", "urt", "oa", "et", "cod", "cod2", "cod4", "jk2", "jka", "rtcw", "ut99", "cs16",
-            "tfc", "dod"
+            "tfc", "dod", "hl", "cz", "opfor", "dmc", "ricochet", "css", "dods", "hl2dm", "coduo",
+            "ef", "sof2"
         ]
     );
     for game in games() {
@@ -80,6 +81,19 @@ fn cod_master_packet_with_newline_header_and_eof() {
     assert_eq!(
         parse_getservers_response(&packet).unwrap(),
         vec!["192.168.1.10:28896".to_string()]
+    );
+}
+
+#[test]
+fn elite_force_master_hex_addresses() {
+    let mut packet = OUT_OF_BAND_PREFIX.to_vec();
+    packet.extend_from_slice(b"getserversResponse \\c0df186a6d38\\4A5B74856D39\\EOT");
+    assert_eq!(
+        parse_getservers_response(&packet).unwrap(),
+        vec![
+            "192.223.24.106:27960".to_string(),
+            "74.91.116.133:27961".to_string()
+        ]
     );
 }
 

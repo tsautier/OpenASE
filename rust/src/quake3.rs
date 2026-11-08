@@ -289,6 +289,11 @@ fn parse_getservers_packet(packet: &[u8]) -> Result<(Vec<String>, bool), ParseEr
         if chunk.starts_with(b"EOF") && chunk[3..].iter().all(|&byte| byte == 0) {
             return Ok((addresses, true));
         }
+        if let Some(address) = parse_hex_entry(&body[index + 1..]) {
+            addresses.push(address);
+            index += 13;
+            continue;
+        }
         if chunk.len() < 6 {
             return err("truncated getserversResponse address entry");
         }
@@ -300,6 +305,26 @@ fn parse_getservers_packet(packet: &[u8]) -> Result<(Vec<String>, bool), ParseEr
         index += 7;
     }
     Ok((addresses, false))
+}
+
+/// Elite Force masters send each address as 12 hex digits (IPv4 plus port)
+/// instead of 6 raw bytes. Returns the address if `entry` starts with one.
+fn parse_hex_entry(entry: &[u8]) -> Option<String> {
+    let digits = entry.get(..12)?;
+    let ends = entry.get(12).is_none_or(|&byte| byte == b'\\');
+    if !ends || !digits.iter().all(u8::is_ascii_hexdigit) {
+        return None;
+    }
+    let text = std::str::from_utf8(digits).ok()?;
+    let value = |at: usize| u8::from_str_radix(&text[at..at + 2], 16).ok();
+    let port = u16::from_str_radix(&text[8..12], 16).ok()?;
+    Some(format!(
+        "{}.{}.{}.{}:{port}",
+        value(0)?,
+        value(2)?,
+        value(4)?,
+        value(6)?
+    ))
 }
 
 /// Validate the packet prefix and command, then return the response body.
