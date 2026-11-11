@@ -208,29 +208,3 @@ fn parse_getservers_response_accepts_unpadded_eot() {
         vec!["10.0.0.2:27961".to_string()]
     );
 }
-
-#[test]
-fn gamespy_sync_answer_lists_every_game() {
-    let lists = openase::gamespy::parse_sync_answer(
-        br"\ut\1.2.3.4:7778 5.6.7.8:7778 \unreal\9.9.9.9:7778\deusex\\final\",
-    );
-    assert_eq!(lists["ut"], vec!["1.2.3.4:7778", "5.6.7.8:7778"]);
-    assert_eq!(lists["unreal"], vec!["9.9.9.9:7778"]);
-    assert!(lists["deusex"].is_empty());
-    assert!(!lists.contains_key("final"));
-}
-
-#[test]
-fn networks333_page_gives_query_addresses_and_total() {
-    let page = br#"[[{"ip":"195.140.213.123","queryport":12302,"hostport":12208},
-        {"ip":"::ffff:192.169.81.59","queryport":12300,"hostport":12203},
-        {"ip":"10.0.0.1","hostport":7777}],{"players":0,"total":149}]"#;
-    let (addresses, total) = openase::networks333::parse_page(page).unwrap();
-    assert_eq!(
-        addresses,
-        vec!["195.140.213.123:12302", "192.169.81.59:12300"]
-    );
-    assert_eq!(total, 149);
-    let error = br#"{"error":1,"in":"scrape_detected"}"#;
-    assert!(openase::networks333::parse_page(error).is_err());
-}

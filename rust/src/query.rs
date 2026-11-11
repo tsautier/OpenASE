@@ -6,7 +6,7 @@ use std::io;
 use std::time::Duration;
 
 use crate::catalog::{Game, Master, Protocol};
-use crate::model::{Player, Server, parse_count};
+use crate::model::{Listed, Player, Server, parse_count};
 use crate::quake3::{Quake3Client, Quake3Server, millis, parse_address};
 use crate::{
     a2s, ase, doom3, gamespy, gamespy_sb, gamespy2, ghostrecon, location, networks333, quake2,
@@ -33,14 +33,33 @@ impl Default for QueryOptions {
     }
 }
 
-/// Fetch a master's server list (query addresses, `ip:port`).
+/// One master's answer.
+#[derive(Debug, Clone, Default)]
+pub struct MasterList {
+    pub servers: Vec<Listed>,
+    /// Servers the master lists in all, when it sends its list in pages
+    /// (333networks); `servers` then holds the first page only.
+    pub total: Option<usize>,
+}
+
+impl MasterList {
+    fn addresses(addresses: Vec<String>) -> Self {
+        Self {
+            servers: addresses.into_iter().map(Listed::address).collect(),
+            total: None,
+        }
+    }
+}
+
+/// Fetch a master's server list. A 333networks master gives its first page,
+/// with the details of each server.
 pub fn fetch_master(
     master: &Master,
     timeout: Duration,
     steam_key: &str,
     limit: usize,
-) -> io::Result<Vec<String>> {
-    match master {
+) -> io::Result<MasterList> {
+    let addresses = match master {
         Master::Quake3 { address, query } => {
             let (host, port) = parse_address(address, 27950)?;
             Quake3Client::new(timeout * 3).master_query(&host, port, query)
@@ -49,20 +68,7 @@ pub fn fetch_master(
             address,
             gamename,
             key,
-            sync: false,
         } => gamespy::master_list(address, gamename, key, timeout * 3),
-        Master::Gamespy {
-            address,
-            gamename,
-            key,
-            sync: true,
-        } => gamespy::synced_list(
-            address,
-            gamename,
-            key,
-            &sync_gamenames(address),
-            timeout * 3,
-        ),
         Master::SteamWeb { filter } => steam::server_list(steam_key, filter, limit, timeout * 5),
         Master::Quake2 { address, query } => quake2::master_list(
             address,
@@ -83,7 +89,11 @@ pub fn fetch_master(
         } => unreal2::master_list(address, client, *version, timeout * 3),
         Master::Mta { url } => ase::mta_master_list(url, timeout * 10),
         Master::Networks333 { gamename, api } => {
-            networks333::server_list(api, gamename, timeout * 10)
+            let page = networks333::fetch_page(api, gamename, 1, timeout * 10)?;
+            return Ok(MasterList {
+                servers: page.servers,
+                total: Some(page.total),
+            });
         }
         Master::GamespySb {
             address,
@@ -95,39 +105,38 @@ pub fn fetch_master(
         Master::Doom3 { address, version } => doom3::master_list(address, version, timeout * 3),
         Master::SavageDrx { url } => savage::master_list(url, timeout * 10),
         Master::Csv { url } => ravenshield::csv_master_list(url, timeout * 10),
-    }
+    }?;
+    Ok(MasterList::addresses(addresses))
 }
 
-/// Gamenames of every catalog game listed by the `\sync\` master at `address`.
-fn sync_gamenames(address: &str) -> Vec<String> {
-    let mut names: Vec<String> = crate::catalog::games()
+/// Merged lists of all of a game's masters.
+#[derive(Debug, Clone, Default)]
+pub struct GameList {
+    /// Deduplicated entries: those with details first, then the addresses
+    /// that only other masters gave (to be queried).
+    pub servers: Vec<Listed>,
+    /// One message per master that failed.
+    pub errors: Vec<String>,
+    /// Servers the paged masters (333networks) list in all, when the game
+    /// has one; `servers` then holds their first page only.
+    pub paged_total: Option<usize>,
+}
+
+/// The game takes (part of) its list from 333networks, one page at a time.
+pub fn has_paged_master(game: &Game) -> bool {
+    game.masters
         .iter()
-        .flat_map(|game| &game.masters)
-        .filter_map(|master| match master {
-            Master::Gamespy {
-                address: other,
-                gamename,
-                sync: true,
-                ..
-            } if other == address => Some(gamename.clone()),
-            _ => None,
-        })
-        .collect();
-    names.sort();
-    names.dedup();
-    names
+        .any(|master| matches!(master, Master::Networks333 { .. }))
 }
 
 /// Fetch and merge the lists of all of a game's masters.
-///
-/// Returns the deduplicated addresses and one message per master that failed.
 pub fn fetch_all_masters(
     game: &Game,
     timeout: Duration,
     steam_key: &str,
     limit: usize,
-) -> (Vec<String>, Vec<String>) {
-    let results: Vec<(String, io::Result<Vec<String>>)> = std::thread::scope(|scope| {
+) -> GameList {
+    let results: Vec<(String, io::Result<MasterList>)> = std::thread::scope(|scope| {
         let handles: Vec<_> = game
             .masters
             .iter()
@@ -146,19 +155,75 @@ pub fn fetch_all_masters(
             .collect()
     });
 
-    let mut seen = HashSet::new();
-    let mut addresses = Vec::new();
+    let mut lists = Vec::new();
     let mut errors = Vec::new();
+    let mut paged_total = None;
     for (label, result) in results {
         match result {
-            Ok(list) => addresses.extend(
-                list.into_iter()
-                    .filter(|address| seen.insert(address.clone())),
-            ),
+            Ok(list) => {
+                if let Some(total) = list.total {
+                    *paged_total.get_or_insert(0) += total;
+                }
+                lists.push(list.servers);
+            }
             Err(error) => errors.push(format!("{label}: {error}")),
         }
     }
-    (addresses, errors)
+    GameList {
+        servers: merge_listed(game, lists.into_iter().flatten()),
+        errors,
+        paged_total,
+    }
+}
+
+/// Fetch page `page` (from 2 on: the first comes with [`fetch_all_masters`])
+/// of the game's 333networks lists. Returns the listed servers (with
+/// details, for game `game`) and the total the masters list.
+pub fn fetch_more(game: &Game, page: usize, timeout: Duration) -> io::Result<networks333::Page> {
+    let mut servers = Vec::new();
+    let mut total = 0;
+    let mut error = None;
+    for master in &game.masters {
+        if let Master::Networks333 { gamename, api } = master {
+            match networks333::fetch_page(api, gamename, page, timeout * 10) {
+                Ok(page) => {
+                    servers.extend(page.servers);
+                    total += page.total;
+                }
+                Err(failure) => error = Some(failure),
+            }
+        }
+    }
+    if servers.is_empty()
+        && let Some(error) = error
+    {
+        return Err(error);
+    }
+    Ok(networks333::Page {
+        servers: merge_listed(game, servers),
+        total,
+    })
+}
+
+/// Deduplicate entries by address, preferring those with details, and set
+/// the game id of the details.
+pub fn merge_listed(game: &Game, entries: impl IntoIterator<Item = Listed>) -> Vec<Listed> {
+    let (mut previews, plain): (Vec<Listed>, Vec<Listed>) = entries
+        .into_iter()
+        .partition(|entry| entry.preview.is_some());
+    let mut seen = HashSet::new();
+    previews.retain(|entry| seen.insert(entry.address.clone()));
+    for entry in &mut previews {
+        if let Some(server) = &mut entry.preview {
+            server.game = game.id.clone();
+        }
+    }
+    previews.extend(
+        plain
+            .into_iter()
+            .filter(|entry| seen.insert(entry.address.clone())),
+    );
+    previews
 }
 
 /// Query port of a server given by hand (Add server, imported lists).

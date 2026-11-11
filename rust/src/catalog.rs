@@ -49,10 +49,6 @@ pub enum Master {
         address: String,
         gamename: String,
         key: String,
-        /// The master supports `\sync\` (333networks MasterServer): one request
-        /// returns the lists of every game using it, cached for a few minutes.
-        #[serde(default)]
-        sync: bool,
     },
     /// Steam Web API `IGameServersService/GetServerList` (needs a user API key).
     SteamWeb { filter: String },

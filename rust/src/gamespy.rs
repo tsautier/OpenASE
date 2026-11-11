@@ -6,10 +6,9 @@
 //! Servers answer `\status\` over UDP with backslash-delimited key/values,
 //! possibly split across packets and ended by `\final\`.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::io::{self, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs, UdpSocket};
-use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::model::{Player, Server, parse_count};
@@ -98,77 +97,6 @@ pub fn master_list(
         timeout,
     )?;
     Ok(parse_master_list(&data))
-}
-
-/// How long one `\sync\` answer is reused for the other games of that master.
-const SYNC_CACHE_TTL: Duration = Duration::from_secs(300);
-
-/// Lists from `\sync\` answers, per master address.
-type SyncCache = HashMap<String, (Instant, HashMap<String, Vec<String>>)>;
-static SYNC_CACHE: LazyLock<Mutex<SyncCache>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-
-/// Server list of `gamename` from a master that supports `\sync\` (333networks).
-///
-/// One request returns the lists of all `gamenames` at once; the answer is
-/// cached for [`SYNC_CACHE_TTL`], so browsing the other games of that master
-/// opens no new connection.
-pub fn synced_list(
-    address: &str,
-    gamename: &str,
-    key: &str,
-    gamenames: &[String],
-    timeout: Duration,
-) -> io::Result<Vec<String>> {
-    if let Some((fetched, lists)) = SYNC_CACHE
-        .lock()
-        .ok()
-        .and_then(|cache| cache.get(address).cloned())
-        && fetched.elapsed() < SYNC_CACHE_TTL
-    {
-        return Ok(lists.get(gamename).cloned().unwrap_or_default());
-    }
-    let mut names: Vec<&str> = gamenames.iter().map(String::as_str).collect();
-    if !names.contains(&gamename) {
-        names.push(gamename);
-    }
-    let data = master_request(
-        address,
-        gamename,
-        key,
-        // `msid` identifies OpenASE in the master's logs (optional field).
-        &format!("\\msid\\OpenASE\\sync\\{}\\final\\", names.join(" ")),
-        timeout,
-    )?;
-    let lists = parse_sync_answer(&data);
-    let list = lists.get(gamename).cloned().unwrap_or_default();
-    if let Ok(mut cache) = SYNC_CACHE.lock() {
-        cache.insert(address.to_string(), (Instant::now(), lists));
-    }
-    Ok(list)
-}
-
-/// Parse a `\sync\` answer: `\gamename\ip:port ip:port ...\gamename2\...\final\`.
-pub fn parse_sync_answer(data: &[u8]) -> HashMap<String, Vec<String>> {
-    let text = String::from_utf8_lossy(data);
-    let mut parts = text.split('\\');
-    if text.starts_with('\\') {
-        parts.next();
-    }
-    let parts: Vec<&str> = parts.collect();
-    let mut lists = HashMap::new();
-    for pair in parts.chunks(2) {
-        let [name, addresses] = pair else { continue };
-        if name.is_empty() || *name == "final" {
-            continue;
-        }
-        let list: Vec<String> = addresses
-            .split_whitespace()
-            .filter(|address| address.contains(':'))
-            .map(str::to_string)
-            .collect();
-        lists.insert(name.to_string(), list);
-    }
-    lists
 }
 
 /// Connect, answer the `\secure\` challenge for `gamename`, send `request`

@@ -22,7 +22,13 @@ pub struct Server {
     pub port: u16,
     /// Port players connect to (differs from `port` for Unreal).
     pub join_port: u16,
+    /// The server answered a query; `name`, `players`, `ping`... are live.
     pub online: bool,
+    /// Listed by a master that sends server details with its list
+    /// (333networks JSON API), and not queried yet: name, map, game type,
+    /// player counts and country come from the list, ping is unknown.
+    /// Such a server is queried only on demand.
+    pub listed: bool,
     pub error: Option<String>,
 
     /// Raw server name, possibly with Quake color codes.
@@ -71,6 +77,11 @@ impl Server {
         }
     }
 
+    /// Name, map and players are known: queried live, or listed with details.
+    pub fn has_info(&self) -> bool {
+        self.online || self.listed
+    }
+
     /// Query address, `host:port`.
     pub fn address(&self) -> String {
         format!("{}:{}", self.host, self.port)
@@ -93,6 +104,27 @@ impl Server {
     pub fn is_full(&self) -> bool {
         self.max_players
             .is_some_and(|max| max > 0 && self.num_players >= max)
+    }
+}
+
+/// One entry of a master list: a query address, with the server details when
+/// the master sends them (333networks JSON API).
+#[derive(Debug, Clone)]
+pub struct Listed {
+    /// Query address, `ip:port`.
+    pub address: String,
+    /// Details from the list (`listed` set, `online` not set); `None` when
+    /// the master sends addresses only and the server must be queried.
+    pub preview: Option<Server>,
+}
+
+impl Listed {
+    /// An address-only entry.
+    pub fn address(address: String) -> Self {
+        Self {
+            address,
+            preview: None,
+        }
     }
 }
 
