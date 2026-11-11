@@ -3,6 +3,27 @@
 All notable changes to OpenASE. Downloads for every version are on the
 [releases page](https://github.com/tsautier/OpenASE/releases).
 
+## 0.9.6 — 2026-11-11
+
+A lighter client for the 17 games listed by 333networks, after feedback from its admins.
+
+### Changes
+- **The list comes from 333networks' data, with no query per server.** Name, map, players,
+  game type and country are shown straight from the JSON API. OpenASE no longer sends UDP
+  queries to every listed server on each refresh; Ping shows "—" until a server is queried.
+- **Servers are queried on demand**: when you select one, join it, refresh it, or refresh
+  your favorites. The new **Server > Ping visible servers** queries only the rows on
+  screen (60 at most).
+- **Pages of 100 servers**, busiest first, instead of up to 1000 at once. The next page
+  loads when you reach the end of the list or click "Load more servers". Each page is
+  cached for 7.5 minutes and only one request runs at a time.
+- A listed server that does not answer keeps its name and map and shows 100% packet loss.
+- The Location column shows the country when a server only reports a numeric region.
+
+### Removed
+- The `\sync\` master request (0.9.3). It is meant for master-to-master synchronisation,
+  not for clients; it was already unused since 0.9.4.
+
 ## 0.9.5 — 2026-11-08
 
 ### Changes
