@@ -23,17 +23,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = QueryOptions::default();
     let steam_key = std::env::var("STEAM_API_KEY").unwrap_or_default();
 
-    let (addresses, errors) = fetch_all_masters(game, options.timeout, &steam_key, 500);
-    for error in &errors {
+    let list = fetch_all_masters(game, options.timeout, &steam_key, 500);
+    for error in &list.errors {
         eprintln!("master error: {error}");
     }
-    println!("{}: {} servers listed", game.name, addresses.len());
+    match list.paged_total {
+        Some(total) => println!(
+            "{}: {} servers listed ({} in all on 333networks)",
+            game.name,
+            list.servers.len(),
+            total
+        ),
+        None => println!("{}: {} servers listed", game.name, list.servers.len()),
+    }
+
+    // Servers listed with their details (333networks) are printed as listed,
+    // without querying them; the others are queried.
+    let (previews, addresses): (Vec<_>, Vec<_>) = list
+        .servers
+        .into_iter()
+        .partition(|entry| entry.preview.is_some());
+    for server in previews
+        .into_iter()
+        .filter_map(|entry| entry.preview)
+        .take(limit)
+    {
+        println!(
+            "{:<22} listed          {:>2}/{:<2} {:<18} {:<14} {}",
+            server.address(),
+            server.num_players,
+            server
+                .max_players
+                .map_or("?".to_string(), |max| max.to_string()),
+            game.game_type_name(&server.game_type),
+            server.map,
+            server.name.chars().take(40).collect::<String>(),
+        );
+    }
 
     let servers: Vec<_> = std::thread::scope(|scope| {
         let handles: Vec<_> = addresses
             .iter()
             .take(limit)
-            .map(|address| {
+            .map(|entry| {
+                let address = &entry.address;
                 let options = &options;
                 scope.spawn(move || {
                     let (host, port) = parse_address(address, game.default_port).ok()?;

@@ -203,6 +203,10 @@ pub fn french(text: &str) -> Option<&'static str> {
         "Refresh server list (F5)" => "Actualiser la liste des serveurs (F5)",
         "Stop" => "Arrêter",
         "Refresh selected server" => "Actualiser le serveur sélectionné",
+        "Ping visible servers" => "Pinger les serveurs visibles",
+        "Query the servers shown in the list (at most {})" => {
+            "Interroger les serveurs affichés dans la liste ({} au maximum)"
+        }
         "Join server" => "Rejoindre le serveur",
         "Join server (Enter)" => "Rejoindre le serveur (Entrée)",
         "Add to / remove from favorites" => "Ajouter aux favoris / retirer des favoris",
@@ -263,6 +267,7 @@ pub fn french(text: &str) -> Option<&'static str> {
         "{} is playing on {}" => "{} joue sur {}",
         "servers" => "serveurs",
         "known servers" => "serveurs connus",
+        "visible servers" => "serveurs visibles",
         "imported servers" => "serveurs importés",
         "Looking for servers on the local network..." => {
             "Recherche de serveurs sur le réseau local…"
@@ -296,6 +301,13 @@ pub fn french(text: &str) -> Option<&'static str> {
         "{} servers, {}/{} players total, {} visible" => {
             "{} serveurs, {}/{} joueurs au total, {} visibles"
         }
+        "{} of {} servers, {}/{} players total, {} visible" => {
+            "{} serveurs sur {}, {}/{} joueurs au total, {} visibles"
+        }
+        "Load more servers ({} of {})" => "Charger plus de serveurs ({} sur {})",
+        "Loading more servers..." => "Chargement d’autres serveurs…",
+        "{} more servers loaded" => "{} serveurs de plus chargés",
+        "Could not load more servers: {}" => "Impossible de charger plus de serveurs : {}",
         "Modifiers cleared" => "Modificateurs effacés",
         "Profile exported to {}" => "Profil exporté vers {}",
         "Export failed: {}" => "Échec de l’exportation : {}",

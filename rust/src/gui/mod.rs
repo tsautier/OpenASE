@@ -23,9 +23,10 @@ use openase::countries::country_name;
 use openase::detect;
 use openase::geoip::{self, GeoIp};
 use openase::i18n::{self, fill, group_name, noop, tr};
-use openase::model::Server;
+use openase::model::{Listed, Server};
+use openase::networks333::{self, PAGE_SIZE};
 use openase::quake3::parse_address;
-use openase::query::{fetch_all_masters, query_server};
+use openase::query::{fetch_all_masters, fetch_more, query_server};
 use openase::settings::{
     ColorSettings, FAVORITE_GROUPS, FRIEND_GROUPS, FriendSound, Rgb, ServerRef, Settings,
 };
@@ -35,6 +36,8 @@ use icons::{Tool, TreeIcon};
 
 const ROW_HEIGHT: f32 = 18.0;
 const PING_LIMITS: [u32; 4] = [50, 100, 150, 250];
+/// Most servers "Ping visible servers" queries at once.
+const PING_VISIBLE_MAX: usize = 60;
 
 /// Identifies a server across games.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -141,8 +144,18 @@ pub enum Msg {
     MasterList {
         generation: u64,
         game: String,
-        addresses: Vec<String>,
+        /// Listed servers; those with a preview are not queried by the scan.
+        servers: Vec<Listed>,
         errors: Vec<String>,
+        /// Servers the paged masters (333networks) list in all.
+        paged_total: Option<usize>,
+    },
+    /// Next page of a game's 333networks list ("Load more").
+    MorePage {
+        generation: u64,
+        game: String,
+        page: usize,
+        result: Result<networks333::Page, String>,
     },
     Server {
         generation: u64,
@@ -173,12 +186,31 @@ struct Scan {
     label: String,
 }
 
+/// Pages loaded of a game's 333networks list.
+struct Paging {
+    /// Scan that loaded the first page; later pages of older scans are dropped.
+    generation: u64,
+    /// Pages loaded so far.
+    pages: usize,
+    /// Rows added from the pages.
+    listed: usize,
+    /// Servers listed in all.
+    total: usize,
+}
+
+impl Paging {
+    fn has_more(&self) -> bool {
+        self.pages * PAGE_SIZE < self.total
+    }
+}
+
 /// Row actions collected while drawing, applied afterwards.
 enum Action {
     Select(ServerKey),
     Join(ServerKey),
     ToggleFavorite(ServerKey),
     Refresh(ServerKey),
+    LoadMore(String),
     Copy(String),
     FavoriteGroup(ServerKey, String),
 }
@@ -206,6 +238,16 @@ pub struct OpenAseApp {
     pub(crate) geoip_status: String,
     lan_servers: Vec<ServerKey>,
     scroll_to_selected: bool,
+    /// Paging state of games listed by 333networks.
+    paging: HashMap<String, Paging>,
+    /// Game whose next page is being downloaded (one request at a time).
+    more_in_flight: Option<String>,
+    /// Rows drawn in the server list on the last frame.
+    on_screen: Vec<ServerKey>,
+    /// Scroll offset of the server list on the last frame.
+    list_offset: f32,
+    /// The "Load more" row was drawn on the last frame.
+    more_row_drawn: bool,
     pub(crate) extra: extra::Extra,
     pub(crate) dialogs: Dialogs,
 }
@@ -259,6 +301,11 @@ impl OpenAseApp {
             geoip_status: tr("Loading...").to_string(),
             lan_servers: Vec::new(),
             scroll_to_selected: false,
+            paging: HashMap::new(),
+            more_in_flight: None,
+            on_screen: Vec::new(),
+            list_offset: 0.0,
+            more_row_drawn: false,
             extra: extra::Extra::default(),
             dialogs: Dialogs::default(),
         }
@@ -274,16 +321,37 @@ impl OpenAseApp {
     }
 
     fn upsert(&mut self, mut server: Server) {
+        let address = server.address();
+        if server.country.is_none() {
+            // Keep the country the master list gave when GeoIP is off.
+            server.country = self
+                .store
+                .get(&server.game)
+                .and_then(|list| list.iter().find(|existing| existing.address() == address))
+                .and_then(|existing| existing.country.clone());
+        }
         annotate(self.geoip.as_deref(), &mut server);
         self.check_friends(&server);
         let list = self.store.entry(server.game.clone()).or_default();
-        let address = server.address();
         match list
             .iter_mut()
             .find(|existing| existing.address() == address)
         {
+            // No answer from a server the list described: keep its details
+            // and show the loss instead of an empty "no response" row.
+            Some(existing) if !server.online && existing.listed => {
+                existing.packet_loss = Some(100);
+                existing.error = server.error;
+            }
             Some(existing) => *existing = server,
             None => list.push(server),
+        }
+    }
+
+    /// Query a server listed with details (333networks) and not queried yet.
+    fn query_if_listed(&mut self, ctx: &egui::Context, key: &ServerKey) {
+        if self.find(key).is_some_and(|server| server.listed) {
+            self.query_single(ctx, key);
         }
     }
 
@@ -447,22 +515,67 @@ impl OpenAseApp {
         let steam_key = self.settings.steam_api_key.clone();
         std::thread::spawn(move || {
             let options = network.query_options();
-            let (mut addresses, errors) =
-                fetch_all_masters(game, options.timeout, &steam_key, network.scan_limit);
-            addresses.truncate(network.scan_limit.max(1));
+            let mut list = fetch_all_masters(game, options.timeout, &steam_key, network.scan_limit);
+            list.servers.truncate(network.scan_limit.max(1));
+            // Servers listed with their details (333networks) are shown as
+            // listed and queried only on demand; the others are queried now.
+            let targets = list
+                .servers
+                .iter()
+                .filter(|entry| entry.preview.is_none())
+                .map(|entry| (game.id.clone(), entry.address.clone()))
+                .collect();
             let _ = tx.send(Msg::MasterList {
                 generation,
                 game: game.id.clone(),
-                addresses: addresses.clone(),
-                errors,
+                servers: list.servers,
+                errors: list.errors,
+                paged_total: list.paged_total,
             });
             ctx.request_repaint();
-            let targets = addresses
-                .into_iter()
-                .map(|address| (game.id.clone(), address))
-                .collect();
             run_queries(targets, &network, &tx, &ctx, generation, &stop, &done);
         });
+    }
+
+    /// Download the next page of a game's 333networks list, if there is one
+    /// and no page request is already running.
+    fn load_more(&mut self, ctx: &egui::Context, game_id: &str) {
+        if self.more_in_flight.is_some() {
+            return;
+        }
+        let Some(game) = catalog::game(game_id) else {
+            return;
+        };
+        let Some(paging) = self.paging.get(game_id).filter(|paging| paging.has_more()) else {
+            return;
+        };
+        let (generation, page) = (paging.generation, paging.pages + 1);
+        self.more_in_flight = Some(game_id.to_string());
+        self.status = tr("Loading more servers...").to_string();
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        let timeout = self.settings.network.query_options().timeout;
+        std::thread::spawn(move || {
+            let result = fetch_more(game, page, timeout).map_err(|error| error.to_string());
+            let _ = tx.send(Msg::MorePage {
+                generation,
+                game: game.id.clone(),
+                page,
+                result,
+            });
+            ctx.request_repaint();
+        });
+    }
+
+    /// Query the rows drawn in the server list, at most [`PING_VISIBLE_MAX`].
+    fn ping_visible(&mut self, ctx: &egui::Context) {
+        let keys: Vec<ServerKey> = self
+            .on_screen
+            .iter()
+            .take(PING_VISIBLE_MAX)
+            .cloned()
+            .collect();
+        self.scan_list(ctx, keys, noop("visible servers"));
     }
 
     fn scan_list(&mut self, ctx: &egui::Context, keys: Vec<ServerKey>, what: &'static str) {
@@ -514,33 +627,65 @@ impl OpenAseApp {
                 Msg::MasterList {
                     generation,
                     game,
-                    addresses,
+                    servers,
                     errors,
+                    paged_total,
                 } if Some(generation) == current => {
-                    let mut list = Vec::with_capacity(addresses.len());
+                    let mut list = Vec::with_capacity(servers.len());
                     let old = self.store.remove(&game).unwrap_or_default();
                     let mut old: HashMap<String, Server> = old
                         .into_iter()
                         .map(|server| (server.address(), server))
                         .collect();
                     let definition = catalog::game(&game);
-                    for address in &addresses {
-                        if let Some(existing) = old.remove(address) {
+                    let mut listed = 0;
+                    let mut queried = 0;
+                    for entry in servers {
+                        let existing = old.remove(&entry.address);
+                        if let Some(mut server) = entry.preview {
+                            // Fresh details from the list replace older ones.
+                            listed += 1;
+                            annotate(self.geoip.as_deref(), &mut server);
+                            list.push(server);
+                        } else if let Some(existing) = existing {
+                            queried += 1;
                             list.push(existing);
                         } else if let Some(definition) = definition
                             && let Ok((host, port)) =
-                                parse_address(address, definition.default_port)
+                                parse_address(&entry.address, definition.default_port)
                         {
+                            queried += 1;
                             let mut server = Server::new(&game, &host, port);
                             annotate(self.geoip.as_deref(), &mut server);
                             list.push(server);
                         }
                     }
-                    self.store.insert(game, list);
-                    if let Some(scan) = &mut self.scan {
-                        scan.total = addresses.len();
+                    let empty = list.is_empty();
+                    self.store.insert(game.clone(), list);
+                    match paged_total {
+                        Some(total) => {
+                            self.paging.insert(
+                                game.clone(),
+                                Paging {
+                                    generation,
+                                    pages: 1,
+                                    listed,
+                                    total,
+                                },
+                            );
+                        }
+                        None => {
+                            self.paging.remove(&game);
+                        }
                     }
-                    if addresses.is_empty() && !errors.is_empty() {
+                    if let Some(scan) = &mut self.scan {
+                        scan.total = queried;
+                    }
+                    // The details pane of a selected listed server needs a query.
+                    if let Some(key) = self.selected.clone().filter(|key| key.game == game) {
+                        self.query_if_listed(ctx, &key);
+                    }
+                    if empty && !errors.is_empty() {
                         self.dialogs.error = Some(fill(
                             tr("No server list could be downloaded:\n\n{}"),
                             &[&errors.join("\n")],
@@ -551,6 +696,47 @@ impl OpenAseApp {
                 }
                 Msg::Server { generation, server } if Some(generation) == current => {
                     self.upsert(server)
+                }
+                Msg::MorePage {
+                    generation,
+                    game,
+                    page,
+                    result,
+                } => {
+                    if self.more_in_flight.as_deref() == Some(game.as_str()) {
+                        self.more_in_flight = None;
+                    }
+                    match result {
+                        Ok(more) => {
+                            let Some(paging) = self
+                                .paging
+                                .get_mut(&game)
+                                .filter(|paging| paging.generation == generation)
+                            else {
+                                continue;
+                            };
+                            paging.pages = page;
+                            paging.total = more.total;
+                            let list = self.store.entry(game.clone()).or_default();
+                            let mut added = 0;
+                            for entry in more.servers {
+                                // Rows already present (live or from another
+                                // page) are kept as they are.
+                                if let Some(mut server) = entry.preview
+                                    && !list.iter().any(|row| row.address() == entry.address)
+                                {
+                                    annotate(self.geoip.as_deref(), &mut server);
+                                    list.push(server);
+                                    added += 1;
+                                }
+                            }
+                            paging.listed += added;
+                            self.status = fill(tr("{} more servers loaded"), &[&added]);
+                        }
+                        Err(error) => {
+                            self.status = fill(tr("Could not load more servers: {}"), &[&error]);
+                        }
+                    }
                 }
                 Msg::ScanDone { generation } if Some(generation) == current => {
                     let stopped = self
@@ -726,7 +912,7 @@ impl OpenAseApp {
                     return false;
                 }
                 // Unscanned or silent servers cannot satisfy content filters.
-                if !server.online {
+                if !server.has_info() {
                     return !filters.not_empty
                         && filters.max_ping.is_none()
                         && !matches!(self.nav, Nav::GameType(..));
@@ -757,7 +943,7 @@ impl OpenAseApp {
         let (col, ascending) = self.sort;
         // Servers that answered always come first, whatever the sort direction.
         rows.sort_by(|a, b| {
-            b.online.cmp(&a.online).then_with(|| {
+            b.has_info().cmp(&a.has_info()).then_with(|| {
                 let ordering = compare(col, a, b);
                 if ascending {
                     ordering
@@ -802,11 +988,21 @@ impl OpenAseApp {
 
     fn apply(&mut self, ctx: &egui::Context, action: Action) {
         match action {
-            Action::Select(key) => self.selected = Some(key),
+            Action::Select(key) => {
+                if self.selected.as_ref() != Some(&key) {
+                    self.query_if_listed(ctx, &key);
+                }
+                self.selected = Some(key);
+            }
             Action::Join(key) => {
+                // A double click selected (and so queried) the row first.
+                if self.selected.as_ref() != Some(&key) {
+                    self.query_if_listed(ctx, &key);
+                }
                 self.selected = Some(key.clone());
                 self.join(&key);
             }
+            Action::LoadMore(game) => self.load_more(ctx, &game),
             Action::ToggleFavorite(key) => {
                 self.settings.toggle_favorite(key.to_ref());
                 self.settings_dirty = true;
@@ -888,6 +1084,20 @@ impl OpenAseApp {
                     if let Some(key) = &selected {
                         self.query_single(ui.ctx(), key);
                     }
+                    ui.close();
+                }
+                if ui
+                    .add_enabled(
+                        self.scan.is_none() && !self.on_screen.is_empty(),
+                        egui::Button::new(tr("Ping visible servers")),
+                    )
+                    .on_hover_text(fill(
+                        tr("Query the servers shown in the list (at most {})"),
+                        &[&PING_VISIBLE_MAX],
+                    ))
+                    .clicked()
+                {
+                    self.ping_visible(ui.ctx());
                     ui.close();
                 }
                 ui.separator();
@@ -1478,8 +1688,23 @@ impl OpenAseApp {
         let selected = self.selected.clone();
         let text_color = ui.visuals().text_color();
         let selection = ui.visuals().selection.bg_fill;
+        // A "Load more" row ends the list while 333networks lists more servers.
+        let more = self
+            .nav
+            .game()
+            .filter(|game| self.paging.get(*game).is_some_and(Paging::has_more))
+            .map(|game| {
+                let paging = &self.paging[game];
+                let shown = self.store.get(game).map_or(0, Vec::len);
+                let total = paging.total + shown.saturating_sub(paging.listed);
+                let loading = self.more_in_flight.is_some();
+                (game.to_string(), shown, total, loading)
+            });
+        let mut on_screen: Vec<ServerKey> = Vec::new();
+        let mut more_drawn = false;
 
-        if rows.is_empty() && self.scan.is_none() {
+        if rows.is_empty() && self.scan.is_none() && more.is_none() {
+            self.on_screen.clear();
             ui.add_space(30.0);
             ui.vertical_centered(|ui| {
                 ui.label(
@@ -1517,7 +1742,7 @@ impl OpenAseApp {
             table = table.column(column.at_least(24.0).clip(true));
         }
 
-        table
+        let output = table
             .header(20.0, |mut header| {
                 for (col, label, _) in COLUMNS {
                     header.col(|ui| {
@@ -1546,9 +1771,36 @@ impl OpenAseApp {
                 }
             })
             .body(|body| {
-                body.rows(ROW_HEIGHT, rows.len(), |mut row| {
-                    let server = rows[row.index()];
+                let count = rows.len() + usize::from(more.is_some());
+                body.rows(ROW_HEIGHT, count, |mut row| {
+                    let Some(&server) = rows.get(row.index()) else {
+                        // The "Load more" row.
+                        let Some((game, shown, total, loading)) = &more else {
+                            return;
+                        };
+                        more_drawn = true;
+                        for (col, _, _) in COLUMNS {
+                            row.col(|ui| {
+                                if col != Col::Name {
+                                    return;
+                                }
+                                let text = if *loading {
+                                    tr("Loading more servers...").to_string()
+                                } else {
+                                    fill(tr("Load more servers ({} of {})"), &[shown, total])
+                                };
+                                if ui
+                                    .add_enabled(!*loading, egui::Button::new(text).small())
+                                    .clicked()
+                                {
+                                    actions.push(Action::LoadMore(game.clone()));
+                                }
+                            });
+                        }
+                        return;
+                    };
                     let key = ServerKey::of(server);
+                    on_screen.push(key.clone());
                     let is_selected = selected.as_ref() == Some(&key);
                     row.set_selected(is_selected);
                     let game = catalog::game(&server.game);
@@ -1561,7 +1813,7 @@ impl OpenAseApp {
                     };
                     let color = if is_selected {
                         Color32::WHITE
-                    } else if !server.online {
+                    } else if !server.has_info() {
                         Color32::from_gray(0x90)
                     } else {
                         text_color
@@ -1615,7 +1867,7 @@ impl OpenAseApp {
                                     let colored = self.palette.quake_colors
                                         && game
                                             .is_some_and(|game| game.protocol == Protocol::Quake3)
-                                        && server.online
+                                        && server.has_info()
                                         && !is_selected
                                         && self
                                             .settings
@@ -1680,6 +1932,22 @@ impl OpenAseApp {
                     });
                 });
             });
+
+        // Scrolling down to the end of the list loads the next page once: only
+        // when the user's scroll brings the "Load more" row into view, never
+        // again while it stays in view (filtered pages, short lists).
+        let offset = output.state.clamped_offset().y;
+        let scrolled_down = offset > self.list_offset + 0.5;
+        self.list_offset = offset;
+        if more_drawn
+            && !self.more_row_drawn
+            && scrolled_down
+            && let Some((game, _, _, false)) = &more
+        {
+            actions.push(Action::LoadMore(game.clone()));
+        }
+        self.more_row_drawn = more_drawn;
+        self.on_screen = on_screen;
 
         if let Some(col) = sort_click {
             self.sort = if self.sort.0 == col {
@@ -1886,10 +2154,29 @@ impl OpenAseApp {
                 ui.label(&self.status);
             }
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                ui.label(fill(
-                    tr("{} servers, {}/{} players total, {} visible"),
-                    &[&total, &players, &slots, &rows.len()],
-                ));
+                let paged = self
+                    .nav
+                    .game()
+                    .and_then(|game| self.paging.get(game))
+                    .filter(|paging| paging.has_more());
+                ui.label(match paged {
+                    // "100 of 808 servers": the rest of the 333networks list
+                    // is loaded on demand.
+                    Some(paging) => fill(
+                        tr("{} of {} servers, {}/{} players total, {} visible"),
+                        &[
+                            &total,
+                            &(paging.total + total.saturating_sub(paging.listed)),
+                            &players,
+                            &slots,
+                            &rows.len(),
+                        ],
+                    ),
+                    None => fill(
+                        tr("{} servers, {}/{} players total, {} visible"),
+                        &[&total, &players, &slots, &rows.len()],
+                    ),
+                });
             });
         });
     }
@@ -2282,7 +2569,7 @@ fn colored_label(ui: &mut egui::Ui, raw: &str, default_color: Color32) {
 }
 
 fn display_name(server: &Server) -> String {
-    if server.online {
+    if server.has_info() {
         strip_quake_colors(&server.name)
     } else if server.error.is_some() {
         tr("(no response)").to_string()
@@ -2296,7 +2583,12 @@ fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
     match col {
         Col::Icon => String::new(),
         Col::Location => {
-            if server.location != openase::location::UNKNOWN_LOCATION && !server.location.is_empty()
+            // GameSpy servers often send `\location\0`, a region number:
+            // the country (from the list or GeoIP) says more.
+            let region_number = server.location.chars().all(|c| c.is_ascii_digit());
+            if server.location != openase::location::UNKNOWN_LOCATION
+                && !server.location.is_empty()
+                && !(region_number && server.country.is_some())
             {
                 server.location.clone()
             } else {
@@ -2312,6 +2604,9 @@ fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
         Col::Ping => {
             if server.online {
                 number(server.ping)
+            } else if server.listed {
+                // Listed by 333networks and not pinged yet.
+                "—".to_string()
             } else {
                 "9999".to_string()
             }
@@ -2325,7 +2620,7 @@ fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
             .map(|loss| format!("{loss}%"))
             .unwrap_or_default(),
         Col::Players => {
-            if server.online {
+            if server.has_info() {
                 format!(
                     "{}/{}",
                     server.num_players,
@@ -2404,7 +2699,7 @@ fn compare(col: Col, a: &Server, b: &Server) -> std::cmp::Ordering {
                 .cmp(&cell_text(col, b, game_b).to_lowercase())
         }
     }
-    .then_with(|| b.online.cmp(&a.online))
+    .then_with(|| b.has_info().cmp(&a.has_info()))
 }
 
 /// Server passes every checked filter group of its game.
@@ -2441,7 +2736,7 @@ fn passes_groups(
 /// Most common values of a rule among scanned servers, for dynamic filter groups.
 fn dynamic_options(servers: &[Server], key: &str) -> Vec<String> {
     let mut counts: HashMap<String, usize> = HashMap::new();
-    for server in servers.iter().filter(|server| server.online) {
+    for server in servers.iter().filter(|server| server.has_info()) {
         *counts
             .entry(server.rule(key).unwrap_or("").to_string())
             .or_default() += 1;
