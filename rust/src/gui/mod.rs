@@ -337,6 +337,12 @@ impl OpenAseApp {
             .iter_mut()
             .find(|existing| existing.address() == address)
         {
+            // No answer from a server the list described: keep its details
+            // and show the loss instead of an empty "no response" row.
+            Some(existing) if !server.online && existing.listed => {
+                existing.packet_loss = Some(100);
+                existing.error = server.error;
+            }
             Some(existing) => *existing = server,
             None => list.push(server),
         }
