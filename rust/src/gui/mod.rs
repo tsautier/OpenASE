@@ -2577,7 +2577,12 @@ fn cell_text(col: Col, server: &Server, game: Option<&Game>) -> String {
     match col {
         Col::Icon => String::new(),
         Col::Location => {
-            if server.location != openase::location::UNKNOWN_LOCATION && !server.location.is_empty()
+            // GameSpy servers often send `\location\0`, a region number:
+            // the country (from the list or GeoIP) says more.
+            let region_number = server.location.chars().all(|c| c.is_ascii_digit());
+            if server.location != openase::location::UNKNOWN_LOCATION
+                && !server.location.is_empty()
+                && !(region_number && server.country.is_some())
             {
                 server.location.clone()
             } else {
